@@ -1,0 +1,51 @@
+# Go build artifacts
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go modules / dependencies cache
+vendor/
+
+# IDE / editor
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+*.DS_Store
+
+# Logs & temp files
+logs/
+*.log
+*.tmp
+.tmp/
+*.bak
+
+# OS-specific
+Thumbs.db
+.DS_Store
+
+# Local config & secrets
+.env
+.env.*
+config/local*.yaml
+config/local*.yml
+config/local*.json
+
+# Swagger generated docs (保留目录，忽略二进制文件)
+docs/*.json
+docs/*.yaml
+
+# Coverage & profiling
+coverage.out
+*.cover
+profile.out
+
+# GoLand / delve 等调试配置
+*.pprof
+.idea_modules/
