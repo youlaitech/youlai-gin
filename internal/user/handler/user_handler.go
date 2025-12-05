@@ -1,14 +1,24 @@
 package handler
 
 import (
-	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"youlai-gin/internal/user/model"
 	"youlai-gin/internal/user/service"
+	"youlai-gin/pkg/apperror"
+	"youlai-gin/pkg/response"
 )
+
+// bindJSON 统一参数绑定 + BadRequest 封装
+func bindJSON(c *gin.Context, dst any) bool {
+	if err := c.ShouldBindJSON(dst); err != nil {
+		c.Error(apperror.Wrap(apperror.ErrBadRequest(""), err))
+		return false
+	}
+	return true
+}
 
 // RegisterUserRoutes 注册用户相关 HTTP 路由
 func RegisterUserRoutes(r *gin.RouterGroup) {
@@ -30,17 +40,13 @@ func RegisterUserRoutes(r *gin.RouterGroup) {
 func ListUsers(c *gin.Context) {
 	users, err := service.ListUsers()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": "B0001", "msg": "查询失败"})
+		c.Error(err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code": "00000",
-		"msg":  "一切ok",
-		"data": gin.H{
-			"list":  users,
-			"total": len(users),
-		},
+	response.Ok(c, gin.H{
+		"list":  users,
+		"total": len(users),
 	})
 }
 
@@ -55,17 +61,16 @@ func ListUsers(c *gin.Context) {
 // @Router /api/v1/users [post]
 func CreateUser(c *gin.Context) {
 	var req model.User
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": "A0400", "msg": "请求参数错误"})
+	if !bindJSON(c, &req) {
 		return
 	}
 
 	if err := service.CreateUser(&req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": "B0001", "msg": "创建失败"})
+		c.Error(err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"code": "00000", "msg": "创建成功"})
+	response.OkMsg(c, "创建成功")
 }
 
 // UpdateUser 修改用户
@@ -83,17 +88,16 @@ func UpdateUser(c *gin.Context) {
 	id, _ := strconv.ParseUint(idStr, 10, 64)
 
 	var req model.User
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": "A0400", "msg": "请求参数错误"})
+	if !bindJSON(c, &req) {
 		return
 	}
 
 	if err := service.UpdateUser(id, &req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": "B0001", "msg": "修改失败"})
+		c.Error(err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"code": "00000", "msg": "修改成功"})
+	response.OkMsg(c, "修改成功")
 }
 
 // DeleteUser 删除用户
@@ -110,9 +114,9 @@ func DeleteUser(c *gin.Context) {
 	id, _ := strconv.ParseUint(idStr, 10, 64)
 
 	if err := service.DeleteUser(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": "B0001", "msg": "删除失败"})
+		c.Error(err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"code": "00000", "msg": "删除成功"})
+	response.OkMsg(c, "删除成功")
 }
