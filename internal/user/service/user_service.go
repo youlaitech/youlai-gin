@@ -3,7 +3,7 @@ package service
 import (
 	"youlai-gin/internal/user/model"
 	"youlai-gin/internal/user/repository"
-	"youlai-gin/pkg/apperror"
+	"youlai-gin/pkg/errs"
 )
 
 // AutoMigrate 对外暴露，供启动时调用
@@ -20,7 +20,7 @@ func ListUsers() ([]model.User, error) {
 func CreateUser(user *model.User) error {
 	// 示例：业务校验（用户名不能为空）。真实项目可根据实际业务补充更多规则。
 	if user.Username == "" {
-		return apperror.ErrBadRequest("用户名不能为空")
+		return errs.BadRequest("用户名不能为空")
 	}
 
 	return repository.Create(user)

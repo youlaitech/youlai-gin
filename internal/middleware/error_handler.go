@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"youlai-gin/pkg/apperror"
+	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/response"
 )
 
@@ -22,7 +22,7 @@ func ErrorHandler() gin.HandlerFunc {
 		logger := extractLogger(c)
 
 		// AppError
-		if ae, ok := apperror.As(rawErr); ok {
+		if ae, ok := errs.As(rawErr); ok {
 			// 打印底层错误（日志、trace）
 			if ae.Err != nil {
 				logger.Error("[ERROR]", zap.Error(ae.Err))
@@ -33,7 +33,7 @@ func ErrorHandler() gin.HandlerFunc {
 
 		// 未知错误 → 统一系统错误
 		logger.Error("[SYSTEM ERROR]", zap.Error(rawErr))
-		response.FromAppError(c, apperror.ErrSystem(""))
+		response.FromAppError(c, errs.SystemError(""))
 	}
 }
 

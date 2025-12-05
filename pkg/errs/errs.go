@@ -1,4 +1,4 @@
-package apperror
+package errs
 
 import (
 	"errors"
@@ -33,9 +33,9 @@ func Wrap(base *AppError, err error) *AppError {
 	}
 }
  
-// ErrBadRequest 用户端错误（A0400）
+// BadRequest 用户端错误（A0400）
 // msg 为空时使用统一文案
-func ErrBadRequest(msg string) *AppError {
+func BadRequest(msg string) *AppError {
 	if msg == "" {
 		msg = constant.MsgBadRequest
 	}
@@ -46,9 +46,9 @@ func ErrBadRequest(msg string) *AppError {
 	}
 }
 
-// ErrSystem 系统执行出错（B0001）
+// SystemError 系统执行出错（B0001）
 // msg 为空时使用统一文案
-func ErrSystem(msg string) *AppError {
+func SystemError(msg string) *AppError {
 	if msg == "" {
 		msg = constant.MsgSystemError
 	}
@@ -69,4 +69,33 @@ func As(err error) (*AppError, bool) {
 	var ae *AppError
 	ok := errors.As(err, &ae)
 	return ae, ok
+}
+
+// ========== 常用业务错误（典型示例）==========
+
+// UsernameExists 用户名已存在
+func UsernameExists() *AppError {
+	return &AppError{
+		Code:       constant.CodeUsernameExists,
+		Msg:        constant.MsgUsernameExists,
+		HTTPStatus: http.StatusBadRequest,
+	}
+}
+
+// UserNotFound 用户不存在
+func UserNotFound() *AppError {
+	return &AppError{
+		Code:       constant.CodeUserNotExist,
+		Msg:        constant.MsgUserNotExist,
+		HTTPStatus: http.StatusNotFound,
+	}
+}
+
+// TokenInvalid 令牌无效
+func TokenInvalid() *AppError {
+	return &AppError{
+		Code:       constant.CodeAccessTokenInvalid,
+		Msg:        constant.MsgAccessTokenInvalid,
+		HTTPStatus: http.StatusUnauthorized,
+	}
 }

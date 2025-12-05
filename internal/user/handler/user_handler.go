@@ -7,18 +7,9 @@ import (
 
 	"youlai-gin/internal/user/model"
 	"youlai-gin/internal/user/service"
-	"youlai-gin/pkg/apperror"
 	"youlai-gin/pkg/response"
+	"youlai-gin/pkg/validator"
 )
-
-// bindJSON 统一参数绑定 + BadRequest 封装
-func bindJSON(c *gin.Context, dst any) bool {
-	if err := c.ShouldBindJSON(dst); err != nil {
-		c.Error(apperror.Wrap(apperror.ErrBadRequest(""), err))
-		return false
-	}
-	return true
-}
 
 // RegisterUserRoutes 注册用户相关 HTTP 路由
 func RegisterUserRoutes(r *gin.RouterGroup) {
@@ -61,7 +52,8 @@ func ListUsers(c *gin.Context) {
 // @Router /api/v1/users [post]
 func CreateUser(c *gin.Context) {
 	var req model.User
-	if !bindJSON(c, &req) {
+	if err := validator.BindJSON(c, &req); err != nil {
+		c.Error(err)
 		return
 	}
 
@@ -88,7 +80,8 @@ func UpdateUser(c *gin.Context) {
 	id, _ := strconv.ParseUint(idStr, 10, 64)
 
 	var req model.User
-	if !bindJSON(c, &req) {
+	if err := validator.BindJSON(c, &req); err != nil {
+		c.Error(err)
 		return
 	}
 
