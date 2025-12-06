@@ -1,0 +1,172 @@
+package service
+
+import (
+	"errors"
+	"gorm.io/gorm"
+	
+	"youlai-gin/internal/system/role/model"
+	"youlai-gin/internal/system/role/repository"
+	"youlai-gin/pkg/common"
+	"youlai-gin/pkg/errs"
+)
+
+// GetRolePage 角色分页列表
+func GetRolePage(query *model.RolePageQuery) (*common.PageResult, error) {
+	roles, total, err := repository.GetRolePage(query)
+	if err != nil {
+		return nil, errs.SystemError("查询角色列表失败")
+	}
+
+	voList := make([]model.RolePageVO, len(roles))
+	for i, role := range roles {
+		voList[i] = model.RolePageVO{
+			ID:         role.ID,
+			Name:       role.Name,
+			Code:       role.Code,
+			Sort:       role.Sort,
+			Status:     role.Status,
+			DataScope:  role.DataScope,
+			CreateTime: role.CreateTime,
+			UpdateTime: role.UpdateTime,
+		}
+	}
+
+	return &common.PageResult{
+		List:  voList,
+		Total: total,
+	}, nil
+}
+
+// GetRoleOptions 角色下拉选项
+func GetRoleOptions() ([]common.Option[int64], error) {
+	roles, err := repository.GetRoleOptions()
+	if err != nil {
+		return nil, errs.SystemError("查询角色选项失败")
+	}
+
+	options := make([]common.Option[int64], len(roles))
+	for i, role := range roles {
+		options[i] = common.Option[int64]{
+			Value: role.ID,
+			Label: role.Name,
+		}
+	}
+
+	return options, nil
+}
+
+// SaveRole 保存角色（新增或更新）
+func SaveRole(form *model.RoleForm) error {
+	exists, err := repository.CheckRoleNameExists(form.Name, form.ID)
+	if err != nil {
+		return errs.SystemError("检查角色名称失败")
+	}
+	if exists {
+		return errs.BadRequest("角色名称已存在")
+	}
+
+	exists, err = repository.CheckRoleCodeExists(form.Code, form.ID)
+	if err != nil {
+		return errs.SystemError("检查角色编码失败")
+	}
+	if exists {
+		return errs.BadRequest("角色编码已存在")
+	}
+
+	role := &model.Role{
+		ID:        form.ID,
+		Name:      form.Name,
+		Code:      form.Code,
+		Sort:      form.Sort,
+		Status:    form.Status,
+		DataScope: form.DataScope,
+	}
+
+	if form.ID == 0 {
+		if err := repository.CreateRole(role); err != nil {
+			return errs.SystemError("创建角色失败")
+		}
+		form.ID = role.ID
+	} else {
+		if err := repository.UpdateRole(role); err != nil {
+			return errs.SystemError("更新角色失败")
+		}
+	}
+
+	if len(form.MenuIds) > 0 {
+		if err := repository.UpdateRoleMenus(form.ID, form.MenuIds); err != nil {
+			return errs.SystemError("更新角色菜单失败")
+		}
+	}
+
+	return nil
+}
+
+// GetRoleForm 获取角色表单数据
+func GetRoleForm(id int64) (*model.RoleForm, error) {
+	role, err := repository.GetRoleByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errs.NotFound("角色不存在")
+		}
+		return nil, errs.SystemError("查询角色失败")
+	}
+
+	menuIds, err := repository.GetRoleMenuIds(id)
+	if err != nil {
+		return nil, errs.SystemError("查询角色菜单失败")
+	}
+
+	return &model.RoleForm{
+		ID:        role.ID,
+		Name:      role.Name,
+		Code:      role.Code,
+		Sort:      role.Sort,
+		Status:    role.Status,
+		DataScope: role.DataScope,
+		MenuIds:   menuIds,
+	}, nil
+}
+
+// DeleteRole 删除角色
+func DeleteRole(id int64) error {
+	_, err := repository.GetRoleByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.NotFound("角色不存在")
+		}
+		return errs.SystemError("查询角色失败")
+	}
+
+	if err := repository.DeleteRole(id); err != nil {
+		return errs.SystemError("删除角色失败")
+	}
+
+	return nil
+}
+
+// GetRoleMenuIds 获取角色菜单ID列表
+func GetRoleMenuIds(roleId int64) ([]int64, error) {
+	menuIds, err := repository.GetRoleMenuIds(roleId)
+	if err != nil {
+		return nil, errs.SystemError("查询角色菜单失败")
+	}
+	return menuIds, nil
+}
+
+// UpdateRoleMenus 分配角色菜单权限
+func UpdateRoleMenus(roleId int64, menuIds []int64) error {
+	_, err := repository.GetRoleByID(roleId)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.NotFound("角色不存在")
+		}
+		return errs.SystemError("查询角色失败")
+	}
+
+	if err := repository.UpdateRoleMenus(roleId, menuIds); err != nil {
+		return errs.SystemError("更新角色菜单失败")
+	}
+
+	return nil
+}

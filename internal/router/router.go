@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"youlai-gin/internal/auth"
-	"youlai-gin/internal/user"
+	"youlai-gin/internal/system"
 	pkgAuth "youlai-gin/pkg/auth"
 )
 
@@ -15,6 +15,6 @@ func Register(r *gin.Engine, tokenManager pkgAuth.TokenManager) {
 	// 认证模块
 	auth.RegisterRoutes(api, tokenManager)
 
-	// 用户模块
-	user.RegisterRoutes(api)
+	// 系统管理模块（包含用户、角色、菜单、部门、字典）
+	system.RegisterRoutes(api)
 }
