@@ -15,6 +15,103 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/auth/login": {
+            "post": {
+                "description": "用户名密码登录，返回访问令牌和刷新令牌",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证中心"
+                ],
+                "summary": "账号密码登录",
+                "parameters": [
+                    {
+                        "description": "登录信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "code/msg/data，data 为 AuthenticationToken",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/logout": {
+            "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "使当前访问令牌失效",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证中心"
+                ],
+                "summary": "退出登录",
+                "responses": {
+                    "200": {
+                        "description": "code/msg",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/refresh-token": {
+            "post": {
+                "description": "使用刷新令牌获取新的访问令牌",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证中心"
+                ],
+                "summary": "刷新令牌",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "刷新令牌",
+                        "name": "refreshToken",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "code/msg/data，data 为 AuthenticationToken",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/users": {
             "post": {
                 "description": "创建一个新的用户记录",
@@ -151,20 +248,59 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "model.LoginRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "description": "密码",
+                    "type": "string",
+                    "example": "123456"
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string",
+                    "example": "admin"
+                }
+            }
+        },
         "model.User": {
             "type": "object",
+            "required": [
+                "nickname",
+                "username"
+            ],
             "properties": {
-                "id": {
-                    "description": "主键 ID，对应表中的自增/雪花主键",
+                "deptId": {
+                    "description": "部门ID",
                     "type": "integer"
+                },
+                "id": {
+                    "description": "主键 ID",
+                    "type": "integer"
+                },
+                "mobile": {
+                    "description": "手机号",
+                    "type": "string"
                 },
                 "nickname": {
                     "description": "显示昵称",
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 2
+                },
+                "status": {
+                    "description": "状态: 1=启用, 0=禁用",
+                    "type": "integer"
                 },
                 "username": {
                     "description": "用户名（登录账号）",
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 3
                 }
             }
         }

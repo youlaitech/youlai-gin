@@ -44,10 +44,10 @@ logger:
 
 # ==================== Redis 配置 ====================
 redis:
-  host: 127.0.0.1               # Redis 主机（开发用本地）
+  host: www.youlai.tech               # Redis 主机（开发用本地）
   port: 6379                    # Redis 端口
-  password: ""                  # Redis 密码（本地开发通常无密码）
-  database: 0                   # Redis 数据库编号（0-15）
+  password: "123456"                  # Redis 密码（本地开发通常无密码）
+  database: 4                   # Redis 数据库编号（0-15）
   
   # 连接池配置
   pool:

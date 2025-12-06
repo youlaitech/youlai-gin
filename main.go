@@ -9,8 +9,10 @@ import (
 	"youlai-gin/internal/database"
 	"youlai-gin/internal/middleware"
 	"youlai-gin/internal/router"
+	"youlai-gin/pkg/auth"
 	"youlai-gin/pkg/config"
 	"youlai-gin/pkg/logger"
+	"youlai-gin/pkg/redis"
 	"youlai-gin/pkg/requestid"
 
 	swaggerFiles "github.com/swaggo/files"
@@ -32,7 +34,18 @@ func main() {
 		log.Fatalf("数据库初始化失败: %v", err)
 	}
 
-	// 4. 启动 Gin 服务
+	// 4. 初始化 Redis
+	if err := redis.InitWithConfig(&config.Cfg.Redis); err != nil {
+		log.Fatalf("Redis 初始化失败: %v", err)
+	}
+
+	// 5. 初始化 TokenManager
+	tokenManager, err := auth.CreateTokenManager(&config.Cfg.Security)
+	if err != nil {
+		log.Fatalf("TokenManager 初始化失败: %v", err)
+	}
+
+	// 6. 启动 Gin 服务
 	r := gin.New()
 	r.Use(requestid.Middleware())
 	r.Use(logger.Middleware())
@@ -40,7 +53,7 @@ func main() {
 	r.Use(middleware.ErrorHandler())
 
 	// 业务路由统一注册
-	router.Register(r)
+	router.Register(r, tokenManager)
 
 	// Swagger 文档路由
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
