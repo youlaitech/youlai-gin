@@ -43,51 +43,6 @@ type FileConfig struct {
 	ErrorPath string `yaml:"errorPath" json:"errorPath"` // 错误日志单独文件（可选）
 }
 
-// DefaultConfig 返回默认配置（开发环境友好）
-func DefaultConfig() *Config {
-	return &Config{
-		Level:      "info",
-		CallerSkip: 1,
-		Console: ConsoleConfig{
-			Enabled: true,
-			Color:   true,
-			Format:  "console",
-		},
-		File: FileConfig{
-			Enabled:    false,
-			Path:       "logs/app.log",
-			Format:     "json",
-			MaxSize:    100,
-			MaxBackups: 10,
-			MaxAge:     30,
-			Compress:   true,
-		},
-	}
-}
-
-// ProductionConfig 返回生产环境配置
-func ProductionConfig() *Config {
-	return &Config{
-		Level:      "info",
-		CallerSkip: 1,
-		Console: ConsoleConfig{
-			Enabled: true,
-			Color:   false, // 生产环境可选择关闭彩色
-			Format:  "json",
-		},
-		File: FileConfig{
-			Enabled:    true,
-			Path:       "/var/log/youlai-gin/app.log",
-			ErrorPath:  "/var/log/youlai-gin/error.log", // 错误单独文件
-			Format:     "json",
-			MaxSize:    100,
-			MaxBackups: 30,
-			MaxAge:     90,
-			Compress:   true,
-		},
-	}
-}
-
 // parseLevel 解析日志级别
 func parseLevel(level string) zapcore.Level {
 	switch strings.ToLower(level) {

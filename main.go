@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/gin-gonic/gin"
 
@@ -18,11 +17,15 @@ import (
 )
 
 func main() {
-	env := os.Getenv("APP_ENV")
-	if env == "" {
-		env = "dev"
+	// 根据 Gin 模式选择日志配置文件
+	configFile := "config/logger.yaml"
+	if gin.Mode() == gin.ReleaseMode {
+		configFile = "config/logger-prod.yaml"
 	}
-	logger.Init(env)
+	
+	if err := logger.InitFromYAML(configFile); err != nil {
+		panic(err)
+	}
 	defer logger.Sync()
 
 	database.Init()

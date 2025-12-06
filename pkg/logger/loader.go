@@ -13,12 +13,12 @@ func LoadFromYAML(path string) (*Config, error) {
 		return nil, err
 	}
 
-	cfg := DefaultConfig()
-	if err := yaml.Unmarshal(data, cfg); err != nil {
+	var cfg Config
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, err
 	}
 
-	return cfg, nil
+	return &cfg, nil
 }
 
 // InitFromYAML 从 YAML 文件初始化日志

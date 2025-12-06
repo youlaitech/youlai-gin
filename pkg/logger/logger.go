@@ -12,24 +12,8 @@ import (
 
 var Log *zap.Logger
 
-// Init 初始化日志（兼容旧接口）
-// env: "dev" 使用开发配置，"prod" 使用生产配置
-func Init(env string) {
-	var cfg *Config
-	if env == "prod" {
-		cfg = ProductionConfig()
-	} else {
-		cfg = DefaultConfig()
-	}
-	cfg.ApplyEnv() // 环境变量覆盖
-	InitWithConfig(cfg)
-}
-
-// InitWithConfig 使用配置初始化日志（推荐）
+// InitWithConfig 使用配置初始化日志
 func InitWithConfig(cfg *Config) {
-	if cfg == nil {
-		cfg = DefaultConfig()
-	}
 
 	// 基础编码配置
 	encoderCfg := zap.NewProductionEncoderConfig()
