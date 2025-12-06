@@ -24,8 +24,19 @@ const (
     CodeUsernameExists = "A0111" // 用户名已存在
     MsgUsernameExists  = "用户名已存在"
 
-    CodeAccessTokenInvalid = "A0230" // 令牌无效
+    // ========== A02** 用户登录异常 ==========
+    CodeUserPasswordError = "A0210" // 用户名或密码错误
+    MsgUserPasswordError  = "用户名或密码错误"
+
+    CodeAccessTokenInvalid = "A0230" // 访问令牌无效
     MsgAccessTokenInvalid  = "访问令牌无效或已过期"
+
+    CodeRefreshTokenInvalid = "A0231" // 刷新令牌无效
+    MsgRefreshTokenInvalid  = "刷新令牌无效或已过期"
+
+    // ========== A03** 访问权限异常 ==========
+    CodeAccessUnauthorized = "A0301" // 访问未授权
+    MsgAccessUnauthorized  = "访问未授权"
 
     // ========== B0*** 系统执行出错 ==========
     CodeSystemError = "B0001"

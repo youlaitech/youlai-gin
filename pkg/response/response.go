@@ -36,27 +36,6 @@ func OkMsg(c *gin.Context, msg string) {
     })
 }
 
-// Error 通用错误响应（已废弃，请使用 FromAppError）
-// Deprecated: 使用 FromAppError 以正确设置 HTTP 状态码
-func Error(c *gin.Context, code, msg string) {
-	// 根据业务码前缀判断 HTTP 状态码
-	status := http.StatusOK
-	if len(code) > 0 {
-		switch code[0] {
-		case 'A': // 用户端错误
-			status = http.StatusBadRequest // 400
-		case 'B': // 系统执行出错
-			status = http.StatusInternalServerError // 500
-		case 'C': // 第三方服务出错
-			status = http.StatusServiceUnavailable // 503
-		}
-	}
-	c.JSON(status, Result{
-		Code: code,
-		Msg:  msg,
-	})
-}
-
 // FromAppError 根据 AppError 返回
 func FromAppError(c *gin.Context, ae *errs.AppError) {
 	status := ae.HTTPStatus
@@ -77,6 +56,28 @@ func BadRequest(c *gin.Context, msg string) {
     }
     c.JSON(http.StatusBadRequest, Result{
         Code: constant.CodeBadRequest,
+        Msg:  msg,
+    })
+}
+
+// Unauthorized 访问未授权（已登录但无权限）
+func Unauthorized(c *gin.Context, msg string) {
+    if msg == "" {
+        msg = constant.MsgAccessUnauthorized
+    }
+    c.JSON(http.StatusForbidden, Result{
+        Code: constant.CodeAccessUnauthorized,
+        Msg:  msg,
+    })
+}
+
+// TokenInvalid 访问令牌无效
+func TokenInvalid(c *gin.Context, msg string) {
+    if msg == "" {
+        msg = constant.MsgAccessTokenInvalid
+    }
+    c.JSON(http.StatusUnauthorized, Result{
+        Code: constant.CodeAccessTokenInvalid,
         Msg:  msg,
     })
 }
