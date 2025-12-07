@@ -48,6 +48,86 @@ func BindJSON(c *gin.Context, dst any) error {
 	return nil
 }
 
+// BindQuery 统一 Query 参数绑定 + 校验
+func BindQuery(c *gin.Context, dst any) error {
+	// 1. 绑定 Query 参数
+	if err := c.ShouldBindQuery(dst); err != nil {
+		return errs.Wrap(
+			errs.BadRequest("查询参数错误"),
+			err,
+		)
+	}
+
+	// 2. 执行 validate 校验
+	if err := validate.Struct(dst); err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			var messages []string
+			for _, fieldError := range validationErrors {
+				messages = append(messages, translateFieldError(fieldError))
+			}
+			msg := strings.Join(messages, "；")
+			return errs.New(
+				constant.CodeInvalidUserInput,
+				msg,
+				400,
+			)
+		}
+		return errs.BadRequest(err.Error())
+	}
+
+	return nil
+}
+
+// BindURI 统一 URI 参数绑定 + 校验
+func BindURI(c *gin.Context, dst any) error {
+	// 1. 绑定 URI 参数
+	if err := c.ShouldBindUri(dst); err != nil {
+		return errs.Wrap(
+			errs.BadRequest("路径参数错误"),
+			err,
+		)
+	}
+
+	// 2. 执行 validate 校验
+	if err := validate.Struct(dst); err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			var messages []string
+			for _, fieldError := range validationErrors {
+				messages = append(messages, translateFieldError(fieldError))
+			}
+			msg := strings.Join(messages, "；")
+			return errs.New(
+				constant.CodeInvalidUserInput,
+				msg,
+				400,
+			)
+		}
+		return errs.BadRequest(err.Error())
+	}
+
+	return nil
+}
+
+// Validate 直接校验结构体
+func Validate(dst any) error {
+	if err := validate.Struct(dst); err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			var messages []string
+			for _, fieldError := range validationErrors {
+				messages = append(messages, translateFieldError(fieldError))
+			}
+			msg := strings.Join(messages, "；")
+			return errs.New(
+				constant.CodeInvalidUserInput,
+				msg,
+				400,
+			)
+		}
+		return errs.BadRequest(err.Error())
+	}
+	return nil
+}
+
 // translateFieldError 翻译字段错误为友好提示
 func translateFieldError(fe validator.FieldError) string {
 	field := fe.Field()

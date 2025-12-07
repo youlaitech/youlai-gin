@@ -7,8 +7,10 @@ import (
 
 	_ "youlai-gin/docs"
 	"youlai-gin/internal/database"
+	"youlai-gin/internal/health"
 	"youlai-gin/internal/middleware"
 	"youlai-gin/internal/router"
+	roleService "youlai-gin/internal/system/role/service"
 	"youlai-gin/pkg/auth"
 	"youlai-gin/pkg/config"
 	"youlai-gin/pkg/logger"
@@ -39,18 +41,27 @@ func main() {
 		log.Fatalf("Redis 初始化失败: %v", err)
 	}
 
-	// 5. 初始化 TokenManager
+	// 5. 初始化角色权限缓存
+	if err := roleService.InitRolePermsCache(); err != nil {
+		log.Printf("警告: 角色权限缓存初始化失败: %v", err)
+		// 不阻断启动，继续运行
+	}
+
+	// 6. 初始化 TokenManager
 	tokenManager, err := auth.CreateTokenManager(&config.Cfg.Security)
 	if err != nil {
 		log.Fatalf("TokenManager 初始化失败: %v", err)
 	}
 
-	// 6. 启动 Gin 服务
+	// 7. 启动 Gin 服务
 	r := gin.New()
 	r.Use(requestid.Middleware())
 	r.Use(logger.Middleware())
 	r.Use(logger.Recovery())
 	r.Use(middleware.ErrorHandler())
+
+	// 健康检查路由（无需认证）
+	health.RegisterRoutes(r)
 
 	// 业务路由统一注册
 	router.Register(r, tokenManager)

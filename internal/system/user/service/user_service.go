@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -12,6 +14,7 @@ import (
 	"youlai-gin/internal/system/user/repository"
 	"youlai-gin/pkg/common"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/redis"
 )
 
 // GetUserPage 用户分页列表
@@ -141,7 +144,36 @@ func UpdateUserStatus(userId int64, status int) error {
 	return nil
 }
 
-// GetCurrentUserInfo 获取当前登录用户信息
+// GetCurrentUserInfo 获取当前登录用户信息（需要传入token中的userDetails）
+func GetCurrentUserInfoWithRoles(userId int64, roles []string) (*model.CurrentUserDTO, error) {
+	user, err := repository.GetUserByID(userId)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errs.NotFound("用户不存在")
+		}
+		return nil, errs.SystemError("查询用户失败")
+	}
+
+	// 获取用户权限列表（从Redis缓存）
+	perms := []string{}
+	if len(roles) > 0 {
+		perms, err = getRolePermsFromCache(roles)
+		if err != nil {
+			return nil, errs.SystemError("查询用户权限失败")
+		}
+	}
+
+	return &model.CurrentUserDTO{
+		UserID:   user.ID,
+		Username: user.Username,
+		Nickname: user.Nickname,
+		Avatar:   user.Avatar,
+		Roles:    roles,
+		Perms:    perms,
+	}, nil
+}
+
+// GetCurrentUserInfo 获取当前登录用户信息（从数据库查询角色）
 func GetCurrentUserInfo(userId int64) (*model.CurrentUserDTO, error) {
 	user, err := repository.GetUserByID(userId)
 	if err != nil {
@@ -151,15 +183,119 @@ func GetCurrentUserInfo(userId int64) (*model.CurrentUserDTO, error) {
 		return nil, errs.SystemError("查询用户失败")
 	}
 
-	// TODO: 获取用户角色和权限
+	// 从数据库获取用户角色编码列表
+	roles, err := repository.GetUserRoles(userId)
+	if err != nil {
+		return nil, errs.SystemError("查询用户角色失败")
+	}
+
+	// 获取用户权限列表
+	perms := []string{}
+	if len(roles) > 0 {
+		perms, err = getRolePermsFromCache(roles)
+		if err != nil {
+			return nil, errs.SystemError("查询用户权限失败")
+		}
+	}
+
 	return &model.CurrentUserDTO{
 		UserID:   user.ID,
 		Username: user.Username,
 		Nickname: user.Nickname,
 		Avatar:   user.Avatar,
-		Roles:    []string{},
-		Perms:    []string{},
+		Roles:    roles,
+		Perms:    perms,
 	}, nil
+}
+
+// getRolePermsFromCache 从Redis缓存中获取角色权限列表（带降级策略）
+func getRolePermsFromCache(roleCodes []string) ([]string, error) {
+	if len(roleCodes) == 0 {
+		return []string{}, nil
+	}
+
+	ctx := context.Background()
+	permsSet := make(map[string]bool)
+	missingRoles := make([]string, 0) // 记录缓存中不存在的角色
+
+	// 从Redis中获取每个角色的权限
+	for _, roleCode := range roleCodes {
+		// Redis key: system:role:perms
+		result, err := redis.Client.HGet(ctx, "system:role:perms", roleCode).Result()
+		if err != nil {
+			// 记录缓存未命中的角色，稍后降级查询数据库
+			missingRoles = append(missingRoles, roleCode)
+			continue
+		}
+
+		if result != "" {
+			// 尝试解析JSON数组格式
+			var rolePerms []string
+			if err := json.Unmarshal([]byte(result), &rolePerms); err == nil {
+				for _, perm := range rolePerms {
+					if perm != "" {
+						permsSet[perm] = true
+					}
+				}
+			}
+		}
+	}
+
+	// 降级策略：如果有角色在缓存中不存在，从数据库查询
+	if len(missingRoles) > 0 {
+		dbPerms, err := getRolePermsFromDB(missingRoles)
+		if err != nil {
+			// 数据库查询失败，只返回已从缓存获取的权限
+			// 不返回错误，保证服务可用性
+			fmt.Printf("⚠️  降级查询数据库失败，角色: %v, 错误: %v\n", missingRoles, err)
+		} else {
+			// 将数据库查询结果合并到权限集合
+			for _, perm := range dbPerms {
+				if perm != "" {
+					permsSet[perm] = true
+				}
+			}
+		}
+	}
+
+	// 将set转为slice
+	perms := make([]string, 0, len(permsSet))
+	for perm := range permsSet {
+		perms = append(perms, perm)
+	}
+
+	return perms, nil
+}
+
+// getRolePermsFromDB 从数据库查询角色权限（降级方案）
+func getRolePermsFromDB(roleCodes []string) ([]string, error) {
+	if len(roleCodes) == 0 {
+		return []string{}, nil
+	}
+
+	// 导入role repository（避免循环依赖，使用数据库直接查询）
+	rolePermsList, err := repository.GetRolePermsByCodes(roleCodes)
+	if err != nil {
+		return nil, err
+	}
+
+	// 收集所有权限
+	permsSet := make(map[string]bool)
+	for _, rolePerms := range rolePermsList {
+		for _, perm := range rolePerms.Perms {
+			if perm != "" {
+				permsSet[perm] = true
+			}
+		}
+	}
+
+	// 转为slice
+	perms := make([]string, 0, len(permsSet))
+	for perm := range permsSet {
+		perms = append(perms, perm)
+	}
+
+	return perms, nil
 }
 
 // GetUserProfile 获取用户个人信息

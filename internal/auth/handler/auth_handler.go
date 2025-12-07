@@ -14,28 +14,66 @@ import (
 
 // RegisterAuthRoutes 注册认证相关 HTTP 路由
 func RegisterAuthRoutes(r *gin.RouterGroup) {
+	r.GET("/auth/captcha", GetCaptcha)
 	r.POST("/auth/login", Login)
+	r.POST("/auth/login/sms", LoginBySms)
+	r.POST("/auth/sms/code", SendSmsCode)
+	r.POST("/auth/login/wechat", LoginByWechat)
+	r.POST("/auth/wx/miniapp/code-login", LoginByWxMiniAppCode)
+	r.POST("/auth/wx/miniapp/phone-login", LoginByWxMiniAppPhone)
 	r.DELETE("/auth/logout", Logout)
 	r.POST("/auth/refresh-token", RefreshToken)
+}
+
+// GetCaptcha 获取验证码
+// @Summary 获取验证码
+// @Description 获取图形验证码
+// @Tags 认证中心
+// @Produce json
+// @Success 200 {object} map[string]interface{} "code/msg/data，data 为 CaptchaVO"
+// @Router /api/v1/auth/captcha [get]
+func GetCaptcha(c *gin.Context) {
+	captcha, err := service.GetCaptcha()
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.Ok(c, captcha)
 }
 
 // Login 账号密码登录
 // @Summary 账号密码登录
 // @Description 用户名密码登录，返回访问令牌和刷新令牌
 // @Tags 认证中心
-// @Accept json
+// @Accept application/x-www-form-urlencoded
 // @Produce json
-// @Param body body model.LoginRequest true "登录信息"
+// @Param username formData string true "用户名" default(admin)
+// @Param password formData string true "密码" default(123456)
 // @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
 // @Router /api/v1/auth/login [post]
 func Login(c *gin.Context) {
-	var req model.LoginRequest
-	if err := validator.BindJSON(c, &req); err != nil {
-		c.Error(err)
+	// 从表单参数或query参数获取（兼容Java版本）
+	username := c.PostForm("username")
+	if username == "" {
+		username = c.Query("username")
+	}
+	password := c.PostForm("password")
+	if password == "" {
+		password = c.Query("password")
+	}
+
+	if username == "" || password == "" {
+		response.BadRequest(c, "用户名和密码不能为空")
 		return
 	}
 
-	token, err := service.Login(&req)
+	req := &model.LoginRequest{
+		Username: username,
+		Password: password,
+	}
+
+	token, err := service.Login(req)
 	if err != nil {
 		c.Error(err)
 		return
@@ -83,6 +121,151 @@ func RefreshToken(c *gin.Context) {
 	}
 
 	token, err := service.RefreshToken(refreshToken)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.Ok(c, token)
+}
+
+// SendSmsCode 发送登录短信验证码
+// @Summary 发送登录短信验证码
+// @Description 发送短信验证码到指定手机号
+// @Tags 认证中心
+// @Accept json
+// @Produce json
+// @Param mobile query string true "手机号" example("18812345678")
+// @Success 200 {object} map[string]interface{} "code/msg"
+// @Router /api/v1/auth/sms/code [post]
+func SendSmsCode(c *gin.Context) {
+	mobile := c.Query("mobile")
+	if mobile == "" {
+		response.BadRequest(c, "手机号不能为空")
+		return
+	}
+
+	err := service.SendSmsLoginCode(mobile)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.OkMsg(c, "验证码已发送")
+}
+
+// LoginBySms 短信验证码登录
+// @Summary 短信验证码登录
+// @Description 使用手机号和短信验证码登录
+// @Tags 认证中心
+// @Accept application/x-www-form-urlencoded
+// @Produce json
+// @Param mobile formData string true "手机号" default(18812345678)
+// @Param code formData string true "验证码" default(1234)
+// @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
+// @Router /api/v1/auth/login/sms [post]
+func LoginBySms(c *gin.Context) {
+	// 从表单参数或query参数获取
+	mobile := c.PostForm("mobile")
+	if mobile == "" {
+		mobile = c.Query("mobile")
+	}
+	code := c.PostForm("code")
+	if code == "" {
+		code = c.Query("code")
+	}
+
+	if mobile == "" || code == "" {
+		response.BadRequest(c, "手机号和验证码不能为空")
+		return
+	}
+
+	req := &model.SmsLoginRequest{
+		Mobile: mobile,
+		Code:   code,
+	}
+
+	token, err := service.LoginBySms(req)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.Ok(c, token)
+}
+
+// LoginByWechat 微信授权登录(Web)
+// @Summary 微信授权登录
+// @Description 使用微信授权码登录
+// @Tags 认证中心
+// @Accept application/x-www-form-urlencoded
+// @Produce json
+// @Param code formData string true "微信授权码"
+// @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
+// @Router /api/v1/auth/login/wechat [post]
+func LoginByWechat(c *gin.Context) {
+	// 从表单参数或query参数获取
+	code := c.PostForm("code")
+	if code == "" {
+		code = c.Query("code")
+	}
+	
+	if code == "" {
+		response.BadRequest(c, "微信授权码不能为空")
+		return
+	}
+
+	token, err := service.LoginByWechat(code)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.Ok(c, token)
+}
+
+// LoginByWxMiniAppCode 微信小程序登录(Code)
+// @Summary 微信小程序Code登录
+// @Description 使用微信小程序Code登录
+// @Tags 认证中心
+// @Accept json
+// @Produce json
+// @Param body body model.WxMiniAppCodeLoginRequest true "微信小程序Code登录信息"
+// @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
+// @Router /api/v1/auth/wx/miniapp/code-login [post]
+func LoginByWxMiniAppCode(c *gin.Context) {
+	var req model.WxMiniAppCodeLoginRequest
+	if err := validator.BindJSON(c, &req); err != nil {
+		c.Error(err)
+		return
+	}
+
+	token, err := service.LoginByWxMiniAppCode(&req)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.Ok(c, token)
+}
+
+// LoginByWxMiniAppPhone 微信小程序登录(手机号)
+// @Summary 微信小程序手机号登录
+// @Description 使用微信小程序获取手机号登录
+// @Tags 认证中心
+// @Accept json
+// @Produce json
+// @Param body body model.WxMiniAppPhoneLoginRequest true "微信小程序手机号登录信息"
+// @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
+// @Router /api/v1/auth/wx/miniapp/phone-login [post]
+func LoginByWxMiniAppPhone(c *gin.Context) {
+	var req model.WxMiniAppPhoneLoginRequest
+	if err := validator.BindJSON(c, &req); err != nil {
+		c.Error(err)
+		return
+	}
+
+	token, err := service.LoginByWxMiniAppPhone(&req)
 	if err != nil {
 		c.Error(err)
 		return

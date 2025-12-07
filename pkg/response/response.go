@@ -36,6 +36,17 @@ func OkMsg(c *gin.Context, msg string) {
     })
 }
 
+// Fail 失败响应
+func Fail(c *gin.Context, msg string) {
+    if msg == "" {
+        msg = constant.MsgBadRequest
+    }
+    c.JSON(http.StatusOK, Result{
+        Code: constant.CodeBadRequest,
+        Msg:  msg,
+    })
+}
+
 // FromAppError 根据 AppError 返回
 func FromAppError(c *gin.Context, ae *errs.AppError) {
 	status := ae.HTTPStatus
@@ -93,10 +104,24 @@ func SystemError(c *gin.Context, msg string) {
     })
 }
 
+// InternalServerError 内部服务器错误（SystemError 的别名）
+func InternalServerError(c *gin.Context, msg string) {
+    SystemError(c, msg)
+}
+
 // ForbiddenWrite 演示环境禁止写入时使用（示例）
 func ForbiddenWrite(c *gin.Context) {
     c.JSON(http.StatusForbidden, Result{
         Code: constant.CodeDatabaseAccessDenied,
         Msg:  constant.MsgDatabaseAccessDenied,
     })
+}
+
+// HandleError 统一错误处理
+func HandleError(c *gin.Context, err error) {
+    if ae, ok := err.(*errs.AppError); ok {
+        FromAppError(c, ae)
+    } else {
+        SystemError(c, err.Error())
+    }
 }

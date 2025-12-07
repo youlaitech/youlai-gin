@@ -116,3 +116,31 @@ func Sync() {
 	}
 }
 
+// Info 记录Info级别日志
+func Info(msg string, fields ...zap.Field) {
+	if Log != nil {
+		Log.Info(msg, fields...)
+	}
+}
+
+// Error 记录Error级别日志
+func Error(msg string, fields ...zap.Field) {
+	if Log != nil {
+		Log.Error(msg, fields...)
+	}
+}
+
+// Debug 记录Debug级别日志
+func Debug(msg string, fields ...zap.Field) {
+	if Log != nil {
+		Log.Debug(msg, fields...)
+	}
+}
+
+// Warn 记录Warn级别日志
+func Warn(msg string, fields ...zap.Field) {
+	if Log != nil {
+		Log.Warn(msg, fields...)
+	}
+}
+

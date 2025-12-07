@@ -61,13 +61,40 @@ func GetMenuOptions(onlyParent bool) ([]model.Menu, error) {
 func GetUserMenus(userId int64) ([]model.Menu, error) {
 	var menus []model.Menu
 	
+	// 查询用户是否是超级管理员（ROOT）
+	var isAdmin int
+	database.DB.Raw(`
+		SELECT COUNT(DISTINCT r.id)
+		FROM sys_role r
+		INNER JOIN sys_user_role ur ON r.id = ur.role_id
+		WHERE ur.user_id = ? AND r.code = 'ROOT' AND r.status = 1
+	`, userId).Scan(&isAdmin)
+	
+	// 超级管理员返回所有菜单
+	if isAdmin > 0 {
+		err := database.DB.Raw(`
+			SELECT DISTINCT m.*
+			FROM sys_menu m
+			WHERE m.visible = 1
+			AND m.type IN (1, 2)
+			ORDER BY m.sort ASC, m.id ASC
+		`).Scan(&menus).Error
+		return menus, err
+	}
+	
+	// 普通用户根据角色权限查询菜单
 	err := database.DB.Raw(`
 		SELECT DISTINCT m.*
 		FROM sys_menu m
-		WHERE m.visible = 1
-		AND m.type IN (1, 2, 3)
+		INNER JOIN sys_role_menu rm ON m.id = rm.menu_id
+		INNER JOIN sys_user_role ur ON rm.role_id = ur.role_id
+		INNER JOIN sys_role r ON ur.role_id = r.id
+		WHERE ur.user_id = ?
+		AND r.status = 1
+		AND m.visible = 1
+		AND m.type IN (1, 2)
 		ORDER BY m.sort ASC, m.id ASC
-	`).Scan(&menus).Error
+	`, userId).Scan(&menus).Error
 	
 	return menus, err
 }

@@ -66,7 +66,7 @@ func CheckDictCodeExists(dictCode string, excludeId int64) (bool, error) {
 func GetDictItems(dictCode string) ([]model.DictItem, error) {
 	var items []model.DictItem
 	err := database.DB.Model(&model.DictItem{}).
-		Where("dict_code = ? AND is_deleted = 0", dictCode).
+		Where("dict_code = ?", dictCode).
 		Order("sort ASC, id ASC").
 		Find(&items).Error
 	return items, err
@@ -75,7 +75,7 @@ func GetDictItems(dictCode string) ([]model.DictItem, error) {
 // GetDictItemByID 根据ID查询字典项
 func GetDictItemByID(id int64) (*model.DictItem, error) {
 	var item model.DictItem
-	err := database.DB.Where("id = ? AND is_deleted = 0", id).First(&item).Error
+	err := database.DB.Where("id = ?", id).First(&item).Error
 	return &item, err
 }
 
@@ -89,16 +89,16 @@ func UpdateDictItem(item *model.DictItem) error {
 	return database.DB.Model(&model.DictItem{}).Where("id = ?", item.ID).Updates(item).Error
 }
 
-// DeleteDictItem 删除字典项（逻辑删除）
+// DeleteDictItem 删除字典项（物理删除）
 func DeleteDictItem(id int64) error {
-	return database.DB.Model(&model.DictItem{}).Where("id = ?", id).Update("is_deleted", 1).Error
+	return database.DB.Where("id = ?", id).Delete(&model.DictItem{}).Error
 }
 
 // GetDictItemsCount 获取字典项数量（用于删除前校验）
 func GetDictItemsCount(dictCode string) (int64, error) {
 	var count int64
 	err := database.DB.Model(&model.DictItem{}).
-		Where("dict_code = ? AND is_deleted = 0", dictCode).
+		Where("dict_code = ?", dictCode).
 		Count(&count).Error
 	return count, err
 }

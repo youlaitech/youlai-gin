@@ -156,7 +156,7 @@ func GetRoleMenuIds(roleId int64) ([]int64, error) {
 
 // UpdateRoleMenus 分配角色菜单权限
 func UpdateRoleMenus(roleId int64, menuIds []int64) error {
-	_, err := repository.GetRoleByID(roleId)
+	role, err := repository.GetRoleByID(roleId)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errs.NotFound("角色不存在")
@@ -166,6 +166,12 @@ func UpdateRoleMenus(roleId int64, menuIds []int64) error {
 
 	if err := repository.UpdateRoleMenus(roleId, menuIds); err != nil {
 		return errs.SystemError("更新角色菜单失败")
+	}
+
+	// 刷新该角色的权限缓存
+	if err := RefreshRolePermsCacheByCode(role.Code); err != nil {
+		// 日志记录但不阻断操作
+		return errs.SystemError("刷新角色权限缓存失败")
 	}
 
 	return nil

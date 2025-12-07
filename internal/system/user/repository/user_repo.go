@@ -2,8 +2,15 @@ package repository
 
 import (
 	"youlai-gin/internal/database"
+	roleRepo "youlai-gin/internal/system/role/repository"
 	"youlai-gin/internal/system/user/model"
+	pkgDatabase "youlai-gin/pkg/database"
 )
+
+// GetRolePermsByCodes 从数据库查询角色权限（降级用）
+func GetRolePermsByCodes(roleCodes []string) ([]roleRepo.RolePerms, error) {
+	return roleRepo.GetRolePermsByCodes(roleCodes)
+}
 
 // GetUserPage 用户分页查询
 func GetUserPage(query *model.UserPageQuery) ([]model.UserPageVO, int64, error) {
@@ -42,9 +49,8 @@ func GetUserPage(query *model.UserPageQuery) ([]model.UserPageVO, int64, error) 
 		return nil, 0, err
 	}
 
-	offset := query.GetOffset()
-	limit := query.GetLimit()
-	if err := db.Offset(offset).Limit(limit).Order("u.create_time DESC").Find(&users).Error; err != nil {
+	// 使用通用分页函数
+	if err := db.Scopes(pkgDatabase.PaginateFromQuery(query)).Order("u.create_time DESC").Find(&users).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -63,6 +69,29 @@ func GetUserByUsername(username string) (*model.User, error) {
 	var user model.User
 	err := database.DB.Where("username = ? AND is_deleted = 0", username).First(&user).Error
 	return &user, err
+}
+
+// FindByUsername GetUserByUsername 的别名函数
+func FindByUsername(username string) (*model.User, error) {
+	return GetUserByUsername(username)
+}
+
+// GetUserByMobile 根据手机号查询用户
+func GetUserByMobile(mobile string) (*model.User, error) {
+	var user model.User
+	err := database.DB.Where("mobile = ? AND is_deleted = 0", mobile).First(&user).Error
+	return &user, err
+}
+
+// GetUserRoles 获取用户角色编码列表
+func GetUserRoles(userID int64) ([]string, error) {
+	var roleCodes []string
+	err := database.DB.Table("sys_user_role ur").
+		Select("r.code").
+		Joins("INNER JOIN sys_role r ON ur.role_id = r.id").
+		Where("ur.user_id = ? AND r.is_deleted = 0 AND r.status = 1", userID).
+		Pluck("r.code", &roleCodes).Error
+	return roleCodes, err
 }
 
 // CreateUser 创建用户

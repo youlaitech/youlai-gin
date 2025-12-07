@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"gorm.io/gorm"
+	
 	"youlai-gin/internal/database"
 	"youlai-gin/internal/system/role/model"
 )
@@ -72,7 +74,7 @@ func GetRoleMenuIds(roleId int64) ([]int64, error) {
 
 // UpdateRoleMenus 更新角色菜单权限
 func UpdateRoleMenus(roleId int64, menuIds []int64) error {
-	return database.DB.Transaction(func(tx *database.DB) error {
+	return database.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("role_id = ?", roleId).Delete(&model.RoleMenu{}).Error; err != nil {
 			return err
 		}
@@ -115,3 +117,4 @@ func CheckRoleCodeExists(code string, excludeId int64) (bool, error) {
 	err := db.Count(&count).Error
 	return count > 0, err
 }
+

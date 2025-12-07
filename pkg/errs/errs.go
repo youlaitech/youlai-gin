@@ -99,3 +99,27 @@ func TokenInvalid() *AppError {
 		HTTPStatus: http.StatusUnauthorized,
 	}
 }
+
+// NotFound 资源不存在
+func NotFound(msg string) *AppError {
+	if msg == "" {
+		msg = "资源不存在"
+	}
+	return &AppError{
+		Code:       constant.CodeBadRequest,
+		Msg:        msg,
+		HTTPStatus: http.StatusNotFound,
+	}
+}
+
+// Unauthorized 未授权访问
+func Unauthorized(msg string) *AppError {
+	if msg == "" {
+		msg = constant.MsgAccessUnauthorized
+	}
+	return &AppError{
+		Code:       constant.CodeAccessUnauthorized,
+		Msg:        msg,
+		HTTPStatus: http.StatusUnauthorized,
+	}
+}

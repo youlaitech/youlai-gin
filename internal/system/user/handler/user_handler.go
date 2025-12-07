@@ -28,6 +28,11 @@ func RegisterUserRoutes(r *gin.RouterGroup) {
 	r.PUT("/users/mobile", BindOrChangeMobile)
 	r.POST("/users/email/code", SendEmailCode)
 	r.PUT("/users/email", BindOrChangeEmail)
+	
+	// Excel 导入导出
+	r.GET("/users/export", ExportUsers)
+	r.GET("/users/template", DownloadUserTemplate)
+	r.POST("/users/import", ImportUsers)
 	r.GET("/users/options", GetUserOptions)
 }
 
@@ -128,13 +133,15 @@ func UpdateUserStatus(c *gin.Context) {
 
 // GetCurrentUser 获取当前登录用户信息
 func GetCurrentUser(c *gin.Context) {
-	userId, err := pkgContext.GetCurrentUserID(c)
+	// 从token中获取用户详情（包含角色信息）
+	userDetails, err := pkgContext.GetCurrentUser(c)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	currentUser, err := service.GetCurrentUserInfo(userId)
+	// 使用token中的角色信息获取用户详情和权限
+	currentUser, err := service.GetCurrentUserInfoWithRoles(userDetails.UserID, userDetails.Roles)
 	if err != nil {
 		c.Error(err)
 		return
@@ -296,4 +303,22 @@ func GetUserOptions(c *gin.Context) {
 	}
 
 	response.Ok(c, options)
+}
+
+// ExportUsers 导出用户列表
+func ExportUsers(c *gin.Context) {
+	// TODO: 实现 Excel 导出功能
+	response.OkMsg(c, "导出功能待实现")
+}
+
+// DownloadUserTemplate 下载用户导入模板
+func DownloadUserTemplate(c *gin.Context) {
+	// TODO: 实现模板下载功能
+	response.OkMsg(c, "模板下载功能待实现")
+}
+
+// ImportUsers 导入用户数据
+func ImportUsers(c *gin.Context) {
+	// TODO: 实现 Excel 导入功能
+	response.OkMsg(c, "导入功能待实现")
 }

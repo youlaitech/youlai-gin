@@ -32,3 +32,8 @@ func MustGetCurrentUserID(c *gin.Context) int64 {
 	}
 	return userID
 }
+
+// GetUserIDMust GetCurrentUserID 的别名函数，返回用户ID和错误
+func GetUserIDMust(c *gin.Context) (int64, error) {
+	return GetCurrentUserID(c)
+}

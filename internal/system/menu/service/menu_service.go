@@ -3,10 +3,14 @@ package service
 import (
 	"errors"
 	"fmt"
+	"log"
+
 	"gorm.io/gorm"
-	
+
 	"youlai-gin/internal/system/menu/model"
 	"youlai-gin/internal/system/menu/repository"
+	roleRepo "youlai-gin/internal/system/role/repository"
+	roleService "youlai-gin/internal/system/role/service"
 	"youlai-gin/pkg/common"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/utils"
@@ -153,13 +157,28 @@ func SaveMenu(form *model.MenuForm) error {
 		menu.TreePath = fmt.Sprintf("%s,%d", parent.TreePath, parent.ID)
 	}
 
-	if form.ID == 0 {
+	// 保存菜单
+	var menuID int64
+	isUpdate := form.ID > 0
+	
+	if !isUpdate {
 		if err := repository.CreateMenu(menu); err != nil {
 			return errs.SystemError("创建菜单失败")
 		}
+		menuID = menu.ID
 	} else {
 		if err := repository.UpdateMenu(menu); err != nil {
 			return errs.SystemError("更新菜单失败")
+		}
+		menuID = menu.ID
+	}
+
+	// 🔄 刷新受影响角色的权限缓存（处女座标准：完美的一致性保障）
+	// 仅当菜单类型为按钮且有权限标识时才刷新
+	if menu.Type == 4 && menu.Perm != "" {
+		if err := refreshAffectedRolesCache([]int64{menuID}); err != nil {
+			log.Printf("⚠️  刷新角色权限缓存失败: %v", err)
+			// 不阻断操作，记录日志即可
 		}
 	}
 
@@ -197,7 +216,7 @@ func GetMenuForm(id int64) (*model.MenuForm, error) {
 
 // DeleteMenu 删除菜单
 func DeleteMenu(id int64) error {
-	_, err := repository.GetMenuByID(id)
+	menu, err := repository.GetMenuByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errs.NotFound("菜单不存在")
@@ -217,5 +236,57 @@ func DeleteMenu(id int64) error {
 		return errs.SystemError("删除菜单失败")
 	}
 
+	// 🔄 刷新受影响角色的权限缓存（处女座标准：删除也要保证一致性）
+	// 仅当删除的是按钮且有权限标识时才刷新
+	if menu.Type == 4 && menu.Perm != "" {
+		if err := refreshAffectedRolesCache([]int64{id}); err != nil {
+			log.Printf("⚠️  刷新角色权限缓存失败: %v", err)
+			// 不阻断操作，记录日志即可
+		}
+	}
+
 	return nil
+}
+
+// refreshAffectedRolesCache 刷新受菜单影响的角色权限缓存（内部辅助函数）
+func refreshAffectedRolesCache(menuIds []int64) error {
+	if len(menuIds) == 0 {
+		return nil
+	}
+	
+	// 查询受影响的角色
+	roleCodes, err := roleRepo.GetRolesAffectedByMenus(menuIds)
+	if err != nil {
+		return fmt.Errorf("查询受影响的角色失败: %w", err)
+	}
+	
+	if len(roleCodes) == 0 {
+		// 没有角色受影响，无需刷新
+		return nil
+	}
+	
+	// 批量刷新这些角色的权限缓存
+	if err := roleService.RefreshRolePermsCacheByCodes(roleCodes); err != nil {
+		return fmt.Errorf("批量刷新角色权限缓存失败: %w", err)
+	}
+	
+	return nil
+}
+
+// GetUserPermissions 获取用户按钮权限
+func GetUserPermissions(userId int64) ([]string, error) {
+	menus, err := repository.GetUserMenus(userId)
+	if err != nil {
+		return nil, errs.SystemError("查询用户权限失败")
+	}
+
+	perms := make([]string, 0)
+	for _, menu := range menus {
+		// 只返回按钮权限（type=3）且有权限标识的
+		if menu.Type == 3 && menu.Perm != "" {
+			perms = append(perms, menu.Perm)
+		}
+	}
+
+	return perms, nil
 }

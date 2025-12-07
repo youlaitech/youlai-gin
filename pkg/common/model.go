@@ -22,6 +22,16 @@ func (p *PageQuery) GetLimit() int {
 	return p.PageSize
 }
 
+// GetPage 获取页码（用于新分页函数）
+func (p *PageQuery) GetPage() int {
+	return p.PageNum
+}
+
+// GetPageSize 获取每页大小（用于新分页函数）
+func (p *PageQuery) GetPageSize() int {
+	return p.PageSize
+}
+
 // PageResult 分页响应
 type PageResult struct {
 	List  interface{} `json:"list"`

@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"youlai-gin/internal/system/menu/model"
 	"youlai-gin/internal/system/menu/service"
+	pkgContext "youlai-gin/pkg/context"
 	"youlai-gin/pkg/response"
 	"youlai-gin/pkg/validator"
 )
@@ -20,6 +21,9 @@ func RegisterMenuRoutes(r *gin.RouterGroup) {
 		menus.PUT("/:id", UpdateMenu)
 		menus.DELETE("/:id", DeleteMenu)
 	}
+	
+	// 用户权限接口
+	r.GET("/user/perms", GetCurrentUserPermissions)
 }
 
 // @Summary 菜单列表
@@ -164,4 +168,24 @@ func DeleteMenu(c *gin.Context) {
 	}
 
 	response.OkMsg(c, "删除成功")
+}
+
+// @Summary 获取当前用户权限（按钮权限）
+// @Tags 菜单管理
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/user/perms [get]
+func GetCurrentUserPermissions(c *gin.Context) {
+	userId, err := pkgContext.GetUserIDMust(c)
+	if err != nil {
+		response.Unauthorized(c, "未登录")
+		return
+	}
+
+	perms, err := service.GetUserPermissions(userId)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.Ok(c, perms)
 }
