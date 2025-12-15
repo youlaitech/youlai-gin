@@ -3,9 +3,11 @@ package database
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 var DB *gorm.DB
@@ -13,7 +15,15 @@ var DB *gorm.DB
 // InitWithConfig 使用配置初始化数据库
 func InitWithConfig(cfg *Config) error {
 	dsn := cfg.DSN()
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{
+			SingularTable: true, // 使用单数表名
+		},
+		// 禁用自动更新时间戳，使用数据库触发器
+		NowFunc: func() time.Time {
+			return time.Now().Local()
+		},
+	})
 	if err != nil {
 		return fmt.Errorf("连接数据库失败: %w", err)
 	}

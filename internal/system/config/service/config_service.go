@@ -110,6 +110,24 @@ func GetConfigByID(id int64) (*model.Config, error) {
 	return repository.GetConfigByID(id)
 }
 
+// GetConfigFormData 获取配置表单数据
+func GetConfigFormData(id int64) (*model.ConfigForm, error) {
+	config, err := repository.GetConfigByID(id)
+	if err != nil {
+		return nil, errs.NotFound("配置不存在")
+	}
+	
+	return &model.ConfigForm{
+		ID:          config.ID,
+		ConfigKey:   config.ConfigKey,
+		ConfigValue: config.ConfigValue,
+		ConfigName:  config.ConfigName,
+		ConfigType:  config.ConfigType,
+		Description: config.Description,
+		Sort:        config.Sort,
+	}, nil
+}
+
 // SaveConfig 保存配置（新增或更新）
 func SaveConfig(form *model.ConfigForm) error {
 	config := &model.Config{

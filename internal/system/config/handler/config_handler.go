@@ -13,10 +13,11 @@ import (
 
 // RegisterRoutes 注册配置管理路由
 func RegisterRoutes(r *gin.RouterGroup) {
-	// 使用单数形式匹配Java版本
-	config := r.Group("/config")
+	// 使用复数形式符合RESTful规范
+	config := r.Group("/configs")
 	{
 		config.GET("/page", GetConfigPage)
+		config.GET("/:id/form", GetConfigForm)
 		config.GET("/:id", GetConfigByID)
 		config.GET("/key/:key", GetConfigByKey)
 		config.POST("", SaveConfig)
@@ -42,6 +43,24 @@ func GetConfigPage(c *gin.Context) {
 	}
 
 	response.Ok(c, result)
+}
+
+// GetConfigForm 获取配置表单数据
+func GetConfigForm(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		response.Fail(c, "ID格式错误")
+		return
+	}
+
+	formData, err := service.GetConfigFormData(id)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.Ok(c, formData)
 }
 
 // GetConfigByID 根据ID获取配置
