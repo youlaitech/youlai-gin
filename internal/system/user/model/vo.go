@@ -1,20 +1,20 @@
 package model
 
-import "time"
+import "youlai-gin/pkg/types"
 
 // UserPageVO 用户分页视图对象
 type UserPageVO struct {
-	ID         int64     `json:"id"`
-	Username   string    `json:"username"`
-	Nickname   string    `json:"nickname"`
-	Mobile     string    `json:"mobile"`
-	Gender     int       `json:"gender"`
-	Avatar     string    `json:"avatar"`
-	Email      string    `json:"email"`
-	Status     int       `json:"status"`
-	DeptName   string    `json:"deptName"`
-	RoleNames  string    `json:"roleNames"`
-	CreateTime time.Time `json:"createTime"`
+	ID         int64            `json:"id"`
+	Username   string           `json:"username"`
+	Nickname   string           `json:"nickname"`
+	Mobile     string           `json:"mobile"`
+	Gender     int              `json:"gender"`
+	Avatar     string           `json:"avatar"`
+	Email      string           `json:"email"`
+	Status     int              `json:"status"`
+	DeptName   string           `json:"deptName"`
+	RoleNames  string           `json:"roleNames"`
+	CreateTime types.LocalTime  `json:"createTime"`
 }
 
 // UserProfileVO 个人中心用户信息

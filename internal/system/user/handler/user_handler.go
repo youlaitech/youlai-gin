@@ -1,12 +1,16 @@
 package handler
 
 import (
+	"fmt"
+	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"youlai-gin/internal/system/user/model"
 	"youlai-gin/internal/system/user/service"
+	"youlai-gin/pkg/errs"
 	pkgContext "youlai-gin/pkg/context"
 	"youlai-gin/pkg/response"
 )
@@ -307,18 +311,81 @@ func GetUserOptions(c *gin.Context) {
 
 // ExportUsers 导出用户列表
 func ExportUsers(c *gin.Context) {
-	// TODO: 实现 Excel 导出功能
-	response.OkMsg(c, "导出功能待实现")
+	// 绑定查询参数（支持过滤条件）
+	var query model.UserPageQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.Fail(c, "参数错误")
+		return
+	}
+
+	// 导出用户数据
+	exporter, err := service.ExportUsersToExcel(&query)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	defer exporter.Close()
+
+	// 设置响应头
+	filename := fmt.Sprintf("用户列表_%s.xlsx", time.Now().Format("20060102150405"))
+	encodedFilename := url.QueryEscape(filename)
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"; filename*=UTF-8''%s", filename, encodedFilename))
+	c.Header("Content-Transfer-Encoding", "binary")
+
+	// 输出文件
+	if err := exporter.Write(c.Writer); err != nil {
+		c.Error(errs.SystemError("导出文件失败"))
+		return
+	}
 }
 
 // DownloadUserTemplate 下载用户导入模板
 func DownloadUserTemplate(c *gin.Context) {
-	// TODO: 实现模板下载功能
-	response.OkMsg(c, "模板下载功能待实现")
+	exporter, err := service.GenerateUserTemplate()
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	defer exporter.Close()
+
+	// 设置响应头
+	filename := "用户导入模板.xlsx"
+	encodedFilename := url.QueryEscape(filename)
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"; filename*=UTF-8''%s", filename, encodedFilename))
+	c.Header("Content-Transfer-Encoding", "binary")
+
+	// 输出文件
+	if err := exporter.Write(c.Writer); err != nil {
+		c.Error(errs.SystemError("生成模板失败"))
+		return
+	}
 }
 
 // ImportUsers 导入用户数据
 func ImportUsers(c *gin.Context) {
-	// TODO: 实现 Excel 导入功能
-	response.OkMsg(c, "导入功能待实现")
+	// 获取上传的文件
+	file, err := c.FormFile("file")
+	if err != nil {
+		response.Fail(c, "请选择要导入的文件")
+		return
+	}
+
+	// 打开文件
+	f, err := file.Open()
+	if err != nil {
+		response.Fail(c, "文件打开失败")
+		return
+	}
+	defer f.Close()
+
+	// 导入用户数据
+	result, err := service.ImportUsersFromExcel(f)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.Ok(c, result)
 }

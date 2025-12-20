@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"strconv"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
@@ -14,6 +16,7 @@ import (
 	"youlai-gin/internal/system/user/repository"
 	"youlai-gin/pkg/common"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/excel"
 	"youlai-gin/pkg/redis"
 )
 
@@ -403,4 +406,188 @@ func GetUserOptions() ([]common.Option[string], error) {
 	}
 
 	return options, nil
+}
+
+// ExportUsersToExcel 导出用户数据到Excel
+func ExportUsersToExcel(query *model.UserPageQuery) (*excel.ExcelExporter, error) {
+	// 查询所有符合条件的用户（不分页）
+	query.PageNum = 1
+	query.PageSize = 10000 // 设置一个较大的值
+	
+	users, _, err := repository.GetUserPage(query)
+	if err != nil {
+		return nil, errs.SystemError("查询用户数据失败")
+	}
+
+	// 创建Excel导出器
+	exporter := excel.NewExcelExporter("用户列表")
+	
+	// 设置表头
+	headers := []string{
+		"用户ID", "用户名", "昵称", "手机号", "性别", "邮箱", "状态", "部门", "角色", "创建时间",
+	}
+	if err := exporter.SetHeaders(headers); err != nil {
+		return nil, errs.SystemError("设置表头失败")
+	}
+
+	// 添加数据行
+	for _, user := range users {
+		gender := map[int]string{0: "未知", 1: "男", 2: "女"}[user.Gender]
+		status := map[int]string{0: "禁用", 1: "启用"}[user.Status]
+		
+		row := []interface{}{
+			user.ID,
+			user.Username,
+			user.Nickname,
+			user.Mobile,
+			gender,
+			user.Email,
+			status,
+			user.DeptName,
+			user.RoleNames,
+			user.CreateTime.String(),
+		}
+		if err := exporter.AddRow(row); err != nil {
+			return nil, errs.SystemError("添加数据行失败")
+		}
+	}
+
+	return exporter, nil
+}
+
+// GenerateUserTemplate 生成用户导入模板
+func GenerateUserTemplate() (*excel.ExcelExporter, error) {
+	exporter := excel.NewExcelExporter("用户导入模板")
+	
+	// 设置表头
+	headers := []string{
+		"用户名(*)", "昵称(*)", "手机号", "性别(男/女/未知)", "邮箱", "部门ID", "状态(启用/禁用)", "备注",
+	}
+	if err := exporter.SetHeaders(headers); err != nil {
+		return nil, errs.SystemError("设置表头失败")
+	}
+
+	// 添加示例数据行
+	examples := [][]interface{}{
+		{"zhangsan", "张三", "13800138000", "男", "zhangsan@example.com", "1", "启用", "示例用户1"},
+		{"lisi", "李四", "13800138001", "女", "lisi@example.com", "2", "启用", "示例用户2"},
+	}
+	
+	for _, row := range examples {
+		if err := exporter.AddRow(row); err != nil {
+			return nil, errs.SystemError("添加示例数据失败")
+		}
+	}
+
+	return exporter, nil
+}
+
+// ImportUsersFromExcel 从Excel导入用户数据
+func ImportUsersFromExcel(file io.Reader) (map[string]interface{}, error) {
+	importer, err := excel.NewExcelImporter(file)
+	if err != nil {
+		return nil, errs.BadRequest("Excel文件格式错误")
+	}
+	defer importer.Close()
+
+	rows, err := importer.GetRows()
+	if err != nil {
+		return nil, errs.SystemError("读取Excel数据失败")
+	}
+
+	if len(rows) < 2 {
+		return nil, errs.BadRequest("Excel文件没有数据")
+	}
+
+	// 跳过表头
+	dataRows := rows[1:]
+	
+	successCount := 0
+	failCount := 0
+	var failDetails []string
+
+	for i, row := range dataRows {
+		if len(row) < 2 {
+			failCount++
+			failDetails = append(failDetails, fmt.Sprintf("第%d行: 数据不完整", i+2))
+			continue
+		}
+
+		// 解析行数据
+		username := strings.TrimSpace(row[0])
+		nickname := strings.TrimSpace(row[1])
+		mobile := ""
+		if len(row) > 2 {
+			mobile = strings.TrimSpace(row[2])
+		}
+		
+		genderStr := "未知"
+		if len(row) > 3 {
+			genderStr = strings.TrimSpace(row[3])
+		}
+		gender := map[string]int{"男": 1, "女": 2, "未知": 0}[genderStr]
+		
+		email := ""
+		if len(row) > 4 {
+			email = strings.TrimSpace(row[4])
+		}
+		
+		deptID := int64(0)
+		if len(row) > 5 && row[5] != "" {
+			deptIDVal, _ := strconv.ParseInt(strings.TrimSpace(row[5]), 10, 64)
+			deptID = deptIDVal
+		}
+		
+		status := 1
+		if len(row) > 6 {
+			statusStr := strings.TrimSpace(row[6])
+			if statusStr == "禁用" {
+				status = 0
+			}
+		}
+
+		// 验证必填字段
+		if username == "" || nickname == "" {
+			failCount++
+			failDetails = append(failDetails, fmt.Sprintf("第%d行: 用户名或昵称为空", i+2))
+			continue
+		}
+
+		// 检查用户名是否已存在
+		exists, _ := repository.CheckUsernameExists(username, 0)
+		if exists {
+			failCount++
+			failDetails = append(failDetails, fmt.Sprintf("第%d行: 用户名[%s]已存在", i+2, username))
+			continue
+		}
+
+		// 创建用户
+		user := &model.User{
+			Username: username,
+			Nickname: nickname,
+			Mobile:   mobile,
+			Gender:   gender,
+			Email:    email,
+			DeptID:   deptID,
+			Status:   status,
+			Password: "$2a$10$xqb1QjFdvVXMHrdLHKHgG.SQWZpfqnLSQEDdE/eUcLfnXW6rMaLTK", // 默认密码: 123456
+		}
+
+		if err := repository.CreateUser(user); err != nil {
+			failCount++
+			failDetails = append(failDetails, fmt.Sprintf("第%d行: 创建失败 - %v", i+2, err))
+			continue
+		}
+
+		successCount++
+	}
+
+	result := map[string]interface{}{
+		"total":       len(dataRows),
+		"success":     successCount,
+		"fail":        failCount,
+		"failDetails": failDetails,
+	}
+
+	return result, nil
 }

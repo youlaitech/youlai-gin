@@ -10,18 +10,7 @@ import (
 )
 
 func RegisterDeptRoutes(r *gin.RouterGroup) {
-	// 兼容Java版本的单数路由
-	dept := r.Group("/dept")
-	{
-		dept.GET("", GetDeptList)
-		dept.GET("/options", GetDeptOptions)
-		dept.POST("", SaveDept)
-		dept.GET("/:id/form", GetDeptForm)
-		dept.PUT("/:id", UpdateDept)
-		dept.DELETE("/:id", DeleteDept)
-	}
-	
-	// 保留复数形式的路由（向后兼容）
+	// 使用复数形式符合RESTful规范
 	depts := r.Group("/depts")
 	{
 		depts.GET("", GetDeptList)
