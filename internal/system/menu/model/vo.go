@@ -5,7 +5,7 @@ type MenuVO struct {
 	ID         int64      `json:"id"`
 	ParentID   int64      `json:"parentId"`
 	Name       string     `json:"name"`
-	Type       int        `json:"type"`
+	Type       string     `json:"type"`
 	RouteName  string     `json:"routeName"`
 	RoutePath  string     `json:"routePath"`
 	Component  string     `json:"component"`

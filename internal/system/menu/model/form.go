@@ -4,7 +4,7 @@ type MenuForm struct {
 	ID         int64  `json:"id"`
 	ParentID   int64  `json:"parentId"`
 	Name       string `json:"name" binding:"required"`
-	Type       int    `json:"type" binding:"required,oneof=1 2 3 4"`
+	Type       string `json:"type" binding:"required,oneof=C M B"`
 	RouteName  string `json:"routeName"`
 	RoutePath  string `json:"routePath"`
 	Component  string `json:"component"`

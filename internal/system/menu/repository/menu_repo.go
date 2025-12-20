@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"strings"
+
 	"youlai-gin/internal/database"
 	"youlai-gin/internal/system/menu/model"
 )
@@ -50,7 +52,7 @@ func GetMenuOptions(onlyParent bool) ([]model.Menu, error) {
 	db := database.DB.Model(&model.Menu{}).Where("visible = 1")
 
 	if onlyParent {
-		db = db.Where("type IN (2, 3)")
+		db = db.Where("type IN ('C','M')")
 	}
 
 	err := db.Order("sort ASC").Find(&menus).Error
@@ -76,7 +78,7 @@ func GetUserMenus(userId int64) ([]model.Menu, error) {
 			SELECT DISTINCT m.*
 			FROM sys_menu m
 			WHERE m.visible = 1
-			AND m.type IN (1, 2)
+			AND m.type IN ('C','M')
 			ORDER BY m.sort ASC, m.id ASC
 		`).Scan(&menus).Error
 		return menus, err
@@ -92,11 +94,72 @@ func GetUserMenus(userId int64) ([]model.Menu, error) {
 		WHERE ur.user_id = ?
 		AND r.status = 1
 		AND m.visible = 1
-		AND m.type IN (1, 2)
+		AND m.type IN ('C','M')
 		ORDER BY m.sort ASC, m.id ASC
 	`, userId).Scan(&menus).Error
 	
 	return menus, err
+}
+
+// GetUserButtonPerms 获取用户按钮权限标识列表
+func GetUserButtonPerms(userId int64) ([]string, error) {
+	perms := make([]string, 0)
+
+	// 查询用户是否是超级管理员（ROOT）
+	var isAdmin int
+	database.DB.Raw(`
+		SELECT COUNT(DISTINCT r.id)
+		FROM sys_role r
+		INNER JOIN sys_user_role ur ON r.id = ur.role_id
+		WHERE ur.user_id = ? AND r.code = 'ROOT' AND r.status = 1
+	`, userId).Scan(&isAdmin)
+
+	if isAdmin > 0 {
+		rows := make([]struct{ Perm string }, 0)
+		err := database.DB.Raw(`
+			SELECT DISTINCT m.perm
+			FROM sys_menu m
+			WHERE m.visible = 1
+			AND m.type = 'B'
+			AND m.perm IS NOT NULL
+			AND m.perm != ''
+		`).Scan(&rows).Error
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range rows {
+			p := strings.TrimSpace(r.Perm)
+			if p != "" {
+				perms = append(perms, p)
+			}
+		}
+		return perms, nil
+	}
+
+	rows := make([]struct{ Perm string }, 0)
+	err := database.DB.Raw(`
+		SELECT DISTINCT m.perm
+		FROM sys_menu m
+		INNER JOIN sys_role_menu rm ON m.id = rm.menu_id
+		INNER JOIN sys_user_role ur ON rm.role_id = ur.role_id
+		INNER JOIN sys_role r ON ur.role_id = r.id
+		WHERE ur.user_id = ?
+		AND r.status = 1
+		AND m.visible = 1
+		AND m.type = 'B'
+		AND m.perm IS NOT NULL
+		AND m.perm != ''
+	`, userId).Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range rows {
+		p := strings.TrimSpace(r.Perm)
+		if p != "" {
+			perms = append(perms, p)
+		}
+	}
+	return perms, nil
 }
 
 // CheckMenuNameExists 检查同级菜单名称是否存在

@@ -175,7 +175,7 @@ func SaveMenu(form *model.MenuForm) error {
 
 	// 🔄 刷新受影响角色的权限缓存（处女座标准：完美的一致性保障）
 	// 仅当菜单类型为按钮且有权限标识时才刷新
-	if menu.Type == 4 && menu.Perm != "" {
+	if menu.Type == "B" && menu.Perm != "" {
 		if err := refreshAffectedRolesCache([]int64{menuID}); err != nil {
 			log.Printf("⚠️  刷新角色权限缓存失败: %v", err)
 			// 不阻断操作，记录日志即可
@@ -238,7 +238,7 @@ func DeleteMenu(id int64) error {
 
 	// 🔄 刷新受影响角色的权限缓存（处女座标准：删除也要保证一致性）
 	// 仅当删除的是按钮且有权限标识时才刷新
-	if menu.Type == 4 && menu.Perm != "" {
+	if menu.Type == "B" && menu.Perm != "" {
 		if err := refreshAffectedRolesCache([]int64{id}); err != nil {
 			log.Printf("⚠️  刷新角色权限缓存失败: %v", err)
 			// 不阻断操作，记录日志即可
@@ -275,18 +275,9 @@ func refreshAffectedRolesCache(menuIds []int64) error {
 
 // GetUserPermissions 获取用户按钮权限
 func GetUserPermissions(userId int64) ([]string, error) {
-	menus, err := repository.GetUserMenus(userId)
+	perms, err := repository.GetUserButtonPerms(userId)
 	if err != nil {
 		return nil, errs.SystemError("查询用户权限失败")
 	}
-
-	perms := make([]string, 0)
-	for _, menu := range menus {
-		// 只返回按钮权限（type=3）且有权限标识的
-		if menu.Type == 3 && menu.Perm != "" {
-			perms = append(perms, menu.Perm)
-		}
-	}
-
 	return perms, nil
 }

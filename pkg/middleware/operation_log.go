@@ -7,9 +7,10 @@ import (
 	"time"
 	
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	
 	"youlai-gin/internal/database"
-	"youlai-gin/pkg/context"
+	pkgContext "youlai-gin/pkg/context"
 	"youlai-gin/pkg/logger"
 )
 
@@ -70,9 +71,9 @@ func OperationLogWithConfig(config OperationLogConfig) gin.HandlerFunc {
 		start := time.Now()
 		
 		// 获取用户信息
-		userID, _ := context.GetUserID(c)
+		userID, _ := pkgContext.GetCurrentUserID(c)
 		username := ""
-		if user, exists := context.GetUser(c); exists {
+		if user, err := pkgContext.GetCurrentUser(c); err == nil {
 			username = user.Username
 		}
 		
@@ -148,7 +149,7 @@ func OperationLogWithConfig(config OperationLogConfig) gin.HandlerFunc {
 // saveOperationLog 保存操作日志到数据库
 func saveOperationLog(log OperationLogEntity) {
 	if err := database.DB.Create(&log).Error; err != nil {
-		logger.Error("保存操作日志失败: %v", err)
+		logger.Error("保存操作日志失败", zap.Error(err))
 	}
 }
 
@@ -173,21 +174,22 @@ func OperationLogJSON(module, operation string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		
-		userID, _ := context.GetUserID(c)
+		userID, _ := pkgContext.GetCurrentUserID(c)
 		
 		c.Next()
 		
 		duration := time.Since(start)
 		
 		// 使用结构化日志记录
-		logger.Info("[操作日志] 模块=%s 操作=%s 用户ID=%d 路径=%s 方法=%s 状态=%d 耗时=%v",
-			module,
-			operation,
-			userID,
-			c.Request.URL.Path,
-			c.Request.Method,
-			c.Writer.Status(),
-			duration,
+		logger.Info(
+			"[操作日志]",
+			zap.String("module", module),
+			zap.String("operation", operation),
+			zap.Int64("userId", userID),
+			zap.String("path", c.Request.URL.Path),
+			zap.String("method", c.Request.Method),
+			zap.Int("status", c.Writer.Status()),
+			zap.Duration("duration", duration),
 		)
 	}
 }

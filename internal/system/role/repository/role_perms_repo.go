@@ -39,7 +39,7 @@ func GetRolePermsByCodes(roleCodes []string) ([]RolePerms, error) {
 	}
 	
 	// 查询角色和对应的权限按钮
-	// type = 4 表示按钮（MenuTypeEnum.BUTTON: 1-菜单 2-目录 3-外链 4-按钮）
+	// type = 'B' 表示按钮
 	var results []struct {
 		RoleCode string
 		Perm     string
@@ -49,7 +49,7 @@ func GetRolePermsByCodes(roleCodes []string) ([]RolePerms, error) {
 		Select("t2.code as role_code, t3.perm").
 		Joins("INNER JOIN sys_role t2 ON t1.role_id = t2.id AND t2.is_deleted = 0 AND t2.status = 1").
 		Joins("INNER JOIN sys_menu t3 ON t1.menu_id = t3.id").
-		Where("t2.code IN ? AND t3.type = 4 AND t3.perm IS NOT NULL AND t3.perm != ''", roleCodes).
+		Where("t2.code IN ? AND t3.type = 'B' AND t3.perm IS NOT NULL AND t3.perm != ''", roleCodes).
 		Find(&results).Error
 	
 	if err != nil {
@@ -77,7 +77,7 @@ func GetRolePermsByCodes(roleCodes []string) ([]RolePerms, error) {
 // getRolePermsByCondition 内部方法：根据条件查询角色权限
 func getRolePermsByCondition(roleCode string) ([]RolePerms, error) {
 	// 查询角色和对应的权限按钮
-	// type = 4 表示按钮（MenuTypeEnum.BUTTON: 1-菜单 2-目录 3-外链 4-按钮）
+	// type = 'B' 表示按钮
 	var results []struct {
 		RoleCode string
 		Perm     string
@@ -87,7 +87,7 @@ func getRolePermsByCondition(roleCode string) ([]RolePerms, error) {
 		Select("t2.code as role_code, t3.perm").
 		Joins("INNER JOIN sys_role t2 ON t1.role_id = t2.id AND t2.is_deleted = 0 AND t2.status = 1").
 		Joins("INNER JOIN sys_menu t3 ON t1.menu_id = t3.id").
-		Where("t3.type = 4 AND t3.perm IS NOT NULL AND t3.perm != ''")
+		Where("t3.type = 'B' AND t3.perm IS NOT NULL AND t3.perm != ''")
 	
 	// 如果指定角色编码，添加过滤条件
 	if roleCode != "" {

@@ -31,7 +31,7 @@ const (
 //   user := context.MustGetUser(c)
 //   db = middleware.ApplyDataScope(db, user, "sys_user", "dept_id", "id")
 //   db.Find(&users)
-func ApplyDataScope(db *gorm.DB, user *auth.UserDetail, tableName, deptIDColumn, userIDColumn string) *gorm.DB {
+func ApplyDataScope(db *gorm.DB, user *auth.UserDetails, tableName, deptIDColumn, userIDColumn string) *gorm.DB {
 	if user == nil {
 		// 未登录用户，不返回任何数据
 		return db.Where("1 = 0")
@@ -96,7 +96,7 @@ func ApplyDataScope(db *gorm.DB, user *auth.UserDetail, tableName, deptIDColumn,
 //   db := database.DB.Model(&User{})
 //   db = db.Scopes(middleware.DataScopeFilter(c, "sys_user", "dept_id", "create_by"))
 //   db.Find(&users)
-func DataScopeFilter(user *auth.UserDetail, tableName, deptIDColumn, userIDColumn string) func(db *gorm.DB) *gorm.DB {
+func DataScopeFilter(user *auth.UserDetails, tableName, deptIDColumn, userIDColumn string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return ApplyDataScope(db, user, tableName, deptIDColumn, userIDColumn)
 	}

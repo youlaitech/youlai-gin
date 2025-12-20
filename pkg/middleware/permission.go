@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	
 	"youlai-gin/internal/system/permission/service"
-	"youlai-gin/pkg/context"
+	pkgContext "youlai-gin/pkg/context"
 	"youlai-gin/pkg/response"
 )
 
@@ -13,9 +13,9 @@ import (
 func PermissionMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 从上下文获取用户ID
-		userID, exists := context.GetUserID(c)
-		if !exists {
-			response.Unauthorized(c, "未获取到用户信息")
+		userID, err := pkgContext.GetCurrentUserID(c)
+		if err != nil {
+			c.Error(err)
 			c.Abort()
 			return
 		}
@@ -39,9 +39,9 @@ func PermissionMiddleware() gin.HandlerFunc {
 // 用法：router.POST("/users", middleware.RequirePermission("sys:user:add"), handler.CreateUser)
 func RequirePermission(perm string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exists := context.GetUserID(c)
-		if !exists {
-			response.Unauthorized(c, "未获取到用户信息")
+		userID, err := pkgContext.GetCurrentUserID(c)
+		if err != nil {
+			c.Error(err)
 			c.Abort()
 			return
 		}
@@ -55,7 +55,7 @@ func RequirePermission(perm string) gin.HandlerFunc {
 		}
 		
 		if !hasPermission {
-			response.Forbidden(c, "无权限访问")
+			response.Unauthorized(c, "无权限访问")
 			c.Abort()
 			return
 		}
@@ -68,9 +68,9 @@ func RequirePermission(perm string) gin.HandlerFunc {
 // 用法：router.POST("/users", middleware.RequireAnyPermission("sys:user:add", "sys:user:edit"), handler.SaveUser)
 func RequireAnyPermission(perms ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exists := context.GetUserID(c)
-		if !exists {
-			response.Unauthorized(c, "未获取到用户信息")
+		userID, err := pkgContext.GetCurrentUserID(c)
+		if err != nil {
+			c.Error(err)
 			c.Abort()
 			return
 		}
@@ -84,7 +84,7 @@ func RequireAnyPermission(perms ...string) gin.HandlerFunc {
 		}
 		
 		if !hasPermission {
-			response.Forbidden(c, "无权限访问")
+			response.Unauthorized(c, "无权限访问")
 			c.Abort()
 			return
 		}
@@ -97,9 +97,9 @@ func RequireAnyPermission(perms ...string) gin.HandlerFunc {
 // 用法：router.POST("/users/batch", middleware.RequireAllPermissions("sys:user:add", "sys:user:delete"), handler.BatchUser)
 func RequireAllPermissions(perms ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exists := context.GetUserID(c)
-		if !exists {
-			response.Unauthorized(c, "未获取到用户信息")
+		userID, err := pkgContext.GetCurrentUserID(c)
+		if err != nil {
+			c.Error(err)
 			c.Abort()
 			return
 		}
@@ -113,7 +113,7 @@ func RequireAllPermissions(perms ...string) gin.HandlerFunc {
 		}
 		
 		if !hasAllPermissions {
-			response.Forbidden(c, "无权限访问")
+			response.Unauthorized(c, "无权限访问")
 			c.Abort()
 			return
 		}
@@ -126,9 +126,9 @@ func RequireAllPermissions(perms ...string) gin.HandlerFunc {
 // 用法：router.GET("/admin", middleware.RequireRole("ADMIN"), handler.AdminPanel)
 func RequireRole(roleCode string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exists := context.GetUserID(c)
-		if !exists {
-			response.Unauthorized(c, "未获取到用户信息")
+		userID, err := pkgContext.GetCurrentUserID(c)
+		if err != nil {
+			c.Error(err)
 			c.Abort()
 			return
 		}
@@ -142,7 +142,7 @@ func RequireRole(roleCode string) gin.HandlerFunc {
 		}
 		
 		if !hasRole {
-			response.Forbidden(c, "无权限访问")
+			response.Unauthorized(c, "无权限访问")
 			c.Abort()
 			return
 		}
@@ -155,9 +155,9 @@ func RequireRole(roleCode string) gin.HandlerFunc {
 // 用法：router.GET("/manage", middleware.RequireAnyRole("ADMIN", "MANAGER"), handler.Manage)
 func RequireAnyRole(roleCodes ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, exists := context.GetUserID(c)
-		if !exists {
-			response.Unauthorized(c, "未获取到用户信息")
+		userID, err := pkgContext.GetCurrentUserID(c)
+		if err != nil {
+			c.Error(err)
 			c.Abort()
 			return
 		}
@@ -171,7 +171,7 @@ func RequireAnyRole(roleCodes ...string) gin.HandlerFunc {
 		}
 		
 		if !hasAnyRole {
-			response.Forbidden(c, "无权限访问")
+			response.Unauthorized(c, "无权限访问")
 			c.Abort()
 			return
 		}

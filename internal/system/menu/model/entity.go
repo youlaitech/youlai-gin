@@ -5,7 +5,7 @@ type Menu struct {
 	ParentID   int64  `gorm:"column:parent_id;not null" json:"parentId"`
 	TreePath   string `gorm:"column:tree_path" json:"treePath"`
 	Name       string `gorm:"column:name;not null" json:"name"`
-	Type       int    `gorm:"column:type;not null" json:"type"`
+	Type       string `gorm:"column:type;not null" json:"type"`
 	RouteName  string `gorm:"column:route_name" json:"routeName"`
 	RoutePath  string `gorm:"column:route_path" json:"routePath"`
 	Component  string `gorm:"column:component" json:"component"`
