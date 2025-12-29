@@ -6,12 +6,13 @@ import (
 	"strconv"
 	"strings"
 
-	"youlai-gin/internal/database"
+	"youlai-gin/pkg/database"
 	deptModel "youlai-gin/internal/system/dept/model"
 	permModel "youlai-gin/internal/system/permission/model"
 	userRepo "youlai-gin/internal/system/user/repository"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/redis"
+	"youlai-gin/pkg/types"
 )
 
 const rolePermsKey = "system:role:perms"
@@ -37,18 +38,18 @@ func GetUserPermissions(userID int64) (*permModel.UserPermissionsVO, error) {
 		return nil, err
 	}
 
-	dataScope, deptIds, err := resolveUserDataScope(userID, roles, user.DeptID)
+	dataScope, deptIds, err := resolveUserDataScope(userID, roles, int64(user.DeptID))
 	if err != nil {
 		return nil, err
 	}
 
 	return &permModel.UserPermissionsVO{
-		UserID:    userID,
+		UserID:    types.BigInt(userID),
 		Roles:     roles,
 		Perms:     perms,
 		DataScope: dataScope,
-		DeptID:    user.DeptID,
-		DeptIds:   deptIds,
+		DeptID:    types.BigInt(user.DeptID),
+		DeptIds:   types.ToBigIntSlice(deptIds),
 	}, nil
 }
 

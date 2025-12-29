@@ -8,6 +8,7 @@ import (
 
 	"youlai-gin/internal/system/notice/model"
 	"youlai-gin/internal/system/notice/service"
+	"youlai-gin/pkg/types"
 	pkgContext "youlai-gin/pkg/context"
 	"youlai-gin/pkg/response"
 )
@@ -122,7 +123,7 @@ func UpdateNotice(c *gin.Context) {
 		return
 	}
 
-	form.ID = id
+	form.ID = types.BigInt(id)
 	if err := service.SaveNotice(&form); err != nil {
 		c.Error(err)
 		return

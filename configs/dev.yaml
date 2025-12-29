@@ -1,17 +1,14 @@
 # ============================================
 # 开发环境配置 (dev.yaml)
 # ============================================
-# 用途：本地开发调试
-# 特点：debug 日志 + 彩色控制台 + 宽松的安全策略
-# ============================================
 
 # ==================== 数据库配置 ====================
 database:
   host: www.youlai.tech         # MySQL 主机地址
   port: 3306                    # MySQL 端口
-  username: youlai              # 数据库用户名
-  password: "123456"            # 数据库密码（可通过环境变量 APP_DATABASE_PASSWORD 覆盖）
-  dbname: youlai_boot           # 数据库名称
+  username: youlai                # 数据库用户名
+  password: 123456         # 数据库密码（可通过环境变量 APP_DATABASE_PASSWORD 覆盖）
+  dbname: youlai_admin          # 数据库名称
   charset: utf8mb4              # 字符集（支持 emoji）
   parseTime: true               # 自动解析时间类型
   loc: Local                    # 时区设置
@@ -20,6 +17,27 @@ database:
   maxIdleConns: 10              # 最大空闲连接数
   maxOpenConns: 100             # 最大打开连接数
   connMaxLifetime: 3600         # 连接最大存活时间（秒）
+
+# ==================== Redis 配置 ====================
+redis:
+  host: www.youlai.tech               # Redis 主机（开发用本地）
+  port: 6379                    # Redis 端口
+  password: 123456                 # Redis 密码（本地开发通常无密码）
+  database: 4                   # Redis 数据库编号（0-15）
+
+  # 连接池配置
+  pool:
+    maxIdle: 10                 # 最大空闲连接数
+    maxActive: 100              # 最大活动连接数
+    minIdle: 5                  # 最小空闲连接数
+
+  # 超时配置（秒）
+  timeout:
+    dial: 5                     # 建立连接超时
+    read: 3                     # 读取超时
+    write: 3                    # 写入超时
+    pool: 5                     # 连接池获取连接超时
+
 
 # ==================== 日志配置 ====================
 logger:
@@ -42,25 +60,7 @@ logger:
     format: json                # 文件格式（json 便于后续分析）
     errorPath: logs/dev-error.log  # 错误日志单独文件
 
-# ==================== Redis 配置 ====================
-redis:
-  host: www.youlai.tech               # Redis 主机（开发用本地）
-  port: 6379                    # Redis 端口
-  password: "123456"                  # Redis 密码（本地开发通常无密码）
-  database: 4                   # Redis 数据库编号（0-15）
-  
-  # 连接池配置
-  pool:
-    maxIdle: 10                 # 最大空闲连接数
-    maxActive: 100              # 最大活动连接数
-    minIdle: 5                  # 最小空闲连接数
-  
-  # 超时配置（秒）
-  timeout:
-    dial: 5                     # 建立连接超时
-    read: 3                     # 读取超时
-    write: 3                    # 写入超时
-    pool: 5                     # 连接池获取连接超时
+
 
 # ==================== 安全配置 ====================
 security:

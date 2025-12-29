@@ -6,6 +6,7 @@ import (
 	"youlai-gin/internal/system/role/model"
 	"youlai-gin/internal/system/role/service"
 	"youlai-gin/pkg/response"
+	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/validator"
 )
 
@@ -122,7 +123,7 @@ func UpdateRole(c *gin.Context) {
 		return
 	}
 
-	form.ID = id
+	form.ID = types.BigInt(id)
 	if err := service.SaveRole(&form); err != nil {
 		c.Error(err)
 		return

@@ -32,18 +32,18 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 
+	// 严格验证文件（使用文档验证器）
+	if err := utils.ValidateDocument(file); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
 	// 获取存储路径前缀
 	pathPrefix := c.DefaultPostForm("path", "uploads")
 
 	// 生成文件名和路径
 	filename := utils.GenerateFileName(file.Filename)
 	path := utils.GeneratePath(pathPrefix, filename)
-
-	// 验证文件
-	if err := utils.ValidateFile(file, 50*1024*1024, nil); err != nil {
-		response.BadRequest(c, err.Error())
-		return
-	}
 
 	// 打开文件
 	src, err := file.Open()
@@ -97,14 +97,14 @@ func UploadFiles(c *gin.Context) {
 	results := make([]UploadResult, 0, len(files))
 
 	for _, file := range files {
+		// 严格验证文件
+		if err := utils.ValidateDocument(file); err != nil {
+			continue // 跳过验证失败的文件
+		}
+
 		// 生成文件名和路径
 		filename := utils.GenerateFileName(file.Filename)
 		path := utils.GeneratePath(pathPrefix, filename)
-
-		// 验证文件
-		if err := utils.ValidateFile(file, 50*1024*1024, nil); err != nil {
-			continue // 跳过验证失败的文件
-		}
 
 		// 打开文件
 		src, err := file.Open()
@@ -147,9 +147,8 @@ func UploadImage(c *gin.Context) {
 		return
 	}
 
-	// 限制图片格式
-	allowedExts := []string{".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"}
-	if err := utils.ValidateFile(file, 10*1024*1024, allowedExts); err != nil {
+	// 严格验证图片文件
+	if err := utils.ValidateImage(file); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}

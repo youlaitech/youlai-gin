@@ -143,10 +143,11 @@ func RefreshToken(refreshToken string) (*auth.AuthenticationToken, error) {
 
 // SendSmsLoginCode 发送登录短信验证码
 func SendSmsLoginCode(mobile string) error {
-	// TODO: 实际开发中对接短信服务商
-	// 为了方便测试，验证码固定为 1234
+	// 生成验证码
+	// code := fmt.Sprintf("%04d", rand.Intn(10000))
+	// TODO: 为了方便测试，验证码固定为 1234，实际开发中在配置了厂商短信服务后，可以使用上面的随机验证码
 	code := "1234"
-	
+
 	// 缓存验证码至 Redis（5分钟过期）
 	redisKey := fmt.Sprintf("captcha:sms:login:%s", mobile)
 	ctx := context.Background()
@@ -154,10 +155,10 @@ func SendSmsLoginCode(mobile string) error {
 	if err != nil {
 		return errs.SystemError("发送短信验证码失败")
 	}
-	
-	// TODO: 实际调用短信服务发送验证码
-	// smsService.SendSms(mobile, code)
-	
+
+	// TODO: 实际开发中对接短信服务商（阿里云、腾讯云等）
+	// 示例：smsService.SendSMS(mobile, code)
+
 	return nil
 }
 
@@ -194,16 +195,16 @@ func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, erro
 	if err != nil {
 		return nil, errs.SystemError("查询用户角色失败")
 	}
-	
+
 	// 5. 验证成功后删除验证码
 	redis.Client.Del(ctx, redisKey)
-	
+
 	// 6. 生成 Token
 	userDetails := &auth.UserDetails{
 		UserID:    int64(user.ID),
 		Username:  user.Username,
 		DeptID:    user.DeptID,
-		DataScope: 0,
+		DataScope: 0, // TODO: 从角色权限获取
 		Roles:     roles,
 	}
 	

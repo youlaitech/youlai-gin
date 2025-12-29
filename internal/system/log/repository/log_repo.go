@@ -3,7 +3,7 @@ package repository
 import (
 	"time"
 
-	"youlai-gin/internal/database"
+	"youlai-gin/pkg/database"
 	"youlai-gin/internal/system/log/model"
 	pkgDatabase "youlai-gin/pkg/database"
 )

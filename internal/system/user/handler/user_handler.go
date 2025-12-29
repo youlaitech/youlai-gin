@@ -13,6 +13,7 @@ import (
 	"youlai-gin/pkg/errs"
 	pkgContext "youlai-gin/pkg/context"
 	"youlai-gin/pkg/response"
+	"youlai-gin/pkg/types"
 )
 
 // RegisterUserRoutes 注册用户路由
@@ -98,7 +99,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	form.ID = userId
+	form.ID = types.BigInt(userId)
 	if err := service.SaveUser(&form); err != nil {
 		c.Error(err)
 		return

@@ -1,7 +1,7 @@
 package config
 
 import (
-	"youlai-gin/internal/database"
+	"youlai-gin/pkg/database"
 	"youlai-gin/pkg/auth"
 	"youlai-gin/pkg/logger"
 	redisConfig "youlai-gin/pkg/redis"

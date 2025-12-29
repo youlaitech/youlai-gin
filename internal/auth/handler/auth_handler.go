@@ -46,34 +46,24 @@ func GetCaptcha(c *gin.Context) {
 // @Summary 账号密码登录
 // @Description 用户名密码登录，返回访问令牌和刷新令牌
 // @Tags 认证中心
-// @Accept application/x-www-form-urlencoded
+// @Accept application/json
 // @Produce json
-// @Param username formData string true "用户名" default(admin)
-// @Param password formData string true "密码" default(123456)
+// @Param body body model.LoginRequest true "登录信息"
 // @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
 // @Router /api/v1/auth/login [post]
 func Login(c *gin.Context) {
-	// 从表单参数或query参数获取（兼容Java版本）
-	username := c.PostForm("username")
-	if username == "" {
-		username = c.Query("username")
-	}
-	password := c.PostForm("password")
-	if password == "" {
-		password = c.Query("password")
+	var req model.LoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "请求参数错误: "+err.Error())
+		return
 	}
 
-	if username == "" || password == "" {
+	if req.Username == "" || req.Password == "" {
 		response.BadRequest(c, "用户名和密码不能为空")
 		return
 	}
 
-	req := &model.LoginRequest{
-		Username: username,
-		Password: password,
-	}
-
-	token, err := service.Login(req)
+	token, err := service.Login(&req)
 	if err != nil {
 		c.Error(err)
 		return
@@ -110,11 +100,17 @@ func Logout(c *gin.Context) {
 // @Tags 认证中心
 // @Accept json
 // @Produce json
-// @Param refreshToken query string true "刷新令牌"
+// @Param body body map[string]string true "刷新令牌信息 {\"refreshToken\":\"刷新令牌\"}"
 // @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
 // @Router /api/v1/auth/refresh-token [post]
 func RefreshToken(c *gin.Context) {
-	refreshToken := c.Query("refreshToken")
+	var req map[string]string
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "请求参数错误: "+err.Error())
+		return
+	}
+
+	refreshToken := req["refreshToken"]
 	if refreshToken == "" {
 		response.BadRequest(c, "刷新令牌不能为空")
 		return
@@ -135,11 +131,17 @@ func RefreshToken(c *gin.Context) {
 // @Tags 认证中心
 // @Accept json
 // @Produce json
-// @Param mobile query string true "手机号" example("18812345678")
+// @Param body body map[string]string true "手机号信息 {\"mobile\":\"手机号\"}"
 // @Success 200 {object} map[string]interface{} "code/msg"
 // @Router /api/v1/auth/sms/code [post]
 func SendSmsCode(c *gin.Context) {
-	mobile := c.Query("mobile")
+	var req map[string]string
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "请求参数错误: "+err.Error())
+		return
+	}
+
+	mobile := req["mobile"]
 	if mobile == "" {
 		response.BadRequest(c, "手机号不能为空")
 		return
@@ -158,34 +160,24 @@ func SendSmsCode(c *gin.Context) {
 // @Summary 短信验证码登录
 // @Description 使用手机号和短信验证码登录
 // @Tags 认证中心
-// @Accept application/x-www-form-urlencoded
+// @Accept json
 // @Produce json
-// @Param mobile formData string true "手机号" default(18812345678)
-// @Param code formData string true "验证码" default(1234)
+// @Param body body model.SmsLoginRequest true "短信登录信息"
 // @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
 // @Router /api/v1/auth/login/sms [post]
 func LoginBySms(c *gin.Context) {
-	// 从表单参数或query参数获取
-	mobile := c.PostForm("mobile")
-	if mobile == "" {
-		mobile = c.Query("mobile")
-	}
-	code := c.PostForm("code")
-	if code == "" {
-		code = c.Query("code")
+	var req model.SmsLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "请求参数错误: "+err.Error())
+		return
 	}
 
-	if mobile == "" || code == "" {
+	if req.Mobile == "" || req.Code == "" {
 		response.BadRequest(c, "手机号和验证码不能为空")
 		return
 	}
 
-	req := &model.SmsLoginRequest{
-		Mobile: mobile,
-		Code:   code,
-	}
-
-	token, err := service.LoginBySms(req)
+	token, err := service.LoginBySms(&req)
 	if err != nil {
 		c.Error(err)
 		return
@@ -198,18 +190,19 @@ func LoginBySms(c *gin.Context) {
 // @Summary 微信授权登录
 // @Description 使用微信授权码登录
 // @Tags 认证中心
-// @Accept application/x-www-form-urlencoded
+// @Accept json
 // @Produce json
-// @Param code formData string true "微信授权码"
+// @Param body body map[string]string true "微信授权信息 {\"code\":\"授权码\"}"
 // @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
 // @Router /api/v1/auth/login/wechat [post]
 func LoginByWechat(c *gin.Context) {
-	// 从表单参数或query参数获取
-	code := c.PostForm("code")
-	if code == "" {
-		code = c.Query("code")
+	var req map[string]string
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "请求参数错误: "+err.Error())
+		return
 	}
-	
+
+	code := req["code"]
 	if code == "" {
 		response.BadRequest(c, "微信授权码不能为空")
 		return

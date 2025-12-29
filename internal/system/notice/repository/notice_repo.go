@@ -2,39 +2,40 @@ package repository
 
 import (
 	"gorm.io/gorm"
-	
-	"youlai-gin/internal/database"
+
+	"youlai-gin/pkg/database"
 	"youlai-gin/internal/system/notice/model"
 	pkgDatabase "youlai-gin/pkg/database"
+	"youlai-gin/pkg/types"
 )
 
 // GetNoticePage 通知分页查询
 func GetNoticePage(query *model.NoticePageQuery) ([]model.Notice, int64, error) {
 	var notices []model.Notice
 	var total int64
-	
+
 	db := database.DB.Model(&model.Notice{}).Where("is_deleted = 0")
-	
+
 	if query.Title != "" {
 		db = db.Where("title LIKE ?", "%"+query.Title+"%")
 	}
-	
+
 	if query.Type != nil {
 		db = db.Where("type = ?", *query.Type)
 	}
-	
+
 	if query.Status != nil {
 		db = db.Where("status = ?", *query.Status)
 	}
-	
+
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	
+
 	err := db.Scopes(pkgDatabase.PaginateFromQuery(query)).
 		Order("create_time DESC").
 		Find(&notices).Error
-	
+
 	return notices, total, err
 }
 
@@ -64,16 +65,16 @@ func DeleteNotice(id int64) error {
 func GetUserNoticePage(userID int64, query *model.UserNoticeQuery) ([]model.Notice, int64, error) {
 	var notices []model.Notice
 	var total int64
-	
+
 	// 构建基础查询条件
 	baseWhere := func(db *gorm.DB) *gorm.DB {
 		db = db.Where("n.is_deleted = 0 AND n.publish_status = 1")
 		db = db.Where("(n.target_type = 1 OR (n.target_type = 2 AND FIND_IN_SET(?, n.target_user_ids)))", userID)
-		
+
 		if query.Type != nil {
 			db = db.Where("n.type = ?", *query.Type)
 		}
-		
+
 		// 已读/未读过滤
 		if query.IsRead != nil {
 			if *query.IsRead == 1 {
@@ -86,21 +87,21 @@ func GetUserNoticePage(userID int64, query *model.UserNoticeQuery) ([]model.Noti
 		}
 		return db
 	}
-	
+
 	// 统计总数 - 使用 COUNT(DISTINCT n.id) 避免 JOIN 导致的重复
 	countDB := database.DB.Table("sys_notice n")
 	countDB = baseWhere(countDB)
 	if err := countDB.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	
+
 	// 查询数据
 	dataDB := database.DB.Table("sys_notice n").Select("n.*")
 	dataDB = baseWhere(dataDB)
 	err := dataDB.Scopes(pkgDatabase.PaginateFromQuery(query)).
 		Order("n.create_time DESC").
 		Find(&notices).Error
-	
+
 	return notices, total, err
 }
 
@@ -109,7 +110,7 @@ func MarkNoticeAsRead(noticeID, userID int64) error {
 	// 检查记录是否存在
 	var userNotice model.UserNotice
 	err := database.DB.Where("notice_id = ? AND user_id = ? AND is_deleted = 0", noticeID, userID).First(&userNotice).Error
-	
+
 	if err == nil {
 		// 记录存在，更新为已读
 		if userNotice.IsRead == 0 {
@@ -120,11 +121,11 @@ func MarkNoticeAsRead(noticeID, userID int64) error {
 		}
 		return nil // 已读，无需更新
 	}
-	
+
 	// 记录不存在，创建新记录
 	userNotice = model.UserNotice{
-		NoticeID: noticeID,
-		UserID:   userID,
+		NoticeID: types.BigInt(noticeID),
+		UserID:   types.BigInt(userID),
 		IsRead:   1,
 	}
 	return database.DB.Create(&userNotice).Error

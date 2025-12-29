@@ -2,12 +2,14 @@ package service
 
 import (
 	"errors"
+
 	"gorm.io/gorm"
-	
+
 	"youlai-gin/internal/system/dict/model"
 	"youlai-gin/internal/system/dict/repository"
 	"youlai-gin/pkg/common"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/types"
 )
 
 // GetDictPage 字典分页列表
@@ -20,7 +22,7 @@ func GetDictPage(query *model.DictPageQuery) (*common.PageResult, error) {
 	voList := make([]model.DictPageVO, len(dicts))
 	for i, dict := range dicts {
 		voList[i] = model.DictPageVO{
-			ID:         dict.ID,
+			ID:         types.BigInt(dict.ID),
 			DictCode:   dict.DictCode,
 			Name:       dict.Name,
 			Status:     dict.Status,
@@ -38,7 +40,7 @@ func GetDictPage(query *model.DictPageQuery) (*common.PageResult, error) {
 
 // SaveDict 保存字典（新增或更新）
 func SaveDict(form *model.DictForm) error {
-	exists, err := repository.CheckDictCodeExists(form.DictCode, form.ID)
+	exists, err := repository.CheckDictCodeExists(form.DictCode, int64(form.ID))
 	if err != nil {
 		return errs.SystemError("检查字典编码失败")
 	}
@@ -121,7 +123,7 @@ func GetDictItems(dictCode string) ([]model.DictItemVO, error) {
 	voList := make([]model.DictItemVO, len(items))
 	for i, item := range items {
 		voList[i] = model.DictItemVO{
-			ID:     item.ID,
+			ID:     types.BigInt(item.ID),
 			Value:  item.Value,
 			Label:  item.Label,
 			Sort:   item.Sort,

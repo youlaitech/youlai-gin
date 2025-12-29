@@ -1,60 +1,36 @@
 # ============================================
-# 测试环境配置 (test.yaml)
-# ============================================
-# 用途：集成测试、QA 测试
-# 特点：info 日志 + 压缩备份 + 单设备登录
+# 开发环境配置 (dev.yaml)
 # ============================================
 
 # ==================== 数据库配置 ====================
 database:
-  host: test-mysql.youlai.tech  # 测试环境 MySQL 地址
+  host: www.youlai.tech         # MySQL 主机地址
   port: 3306                    # MySQL 端口
-  username: youlai_test         # 测试数据库用户（权限受限）
-  password: "test-password"     # 测试数据库密码（⚠️ 生产级密码强度）
-  dbname: youlai_boot_test      # 测试数据库名称（独立于开发和生产）
-  charset: utf8mb4              # 字符集
-  parseTime: true               # 自动解析时间
-  loc: Local                    # 时区
-  
-  # 连接池配置（比开发环境更大）
-  maxIdleConns: 20              # 最大空闲连接数
-  maxOpenConns: 200             # 最大打开连接数（测试并发量更高）
-  connMaxLifetime: 3600         # 连接最大存活时间（秒）
+  username: youlai                # 数据库用户名
+  password: 123456         # 数据库密码（可通过环境变量 APP_DATABASE_PASSWORD 覆盖）
+  dbname: youlai_admin          # 数据库名称
+  charset: utf8mb4              # 字符集（支持 emoji）
+  parseTime: true               # 自动解析时间类型
+  loc: Local                    # 时区设置
 
-# ==================== 日志配置 ====================
-logger:
-  level: info                   # 日志级别：info（过滤掉 debug，减少日志量）
-  
-  # 控制台输出配置
-  console:
-    enabled: true               # 保留控制台输出（方便测试人员查看）
-    color: true                 # 保留彩色输出
-    format: text                # 文本格式（易读）
-  
-  # 文件输出配置
-  file:
-    enabled: true               # 启用文件输出（重要：测试日志需要保留分析）
-    path: logs/test.log         # 日志文件路径
-    maxSize: 100                # 单个文件最大大小（MB）
-    maxBackups: 14              # 保留 14 个备份（测试环境保留时间更长）
-    maxAge: 14                  # 保留 14 天（方便追溯测试问题）
-    compress: true              # 压缩旧日志（节省磁盘空间）
-    format: json                # JSON 格式（便于日志分析工具解析）
-    errorPath: logs/test-error.log  # 错误日志单独文件
+  # 连接池配置
+  maxIdleConns: 10              # 最大空闲连接数
+  maxOpenConns: 100             # 最大打开连接数
+  connMaxLifetime: 3600         # 连接最大存活时间（秒）
 
 # ==================== Redis 配置 ====================
 redis:
-  host: test-redis.youlai.tech  # 测试环境 Redis 地址（独立实例）
+  host: www.youlai.tech               # Redis 主机（开发用本地）
   port: 6379                    # Redis 端口
-  password: "test-password"     # Redis 密码（测试环境也需要密码）
-  database: 0                   # Redis 数据库编号
-  
-  # 连接池配置（比开发环境更大）
+  password: 123456                 # Redis 密码（本地开发通常无密码）
+  database: 4                   # Redis 数据库编号（0-15）
+
+  # 连接池配置
   pool:
-    maxIdle: 20                 # 最大空闲连接数
-    maxActive: 200              # 最大活动连接数（支持并发测试）
-    minIdle: 10                 # 最小空闲连接数（保持一定预热）
-  
+    maxIdle: 10                 # 最大空闲连接数
+    maxActive: 100              # 最大活动连接数
+    minIdle: 5                  # 最小空闲连接数
+
   # 超时配置（秒）
   timeout:
     dial: 5                     # 建立连接超时
@@ -62,28 +38,52 @@ redis:
     write: 3                    # 写入超时
     pool: 5                     # 连接池获取连接超时
 
+
+# ==================== 日志配置 ====================
+logger:
+  level: debug                  # 日志级别：debug/info/warn/error（开发用 debug）
+
+  # 控制台输出配置
+  console:
+    enabled: true               # 是否启用控制台输出
+    color: true                 # 是否启用彩色输出（开发建议启用）
+    format: text                # 输出格式：text（易读）/ json（机器解析）
+
+  # 文件输出配置
+  file:
+    enabled: true               # 是否启用文件输出
+    path: logs/dev.log          # 日志文件路径
+    maxSize: 100                # 单个文件最大大小（MB）
+    maxBackups: 7               # 保留的旧日志文件个数
+    maxAge: 7                   # 保留的最大天数
+    compress: false             # 是否压缩旧日志（开发环境不压缩，便于查看）
+    format: json                # 文件格式（json 便于后续分析）
+    errorPath: logs/dev-error.log  # 错误日志单独文件
+
+
+
 # ==================== 安全配置 ====================
 security:
-  sessionType: jwt              # 会话类型：jwt（测试环境用无状态）
-  
-  # JWT 配置
-  jwt:
-    secretKey: "youlai-gin-test-secret-key-32-chars"  # JWT 密钥（独立于开发环境）
-    accessTokenTTL: 3600        # 访问令牌有效期（1小时，比开发环境短）
-    refreshTokenTTL: 1296000    # 刷新令牌有效期（15天，比开发环境短）
-    enableSecurityVersion: true # 启用安全版本号
-  
-  # Redis Token 配置
-  redisToken:
-    accessTokenTTL: 3600        # 访问令牌有效期（1小时）
-    refreshTokenTTL: 1296000    # 刷新令牌有效期（15天）
-    allowMultiLogin: false      # 禁止多设备登录（测试单点登录逻辑）
+  sessionType: jwt              # 会话类型：jwt（无状态）/ redis-token（有状态）
 
-# ==================== 测试环境注意事项 ====================
-# 1. 数据隔离：测试数据库完全独立，避免污染开发/生产数据
-# 2. 日志保留：测试日志保留 14 天，便于追溯问题
-# 3. 安全加强：Token 有效期更短，模拟生产环境安全策略
-# 4. 单点登录：禁止多设备登录，测试会话互斥逻辑
-# 5. 环境变量：敏感信息建议通过 CI/CD 注入
-#    export APP_DATABASE_PASSWORD="${TEST_DB_PASSWORD}"
-#    export APP_REDIS_PASSWORD="${TEST_REDIS_PASSWORD}"
+  # JWT 配置（无状态会话）
+  jwt:
+    secretKey: "youlai-gin-dev-secret-key-change-in-production"  # JWT 签名密钥（⚠️ 生产环境必须修改）
+    accessTokenTTL: 7200        # 访问令牌有效期（秒，2小时）
+    refreshTokenTTL: 2592000    # 刷新令牌有效期（秒，30天）
+    enableSecurityVersion: true # 是否启用安全版本号（密码修改后使旧 Token 失效）
+
+  # Redis Token 配置（有状态会话）
+  redisToken:
+    accessTokenTTL: 7200        # 访问令牌有效期（秒）
+    refreshTokenTTL: 2592000    # 刷新令牌有效期（秒）
+    allowMultiLogin: true       # 是否允许多设备同时登录（开发环境允许）
+
+# ==================== 环境变量覆盖示例 ====================
+# 任何配置项都可以通过环境变量覆盖，格式：APP_<模块>_<字段>
+#
+# 示例：
+#   export APP_DATABASE_PASSWORD="new-password"      # 覆盖数据库密码
+#   export APP_LOGGER_LEVEL="info"                   # 覆盖日志级别
+#   export APP_REDIS_HOST="remote-redis.com"         # 覆盖 Redis 地址
+#   export APP_SECURITY_JWT_SECRETKEY="new-secret"   # 覆盖 JWT 密钥

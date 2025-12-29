@@ -2,11 +2,13 @@ package handler
 
 import (
 	"strconv"
-	"github.com/gin-gonic/gin"
 	"youlai-gin/internal/system/dept/model"
 	"youlai-gin/internal/system/dept/service"
 	"youlai-gin/pkg/response"
+	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/validator"
+
+	"github.com/gin-gonic/gin"
 )
 
 func RegisterDeptRoutes(r *gin.RouterGroup) {
@@ -118,7 +120,7 @@ func UpdateDept(c *gin.Context) {
 		return
 	}
 
-	form.ID = id
+	form.ID = types.BigInt(id)
 	if err := service.SaveDept(&form); err != nil {
 		c.Error(err)
 		return

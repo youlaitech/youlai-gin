@@ -2,9 +2,10 @@ package repository
 
 import (
 	"gorm.io/gorm"
-	
-	"youlai-gin/internal/database"
+
+	"youlai-gin/pkg/database"
 	"youlai-gin/internal/system/role/model"
+	"youlai-gin/pkg/types"
 )
 
 // GetRolePage 角色分页查询
@@ -83,8 +84,8 @@ func UpdateRoleMenus(roleId int64, menuIds []int64) error {
 			roleMenus := make([]model.RoleMenu, len(menuIds))
 			for i, menuId := range menuIds {
 				roleMenus[i] = model.RoleMenu{
-					RoleID: roleId,
-					MenuID: menuId,
+					RoleID: types.BigInt(roleId),
+					MenuID: types.BigInt(menuId),
 				}
 			}
 			if err := tx.Create(&roleMenus).Error; err != nil {
@@ -117,4 +118,3 @@ func CheckRoleCodeExists(code string, excludeId int64) (bool, error) {
 	err := db.Count(&count).Error
 	return count > 0, err
 }
-

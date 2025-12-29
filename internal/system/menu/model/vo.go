@@ -1,24 +1,26 @@
 package model
 
+import "youlai-gin/pkg/types"
+
 // MenuVO 菜单视图对象
 type MenuVO struct {
-	ID         int64      `json:"id"`
-	ParentID   int64      `json:"parentId"`
-	Name       string     `json:"name"`
-	Type       string     `json:"type"`
-	RouteName  string     `json:"routeName"`
-	RoutePath  string     `json:"routePath"`
-	Component  string     `json:"component"`
-	Perm       string     `json:"perm"`
-	AlwaysShow int        `json:"alwaysShow"`
-	KeepAlive  int        `json:"keepAlive"`
-	Visible    int        `json:"visible"`
-	Sort       int        `json:"sort"`
-	Icon       string     `json:"icon"`
-	Redirect   string     `json:"redirect"`
-	CreateTime string     `json:"createTime"`
-	UpdateTime string     `json:"updateTime"`
-	Children   []*MenuVO  `json:"children,omitempty"`
+	ID         types.BigInt `json:"id"`
+	ParentID   types.BigInt `json:"parentId"`
+	Name       string       `json:"name"`
+	Type       string       `json:"type"`
+	RouteName  string       `json:"routeName"`
+	RoutePath  string       `json:"routePath"`
+	Component  string       `json:"component"`
+	Perm       string       `json:"perm"`
+	AlwaysShow int          `json:"alwaysShow"`
+	KeepAlive  int          `json:"keepAlive"`
+	Visible    int          `json:"visible"`
+	Sort       int          `json:"sort"`
+	Icon       string       `json:"icon"`
+	Redirect   string       `json:"redirect"`
+	CreateTime string       `json:"createTime"`
+	UpdateTime string       `json:"updateTime"`
+	Children   []*MenuVO    `json:"children,omitempty"`
 }
 
 // RouteVO 路由视图对象（前端路由配置）

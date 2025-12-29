@@ -2,11 +2,13 @@ package handler
 
 import (
 	"strconv"
-	"github.com/gin-gonic/gin"
 	"youlai-gin/internal/system/dict/model"
 	"youlai-gin/internal/system/dict/service"
 	"youlai-gin/pkg/response"
+	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/validator"
+
+	"github.com/gin-gonic/gin"
 )
 
 func RegisterDictRoutes(r *gin.RouterGroup) {
@@ -15,14 +17,14 @@ func RegisterDictRoutes(r *gin.RouterGroup) {
 		// 字典分页查询（固定路径，优先级最高）
 		dicts.GET("/page", GetDictPage)
 		dicts.POST("", SaveDict)
-		
+
 		// RESTful风格的字典项路由（使用统一的参数名 :id 来避免冲突）
 		dicts.GET("/:id/items", GetDictItemsByCode)
 		dicts.POST("/:id/items", SaveDictItemByCode)
 		dicts.GET("/:id/items/:itemId/form", GetDictItemFormByCode)
 		dicts.PUT("/:id/items/:itemId", UpdateDictItemByCode)
 		dicts.DELETE("/:id/items/:itemIds", DeleteDictItemsByCode)
-		
+
 		// 字典CRUD操作
 		dicts.GET("/:id/form", GetDictForm)
 		dicts.PUT("/:id", UpdateDict)
@@ -122,7 +124,7 @@ func UpdateDict(c *gin.Context) {
 		return
 	}
 
-	form.ID = id
+	form.ID = types.BigInt(id)
 	if err := service.SaveDict(&form); err != nil {
 		c.Error(err)
 		return
@@ -235,7 +237,7 @@ func UpdateDictItem(c *gin.Context) {
 		return
 	}
 
-	form.ID = id
+	form.ID = types.BigInt(id)
 	if err := service.SaveDictItem(&form); err != nil {
 		c.Error(err)
 		return
@@ -274,7 +276,7 @@ func DeleteDictItem(c *gin.Context) {
 // @Router /api/v1/dicts/{id}/items [get]
 func GetDictItemsByCode(c *gin.Context) {
 	dictCode := c.Param("id") // 从 :id 参数获取字典编码
-	
+
 	items, err := service.GetDictItems(dictCode)
 	if err != nil {
 		c.Error(err)
@@ -292,13 +294,13 @@ func GetDictItemsByCode(c *gin.Context) {
 // @Router /api/v1/dicts/{id}/items [post]
 func SaveDictItemByCode(c *gin.Context) {
 	dictCode := c.Param("id")
-	
+
 	var form model.DictItemForm
 	if err := validator.BindJSON(c, &form); err != nil {
 		c.Error(err)
 		return
 	}
-	
+
 	form.DictCode = dictCode
 
 	if err := service.SaveDictItem(&form); err != nil {
@@ -353,8 +355,8 @@ func UpdateDictItemByCode(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-	
-	form.ID = itemId
+
+	form.ID = types.BigInt(itemId)
 	form.DictCode = dictCode
 
 	if err := service.SaveDictItem(&form); err != nil {
@@ -373,7 +375,7 @@ func UpdateDictItemByCode(c *gin.Context) {
 // @Router /api/v1/dicts/{id}/items/{itemIds} [delete]
 func DeleteDictItemsByCode(c *gin.Context) {
 	itemIdsStr := c.Param("itemIds")
-	
+
 	// 解析ID列表（支持单个或多个，用逗号分隔）
 	id, err := strconv.ParseInt(itemIdsStr, 10, 64)
 	if err != nil {

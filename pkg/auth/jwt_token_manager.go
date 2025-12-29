@@ -9,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	redisClient "youlai-gin/pkg/redis"
+	"youlai-gin/pkg/types"
 )
 
 // JwtConfig JWT 配置
@@ -26,13 +27,13 @@ type JwtTokenManager struct {
 
 // CustomClaims 自定义 Claims
 type CustomClaims struct {
-	UserID          int64    `json:"userId"`
-	Username        string   `json:"username"`
-	DeptID          int64    `json:"deptId"`
-	DataScope       int      `json:"dataScope"`
-	Roles           []string `json:"roles"`
-	IsRefreshToken  bool     `json:"isRefreshToken"`  // 是否为刷新令牌
-	SecurityVersion int      `json:"securityVersion"` // 安全版本号
+	UserID          int64       `json:"userId"`
+	Username        string      `json:"username"`
+	DeptID          types.BigInt `json:"deptId"`
+	DataScope       int         `json:"dataScope"`
+	Roles           []string    `json:"roles"`
+	IsRefreshToken  bool        `json:"isRefreshToken"`  // 是否为刷新令牌
+	SecurityVersion int         `json:"securityVersion"` // 安全版本号
 	jwt.RegisteredClaims
 }
 

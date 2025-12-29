@@ -1,10 +1,11 @@
 package repository
 
 import (
-	"youlai-gin/internal/database"
+	"youlai-gin/pkg/database"
 	roleRepo "youlai-gin/internal/system/role/repository"
 	"youlai-gin/internal/system/user/model"
 	pkgDatabase "youlai-gin/pkg/database"
+	"youlai-gin/pkg/types"
 )
 
 // GetRolePermsByCodes 从数据库查询角色权限（降级用）
@@ -159,8 +160,8 @@ func SaveUserRoles(userId int64, roleIds []int64) error {
 		userRoles := make([]model.UserRole, len(roleIds))
 		for i, roleId := range roleIds {
 			userRoles[i] = model.UserRole{
-				UserID: userId,
-				RoleID: roleId,
+				UserID: types.BigInt(userId),
+				RoleID: types.BigInt(roleId),
 			}
 		}
 		if err := tx.Create(&userRoles).Error; err != nil {
