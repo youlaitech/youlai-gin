@@ -218,7 +218,7 @@ INSERT INTO `sys_menu` VALUES (149, 89, '0,89', 'VxeTable', 'M', 'VxeTable', 'vx
 INSERT INTO `sys_menu` VALUES (150, 36, '0,36', '自适应表格操作列', 'M', 'AutoOperationColumn', 'operation-column', 'demo/auto-operation-column', NULL, NULL, 1, 1, 1, '', '', now(), now(), NULL);
 INSERT INTO `sys_menu` VALUES (151, 89, '0,89', 'CURD单文件', 'M', 'CurdSingle', 'curd-single', 'demo/curd-single', NULL, NULL, 1, 1, 7, 'el-icon-Reading', '', now(),now(), NULL);
 INSERT INTO `sys_menu` VALUES (152, 0, '0', 'AI助手', 'C', NULL, '/platform', 'Layout', NULL, NULL, NULL, 1, 13, 'platform', '', now(), now(), NULL);
-INSERT INTO `sys_menu` VALUES (153, 152, '0,152', 'AI命令记录', 'M', 'AiCommandRecord', 'command-record', 'ai/command-record/index', NULL, NULL, 1, 1, 1, 'document', NULL, now(), now(), NULL);
+INSERT INTO `sys_menu` VALUES (153, 152, '0,152', 'AI命令记录', 'M', 'ai', 'ai', 'ai/index', NULL, NULL, 1, 1, 1, 'document', NULL, now(), now(), NULL);
 
 
 -- ----------------------------
