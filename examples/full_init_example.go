@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"youlai-gin/internal/database"
+	"youlai-gin/pkg/database"
 	"youlai-gin/pkg/auth"
 	"youlai-gin/pkg/config"
 	"youlai-gin/pkg/logger"

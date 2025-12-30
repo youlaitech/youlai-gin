@@ -12,7 +12,7 @@ import (
 
 	"github.com/viant/velty"
 
-	"youlai-gin/internal/database"
+	"youlai-gin/pkg/database"
 	"youlai-gin/internal/platform/codegen/model"
 	"youlai-gin/pkg/common"
 	"youlai-gin/pkg/errs"

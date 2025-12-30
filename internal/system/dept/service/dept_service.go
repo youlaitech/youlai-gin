@@ -3,12 +3,14 @@ package service
 import (
 	"errors"
 	"fmt"
+
 	"gorm.io/gorm"
-	
+
 	"youlai-gin/internal/system/dept/model"
 	"youlai-gin/internal/system/dept/repository"
 	"youlai-gin/pkg/common"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/utils"
 )
 
@@ -36,8 +38,8 @@ func GetDeptList(query *model.DeptQuery) ([]*model.DeptVO, error) {
 
 	tree := utils.BuildTreeSimple(
 		deptVOs,
-		func(d *model.DeptVO) int64 { return d.ID },
-		func(d *model.DeptVO) int64 { return d.ParentID },
+		func(d *model.DeptVO) int64 { return int64(d.ID) },
+		func(d *model.DeptVO) int64 { return int64(d.ParentID) },
 		func(d **model.DeptVO, children []*model.DeptVO) {
 			(*d).Children = children
 		},
@@ -47,16 +49,16 @@ func GetDeptList(query *model.DeptQuery) ([]*model.DeptVO, error) {
 }
 
 // GetDeptOptions 部门下拉选项
-func GetDeptOptions() ([]common.Option[int64], error) {
+func GetDeptOptions() ([]common.Option[types.BigInt], error) {
 	depts, err := repository.GetDeptOptions()
 	if err != nil {
 		return nil, errs.SystemError("查询部门选项失败")
 	}
 
-	options := make([]common.Option[int64], len(depts))
+	options := make([]common.Option[types.BigInt], len(depts))
 	for i, dept := range depts {
-		options[i] = common.Option[int64]{
-			Value: dept.ID,
+		options[i] = common.Option[types.BigInt]{
+			Value: types.BigInt(dept.ID),
 			Label: dept.Name,
 		}
 	}
@@ -66,7 +68,7 @@ func GetDeptOptions() ([]common.Option[int64], error) {
 
 // SaveDept 保存部门（新增或更新）
 func SaveDept(form *model.DeptForm) error {
-	exists, err := repository.CheckDeptNameExists(form.Name, form.ParentID, form.ID)
+	exists, err := repository.CheckDeptNameExists(form.Name, int64(form.ParentID), int64(form.ID))
 	if err != nil {
 		return errs.SystemError("检查部门名称失败")
 	}
@@ -74,7 +76,7 @@ func SaveDept(form *model.DeptForm) error {
 		return errs.BadRequest("同级部门名称已存在")
 	}
 
-	exists, err = repository.CheckDeptCodeExists(form.Code, form.ID)
+	exists, err = repository.CheckDeptCodeExists(form.Code, int64(form.ID))
 	if err != nil {
 		return errs.SystemError("检查部门编号失败")
 	}
@@ -94,7 +96,7 @@ func SaveDept(form *model.DeptForm) error {
 	if form.ParentID == 0 {
 		dept.TreePath = "0"
 	} else {
-		parent, err := repository.GetDeptByID(form.ParentID)
+		parent, err := repository.GetDeptByID(int64(form.ParentID))
 		if err != nil {
 			return errs.SystemError("查询父部门失败")
 		}

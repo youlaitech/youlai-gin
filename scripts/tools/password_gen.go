@@ -8,6 +8,7 @@ import (
 )
 
 // 用于生成 bcrypt 密码的工具
+// 使用方法: go run scripts/tools/password_gen.go <密码>
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("用法: go run password_gen.go <密码>")

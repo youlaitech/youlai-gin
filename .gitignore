@@ -1,5 +1,6 @@
 # Go build artifacts
 bin/
+build/
 *.exe
 *.exe~
 *.dll
@@ -7,6 +8,10 @@ bin/
 *.dylib
 *.test
 *.out
+
+# 编译产物（根目录）
+/youlai-gin
+/youlai-gin.exe
 
 # Go modules / dependencies cache
 vendor/
@@ -25,6 +30,10 @@ logs/
 *.tmp
 .tmp/
 *.bak
+
+# 日志文件（确保不提交）
+/logs/*.log
+/logs/*.txt
 
 # OS-specific
 Thumbs.db

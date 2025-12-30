@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"youlai-gin/internal/database"
+	"youlai-gin/pkg/database"
 	"youlai-gin/internal/system/dept/model"
 )
 

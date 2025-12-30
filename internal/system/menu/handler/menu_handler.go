@@ -2,12 +2,14 @@ package handler
 
 import (
 	"strconv"
-	"github.com/gin-gonic/gin"
 	"youlai-gin/internal/system/menu/model"
 	"youlai-gin/internal/system/menu/service"
 	pkgContext "youlai-gin/pkg/context"
 	"youlai-gin/pkg/response"
+	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/validator"
+
+	"github.com/gin-gonic/gin"
 )
 
 func RegisterMenuRoutes(r *gin.RouterGroup) {
@@ -21,7 +23,7 @@ func RegisterMenuRoutes(r *gin.RouterGroup) {
 		menus.PUT("/:id", UpdateMenu)
 		menus.DELETE("/:id", DeleteMenu)
 	}
-	
+
 	// 用户权限接口
 	r.GET("/user/perms", GetCurrentUserPermissions)
 }
@@ -140,7 +142,7 @@ func UpdateMenu(c *gin.Context) {
 		return
 	}
 
-	form.ID = id
+	form.ID = types.BigInt(id)
 	if err := service.SaveMenu(&form); err != nil {
 		c.Error(err)
 		return

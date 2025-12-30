@@ -37,18 +37,3 @@ type PageResult struct {
 	List  interface{} `json:"list"`
 	Total int64       `json:"total"`
 }
-
-// Option 下拉选项（泛型）
-type Option[T any] struct {
-	Value T      `json:"value"`
-	Label string `json:"label"`
-}
-
-// BaseEntity 基础实体（所有表的公共字段）
-type BaseEntity struct {
-	CreateBy   *int64 `gorm:"column:create_by" json:"createBy,omitempty"`
-	CreateTime string `gorm:"column:create_time;autoCreateTime" json:"createTime,omitempty"`
-	UpdateBy   *int64 `gorm:"column:update_by" json:"updateBy,omitempty"`
-	UpdateTime string `gorm:"column:update_time;autoUpdateTime" json:"updateTime,omitempty"`
-	IsDeleted  int    `gorm:"column:is_deleted;default:0" json:"-"`
-}

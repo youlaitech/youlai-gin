@@ -2,12 +2,14 @@ package service
 
 import (
 	"errors"
+
 	"gorm.io/gorm"
-	
+
 	"youlai-gin/internal/system/role/model"
 	"youlai-gin/internal/system/role/repository"
 	"youlai-gin/pkg/common"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/types"
 )
 
 // GetRolePage 角色分页列表
@@ -20,7 +22,7 @@ func GetRolePage(query *model.RolePageQuery) (*common.PageResult, error) {
 	voList := make([]model.RolePageVO, len(roles))
 	for i, role := range roles {
 		voList[i] = model.RolePageVO{
-			ID:         role.ID,
+			ID:         types.BigInt(role.ID),
 			Name:       role.Name,
 			Code:       role.Code,
 			Sort:       role.Sort,
@@ -38,16 +40,16 @@ func GetRolePage(query *model.RolePageQuery) (*common.PageResult, error) {
 }
 
 // GetRoleOptions 角色下拉选项
-func GetRoleOptions() ([]common.Option[int64], error) {
+func GetRoleOptions() ([]common.Option[types.BigInt], error) {
 	roles, err := repository.GetRoleOptions()
 	if err != nil {
 		return nil, errs.SystemError("查询角色选项失败")
 	}
 
-	options := make([]common.Option[int64], len(roles))
+	options := make([]common.Option[types.BigInt], len(roles))
 	for i, role := range roles {
-		options[i] = common.Option[int64]{
-			Value: role.ID,
+		options[i] = common.Option[types.BigInt]{
+			Value: types.BigInt(role.ID),
 			Label: role.Name,
 		}
 	}
@@ -57,7 +59,7 @@ func GetRoleOptions() ([]common.Option[int64], error) {
 
 // SaveRole 保存角色（新增或更新）
 func SaveRole(form *model.RoleForm) error {
-	exists, err := repository.CheckRoleNameExists(form.Name, form.ID)
+	exists, err := repository.CheckRoleNameExists(form.Name, int64(form.ID))
 	if err != nil {
 		return errs.SystemError("检查角色名称失败")
 	}
@@ -65,7 +67,7 @@ func SaveRole(form *model.RoleForm) error {
 		return errs.BadRequest("角色名称已存在")
 	}
 
-	exists, err = repository.CheckRoleCodeExists(form.Code, form.ID)
+	exists, err = repository.CheckRoleCodeExists(form.Code, int64(form.ID))
 	if err != nil {
 		return errs.SystemError("检查角色编码失败")
 	}
@@ -94,7 +96,11 @@ func SaveRole(form *model.RoleForm) error {
 	}
 
 	if len(form.MenuIds) > 0 {
-		if err := repository.UpdateRoleMenus(form.ID, form.MenuIds); err != nil {
+		menuIds := make([]int64, len(form.MenuIds))
+		for i, id := range form.MenuIds {
+			menuIds[i] = int64(id)
+		}
+		if err := repository.UpdateRoleMenus(int64(form.ID), menuIds); err != nil {
 			return errs.SystemError("更新角色菜单失败")
 		}
 	}
@@ -117,6 +123,11 @@ func GetRoleForm(id int64) (*model.RoleForm, error) {
 		return nil, errs.SystemError("查询角色菜单失败")
 	}
 
+	menuIdsBigInt := make([]types.BigInt, len(menuIds))
+	for i, id := range menuIds {
+		menuIdsBigInt[i] = types.BigInt(id)
+	}
+
 	return &model.RoleForm{
 		ID:        role.ID,
 		Name:      role.Name,
@@ -124,7 +135,7 @@ func GetRoleForm(id int64) (*model.RoleForm, error) {
 		Sort:      role.Sort,
 		Status:    role.Status,
 		DataScope: role.DataScope,
-		MenuIds:   menuIds,
+		MenuIds:   menuIdsBigInt,
 	}, nil
 }
 

@@ -18,6 +18,8 @@ import (
 	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/excel"
 	"youlai-gin/pkg/redis"
+	"youlai-gin/pkg/types"
+	"youlai-gin/pkg/utils"
 )
 
 // GetUserPage 用户分页列表
@@ -35,8 +37,8 @@ func GetUserPage(query *model.UserPageQuery) (*common.PageResult, error) {
 
 // SaveUser 保存用户（新增或更新）
 func SaveUser(form *model.UserForm) error {
-	// 检查用户名是否存在
-	exists, err := repository.CheckUsernameExists(form.Username, form.ID)
+	// 检查用户名是否已存在
+	exists, err := repository.CheckUsernameExists(form.Username, int64(form.ID))
 	if err != nil {
 		return errs.SystemError("检查用户名失败")
 	}
@@ -44,22 +46,37 @@ func SaveUser(form *model.UserForm) error {
 		return errs.BadRequest("用户名已存在")
 	}
 
+	// 转换为实体
 	user := &model.User{
-		ID:       form.ID,
 		Username: form.Username,
 		Nickname: form.Nickname,
 		Mobile:   form.Mobile,
 		Gender:   form.Gender,
-		Avatar:   form.Avatar,
 		Email:    form.Email,
-		Status:   form.Status,
 		DeptID:   form.DeptID,
-		Openid:   form.Openid,
+		Status:   form.Status,
+		Avatar:   form.Avatar,
 	}
 
-	// 新增用户需要设置默认密码
-	if form.ID == 0 {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
+	if form.ID > 0 {
+		// 更新用户
+		user.ID = types.BigInt(int64(form.ID))
+		if err := repository.UpdateUser(user); err != nil {
+			return errs.SystemError("更新用户失败")
+		}
+
+		// 更新用户角色
+		roleIDs := make([]int64, len(form.RoleIDs))
+		for i, roleID := range form.RoleIDs {
+			roleIDs[i] = int64(roleID)
+		}
+		if err := repository.SaveUserRoles(int64(form.ID), roleIDs); err != nil {
+			return errs.SystemError("更新用户角色失败")
+		}
+	} else {
+		// 创建用户 - 设置默认密码
+		defaultPassword := "123456"
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
 		if err != nil {
 			return errs.SystemError("密码加密失败")
 		}
@@ -68,23 +85,31 @@ func SaveUser(form *model.UserForm) error {
 		if err := repository.CreateUser(user); err != nil {
 			return errs.SystemError("创建用户失败")
 		}
-	} else {
-		if err := repository.UpdateUser(user); err != nil {
-			return errs.SystemError("更新用户失败")
-		}
-	}
 
-	// 保存用户角色关联
-	if err := repository.SaveUserRoles(user.ID, form.RoleIDs); err != nil {
-		return errs.SystemError("保存用户角色失败")
+		// 分配角色
+		if len(form.RoleIDs) > 0 {
+			roleIDs := make([]int64, len(form.RoleIDs))
+			for i, roleID := range form.RoleIDs {
+				roleIDs[i] = int64(roleID)
+			}
+			if err := repository.SaveUserRoles(int64(user.ID), roleIDs); err != nil {
+				return errs.SystemError("分配用户角色失败")
+			}
+		}
 	}
 
 	return nil
 }
 
 // GetUserForm 获取用户表单数据
-func GetUserForm(id int64) (*model.UserForm, error) {
-	user, err := repository.GetUserByID(id)
+func GetUserForm(userId int64) (*model.UserForm, error) {
+	if userId == 0 {
+		// 新增用户，返回空表单
+		return &model.UserForm{}, nil
+	}
+
+	// 查询用户信息
+	user, err := repository.GetUserByID(userId)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errs.NotFound("用户不存在")
@@ -92,47 +117,55 @@ func GetUserForm(id int64) (*model.UserForm, error) {
 		return nil, errs.SystemError("查询用户失败")
 	}
 
-	// 获取用户角色ID列表
-	roleIds, err := repository.GetUserRoleIDs(id)
+	// 查询用户角色ID列表
+	roleIDs, err := repository.GetUserRoleIDs(userId)
 	if err != nil {
 		return nil, errs.SystemError("查询用户角色失败")
 	}
 
+	// 转换角色ID类型
+	bigIntRoleIDs := make([]types.BigInt, len(roleIDs))
+	for i, roleID := range roleIDs {
+		bigIntRoleIDs[i] = types.BigInt(roleID)
+	}
+
 	return &model.UserForm{
-		ID:       user.ID,
+		ID:       types.BigInt(user.ID),
 		Username: user.Username,
 		Nickname: user.Nickname,
 		Mobile:   user.Mobile,
 		Gender:   user.Gender,
-		Avatar:   user.Avatar,
 		Email:    user.Email,
-		Status:   user.Status,
+		Avatar:   user.Avatar,
 		DeptID:   user.DeptID,
-		RoleIDs:  roleIds,
-		Openid:   user.Openid,
+		Status:   user.Status,
+		RoleIDs:  bigIntRoleIDs,
 	}, nil
 }
 
-// DeleteUsers 批量删除用户
-func DeleteUsers(idsStr string) error {
-	if idsStr == "" {
-		return errs.BadRequest("用户ID不能为空")
+// DeleteUsers 删除用户
+func DeleteUsers(ids string) error {
+	if ids == "" {
+		return errs.BadRequest("请选择要删除的用户")
 	}
 
-	idStrs := strings.Split(idsStr, ",")
-	ids := make([]int64, 0, len(idStrs))
-	for _, idStr := range idStrs {
-		var id int64
-		if _, err := fmt.Sscanf(idStr, "%d", &id); err == nil {
-			ids = append(ids, id)
+	// 解析ID列表
+	idList := strings.Split(ids, ",")
+	userIDs := make([]int64, 0, len(idList))
+	for _, idStr := range idList {
+		id, err := strconv.ParseInt(strings.TrimSpace(idStr), 10, 64)
+		if err != nil {
+			continue
 		}
+		userIDs = append(userIDs, id)
 	}
 
-	if len(ids) == 0 {
+	if len(userIDs) == 0 {
 		return errs.BadRequest("无效的用户ID")
 	}
 
-	if err := repository.DeleteUsersByIDs(ids); err != nil {
+	// 删除用户
+	if err := repository.DeleteUsersByIDs(userIDs); err != nil {
 		return errs.SystemError("删除用户失败")
 	}
 
@@ -147,7 +180,7 @@ func UpdateUserStatus(userId int64, status int) error {
 	return nil
 }
 
-// GetCurrentUserInfo 获取当前登录用户信息（需要传入token中的userDetails）
+// GetCurrentUserInfoWithRoles 获取当前登录用户信息（需要传入token中的userDetails）
 func GetCurrentUserInfoWithRoles(userId int64, roles []string) (*model.CurrentUserDTO, error) {
 	user, err := repository.GetUserByID(userId)
 	if err != nil {
@@ -167,7 +200,7 @@ func GetCurrentUserInfoWithRoles(userId int64, roles []string) (*model.CurrentUs
 	}
 
 	return &model.CurrentUserDTO{
-		UserID:   user.ID,
+		UserID:   types.BigInt(user.ID),
 		Username: user.Username,
 		Nickname: user.Nickname,
 		Avatar:   user.Avatar,
@@ -202,7 +235,7 @@ func GetCurrentUserInfo(userId int64) (*model.CurrentUserDTO, error) {
 	}
 
 	return &model.CurrentUserDTO{
-		UserID:   user.ID,
+		UserID:   types.BigInt(user.ID),
 		Username: user.Username,
 		Nickname: user.Nickname,
 		Avatar:   user.Avatar,
@@ -360,33 +393,101 @@ func ChangeUserPassword(userId int64, form *model.PasswordUpdateForm) error {
 
 // SendMobileCode 发送短信验证码
 func SendMobileCode(mobile string) error {
-	// TODO: 实现短信验证码发送逻辑
+	ctx := context.Background()
+
+	// 1. 检查发送间隔
+	intervalKey := utils.GetMobileIntervalKey(mobile)
+	if err := utils.CheckSendInterval(ctx, intervalKey); err != nil {
+		return err
+	}
+
+	// 2. 生成验证码
+	code := utils.GenerateVerificationCode()
+
+	// 3. 存储验证码到 Redis
+	codeKey := utils.GetMobileCodeKey(mobile)
+	if err := utils.StoreVerificationCode(ctx, codeKey, code); err != nil {
+		return err
+	}
+
+	// 4. 发送短信（实际生产环境对接短信服务商）
+	// TODO: 对接阿里云、腾讯云等短信服务
+	// 示例：smsService.SendSMS(mobile, code)
+
+	// 开发环境：打印验证码到日志
+	fmt.Printf("📱 短信验证码已发送到 %s: %s (有效期 %d 分钟)\n", mobile, code, utils.CodeExpiration)
+
 	return nil
 }
 
 // BindOrChangeMobile 绑定或更换手机号
 func BindOrChangeMobile(userId int64, form *model.MobileUpdateForm) error {
-	// TODO: 验证短信验证码
+	ctx := context.Background()
 
+	// 1. 验证短信验证码
+	codeKey := utils.GetMobileCodeKey(form.Mobile)
+	if err := utils.VerifyCode(ctx, codeKey, form.Code); err != nil {
+		return err
+	}
+
+	// 2. 检查手机号是否已被其他用户使用
+	existingUser, err := repository.GetUserByMobile(form.Mobile)
+	if err == nil && existingUser != nil && existingUser.ID != types.BigInt(userId) {
+		return errs.BadRequest("该手机号已被其他用户使用")
+	}
+
+	// 3. 更新手机号
 	if err := repository.UpdateUserMobile(userId, form.Mobile); err != nil {
 		return errs.SystemError("更新手机号失败")
 	}
+
 	return nil
 }
 
 // SendEmailCode 发送邮箱验证码
 func SendEmailCode(email string) error {
-	// TODO: 实现邮箱验证码发送逻辑
+	ctx := context.Background()
+
+	// 1. 检查发送间隔
+	intervalKey := utils.GetEmailIntervalKey(email)
+	if err := utils.CheckSendInterval(ctx, intervalKey); err != nil {
+		return err
+	}
+
+	// 2. 生成验证码
+	code := utils.GenerateVerificationCode()
+
+	// 3. 存储验证码到 Redis
+	codeKey := utils.GetEmailCodeKey(email)
+	if err := utils.StoreVerificationCode(ctx, codeKey, code); err != nil {
+		return err
+	}
+
+	// 4. 发送邮件（实际生产环境对接邮件服务）
+	// TODO: 对接 SMTP 服务或第三方邮件服务
+	// 示例：emailService.SendEmail(email, "验证码", fmt.Sprintf("您的验证码是：%s", code))
+
+	// 开发环境：打印验证码到日志
+	fmt.Printf("📧 邮箱验证码已发送到 %s: %s (有效期 %d 分钟)\n", email, code, utils.CodeExpiration)
+
 	return nil
 }
 
 // BindOrChangeEmail 绑定或更换邮箱
 func BindOrChangeEmail(userId int64, form *model.EmailUpdateForm) error {
-	// TODO: 验证邮箱验证码
+	ctx := context.Background()
 
+	// 1. 验证邮箱验证码
+	codeKey := utils.GetEmailCodeKey(form.Email)
+	if err := utils.VerifyCode(ctx, codeKey, form.Code); err != nil {
+		return err
+	}
+
+	// 2. 更新邮箱
 	if err := repository.UpdateUserEmail(userId, form.Email); err != nil {
 		return errs.SystemError("更新邮箱失败")
 	}
+
 	return nil
 }
 
@@ -413,7 +514,7 @@ func ExportUsersToExcel(query *model.UserPageQuery) (*excel.ExcelExporter, error
 	// 查询所有符合条件的用户（不分页）
 	query.PageNum = 1
 	query.PageSize = 10000 // 设置一个较大的值
-	
+
 	users, _, err := repository.GetUserPage(query)
 	if err != nil {
 		return nil, errs.SystemError("查询用户数据失败")
@@ -421,7 +522,7 @@ func ExportUsersToExcel(query *model.UserPageQuery) (*excel.ExcelExporter, error
 
 	// 创建Excel导出器
 	exporter := excel.NewExcelExporter("用户列表")
-	
+
 	// 设置表头
 	headers := []string{
 		"用户ID", "用户名", "昵称", "手机号", "性别", "邮箱", "状态", "部门", "角色", "创建时间",
@@ -434,7 +535,7 @@ func ExportUsersToExcel(query *model.UserPageQuery) (*excel.ExcelExporter, error
 	for _, user := range users {
 		gender := map[int]string{0: "未知", 1: "男", 2: "女"}[user.Gender]
 		status := map[int]string{0: "禁用", 1: "启用"}[user.Status]
-		
+
 		row := []interface{}{
 			user.ID,
 			user.Username,
@@ -458,7 +559,7 @@ func ExportUsersToExcel(query *model.UserPageQuery) (*excel.ExcelExporter, error
 // GenerateUserTemplate 生成用户导入模板
 func GenerateUserTemplate() (*excel.ExcelExporter, error) {
 	exporter := excel.NewExcelExporter("用户导入模板")
-	
+
 	// 设置表头
 	headers := []string{
 		"用户名(*)", "昵称(*)", "手机号", "性别(男/女/未知)", "邮箱", "部门ID", "状态(启用/禁用)", "备注",
@@ -472,7 +573,7 @@ func GenerateUserTemplate() (*excel.ExcelExporter, error) {
 		{"zhangsan", "张三", "13800138000", "男", "zhangsan@example.com", "1", "启用", "示例用户1"},
 		{"lisi", "李四", "13800138001", "女", "lisi@example.com", "2", "启用", "示例用户2"},
 	}
-	
+
 	for _, row := range examples {
 		if err := exporter.AddRow(row); err != nil {
 			return nil, errs.SystemError("添加示例数据失败")
@@ -501,7 +602,7 @@ func ImportUsersFromExcel(file io.Reader) (map[string]interface{}, error) {
 
 	// 跳过表头
 	dataRows := rows[1:]
-	
+
 	successCount := 0
 	failCount := 0
 	var failDetails []string
@@ -520,24 +621,24 @@ func ImportUsersFromExcel(file io.Reader) (map[string]interface{}, error) {
 		if len(row) > 2 {
 			mobile = strings.TrimSpace(row[2])
 		}
-		
+
 		genderStr := "未知"
 		if len(row) > 3 {
 			genderStr = strings.TrimSpace(row[3])
 		}
 		gender := map[string]int{"男": 1, "女": 2, "未知": 0}[genderStr]
-		
+
 		email := ""
 		if len(row) > 4 {
 			email = strings.TrimSpace(row[4])
 		}
-		
+
 		deptID := int64(0)
 		if len(row) > 5 && row[5] != "" {
 			deptIDVal, _ := strconv.ParseInt(strings.TrimSpace(row[5]), 10, 64)
 			deptID = deptIDVal
 		}
-		
+
 		status := 1
 		if len(row) > 6 {
 			statusStr := strings.TrimSpace(row[6])
@@ -568,7 +669,7 @@ func ImportUsersFromExcel(file io.Reader) (map[string]interface{}, error) {
 			Mobile:   mobile,
 			Gender:   gender,
 			Email:    email,
-			DeptID:   deptID,
+			DeptID:   types.BigInt(deptID),
 			Status:   status,
 			Password: "$2a$10$xqb1QjFdvVXMHrdLHKHgG.SQWZpfqnLSQEDdE/eUcLfnXW6rMaLTK", // 默认密码: 123456
 		}

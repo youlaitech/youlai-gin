@@ -47,8 +47,8 @@ func GetMenuList(query *model.MenuQuery) ([]*model.MenuVO, error) {
 
 	tree := utils.BuildTreeSimple(
 		menuVOs,
-		func(m *model.MenuVO) int64 { return m.ID },
-		func(m *model.MenuVO) int64 { return m.ParentID },
+		func(m *model.MenuVO) int64 { return int64(m.ID) },
+		func(m *model.MenuVO) int64 { return int64(m.ParentID) },
 		func(m **model.MenuVO, children []*model.MenuVO) {
 			(*m).Children = children
 		},
@@ -67,7 +67,7 @@ func GetMenuOptions(onlyParent bool) ([]common.Option[int64], error) {
 	options := make([]common.Option[int64], len(menus))
 	for i, menu := range menus {
 		options[i] = common.Option[int64]{
-			Value: menu.ID,
+			Value: int64(menu.ID),
 			Label: menu.Name,
 		}
 	}
@@ -91,7 +91,7 @@ func buildRoutes(menus []model.Menu, parentId int64) []*model.RouteVO {
 	var routes []*model.RouteVO
 
 	for _, menu := range menus {
-		if menu.ParentID == parentId {
+		if int64(menu.ParentID) == parentId {
 			route := &model.RouteVO{
 				Path:      menu.RoutePath,
 				Name:      menu.RouteName,
@@ -107,7 +107,7 @@ func buildRoutes(menus []model.Menu, parentId int64) []*model.RouteVO {
 				},
 			}
 
-			children := buildRoutes(menus, menu.ID)
+			children := buildRoutes(menus, int64(menu.ID))
 			if len(children) > 0 {
 				route.Children = children
 			}
@@ -121,7 +121,7 @@ func buildRoutes(menus []model.Menu, parentId int64) []*model.RouteVO {
 
 // SaveMenu 保存菜单（新增或更新）
 func SaveMenu(form *model.MenuForm) error {
-	exists, err := repository.CheckMenuNameExists(form.Name, form.ParentID, form.ID)
+	exists, err := repository.CheckMenuNameExists(form.Name, int64(form.ParentID), int64(form.ID))
 	if err != nil {
 		return errs.SystemError("检查菜单名称失败")
 	}
@@ -150,7 +150,7 @@ func SaveMenu(form *model.MenuForm) error {
 	if form.ParentID == 0 {
 		menu.TreePath = "0"
 	} else {
-		parent, err := repository.GetMenuByID(form.ParentID)
+		parent, err := repository.GetMenuByID(int64(form.ParentID))
 		if err != nil {
 			return errs.SystemError("查询父菜单失败")
 		}
@@ -160,25 +160,23 @@ func SaveMenu(form *model.MenuForm) error {
 	// 保存菜单
 	var menuID int64
 	isUpdate := form.ID > 0
-	
+
 	if !isUpdate {
 		if err := repository.CreateMenu(menu); err != nil {
 			return errs.SystemError("创建菜单失败")
 		}
-		menuID = menu.ID
+		menuID = int64(menu.ID)
 	} else {
 		if err := repository.UpdateMenu(menu); err != nil {
 			return errs.SystemError("更新菜单失败")
 		}
-		menuID = menu.ID
+		menuID = int64(menu.ID)
 	}
 
-	// 🔄 刷新受影响角色的权限缓存（处女座标准：完美的一致性保障）
-	// 仅当菜单类型为按钮且有权限标识时才刷新
+	// 🔄 刷新受影响角色的权限缓存
 	if menu.Type == "B" && menu.Perm != "" {
 		if err := refreshAffectedRolesCache([]int64{menuID}); err != nil {
 			log.Printf("⚠️  刷新角色权限缓存失败: %v", err)
-			// 不阻断操作，记录日志即可
 		}
 	}
 
@@ -253,23 +251,23 @@ func refreshAffectedRolesCache(menuIds []int64) error {
 	if len(menuIds) == 0 {
 		return nil
 	}
-	
+
 	// 查询受影响的角色
 	roleCodes, err := roleRepo.GetRolesAffectedByMenus(menuIds)
 	if err != nil {
 		return fmt.Errorf("查询受影响的角色失败: %w", err)
 	}
-	
+
 	if len(roleCodes) == 0 {
 		// 没有角色受影响，无需刷新
 		return nil
 	}
-	
+
 	// 批量刷新这些角色的权限缓存
 	if err := roleService.RefreshRolePermsCacheByCodes(roleCodes); err != nil {
 		return fmt.Errorf("批量刷新角色权限缓存失败: %w", err)
 	}
-	
+
 	return nil
 }
 

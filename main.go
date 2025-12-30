@@ -6,14 +6,15 @@ import (
 	"github.com/gin-gonic/gin"
 
 	_ "youlai-gin/docs"
-	"youlai-gin/internal/database"
+	"youlai-gin/pkg/database"
 	"youlai-gin/internal/health"
-	"youlai-gin/internal/middleware"
 	"youlai-gin/internal/router"
 	roleService "youlai-gin/internal/system/role/service"
+	"youlai-gin/pkg/middleware"
 	"youlai-gin/pkg/auth"
 	"youlai-gin/pkg/config"
 	"youlai-gin/pkg/logger"
+	pkgMiddleware "youlai-gin/pkg/middleware"
 	"youlai-gin/pkg/redis"
 	"youlai-gin/pkg/requestid"
 
@@ -59,6 +60,9 @@ func main() {
 	r.Use(logger.Middleware())
 	r.Use(logger.Recovery())
 	r.Use(middleware.ErrorHandler())
+	
+	// 全局限流中间件（每秒 10 个请求，突发 20 个）
+	r.Use(pkgMiddleware.RateLimitByIP())
 
 	// 健康检查路由（无需认证）
 	health.RegisterRoutes(r)

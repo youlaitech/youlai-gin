@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	
-	"youlai-gin/internal/database"
+	"youlai-gin/pkg/database"
 	pkgContext "youlai-gin/pkg/context"
 	"youlai-gin/pkg/logger"
 )
