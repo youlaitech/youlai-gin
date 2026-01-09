@@ -13,7 +13,7 @@ import (
 )
 
 // GetDictPage 字典分页列表
-func GetDictPage(query *model.DictPageQuery) (*common.PageResult, error) {
+func GetDictPage(query *model.DictQuery) (*common.PagedData, error) {
 	dicts, total, err := repository.GetDictPage(query)
 	if err != nil {
 		return nil, errs.SystemError("查询字典列表失败")
@@ -32,10 +32,26 @@ func GetDictPage(query *model.DictPageQuery) (*common.PageResult, error) {
 		}
 	}
 
-	return &common.PageResult{
-		List:  voList,
-		Total: total,
-	}, nil
+	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
+	return &common.PagedData{Data: voList, Page: pageMeta}, nil
+}
+
+// GetDictList 获取字典下拉选项
+func GetDictList() ([]common.Option[string], error) {
+	dicts, err := repository.GetDictList()
+	if err != nil {
+		return nil, errs.SystemError("查询字典列表失败")
+	}
+
+	options := make([]common.Option[string], len(dicts))
+	for i, dict := range dicts {
+		options[i] = common.Option[string]{
+			Value: dict.DictCode,
+			Label: dict.Name,
+		}
+	}
+
+	return options, nil
 }
 
 // SaveDict 保存字典（新增或更新）
@@ -64,6 +80,19 @@ func SaveDict(form *model.DictForm) error {
 		if err := repository.UpdateDict(dict); err != nil {
 			return errs.SystemError("更新字典失败")
 		}
+	}
+
+	return nil
+}
+
+// BatchDeleteDictItems 批量删除字典项
+func BatchDeleteDictItems(ids []int64) error {
+	if len(ids) == 0 {
+		return errs.BadRequest("无效的字典项ID")
+	}
+
+	if err := repository.BatchDeleteDictItems(ids); err != nil {
+		return errs.SystemError("删除字典项失败")
 	}
 
 	return nil
@@ -126,6 +155,7 @@ func GetDictItems(dictCode string) ([]model.DictItemVO, error) {
 			ID:     types.BigInt(item.ID),
 			Value:  item.Value,
 			Label:  item.Label,
+			TagType: item.TagType,
 			Sort:   item.Sort,
 			Status: item.Status,
 			Remark: item.Remark,
@@ -135,6 +165,30 @@ func GetDictItems(dictCode string) ([]model.DictItemVO, error) {
 	return voList, nil
 }
 
+// GetDictItemPage 字典项分页列表
+func GetDictItemPage(query *model.DictItemQuery) (*common.PagedData, error) {
+	items, total, err := repository.GetDictItemPage(query)
+	if err != nil {
+		return nil, errs.SystemError("查询字典项分页失败")
+	}
+
+	voList := make([]model.DictItemVO, len(items))
+	for i, item := range items {
+		voList[i] = model.DictItemVO{
+			ID:     types.BigInt(item.ID),
+			Value:  item.Value,
+			Label:  item.Label,
+			TagType: item.TagType,
+			Sort:   item.Sort,
+			Status: item.Status,
+			Remark: item.Remark,
+		}
+	}
+
+	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
+	return &common.PagedData{Data: voList, Page: pageMeta}, nil
+}
+
 // SaveDictItem 保存字典项（新增或更新）
 func SaveDictItem(form *model.DictItemForm) error {
 	item := &model.DictItem{
@@ -142,6 +196,7 @@ func SaveDictItem(form *model.DictItemForm) error {
 		DictCode: form.DictCode,
 		Value:    form.Value,
 		Label:    form.Label,
+		TagType:  form.TagType,
 		Sort:     form.Sort,
 		Status:   form.Status,
 		Remark:   form.Remark,
@@ -175,6 +230,7 @@ func GetDictItemForm(id int64) (*model.DictItemForm, error) {
 		DictCode: item.DictCode,
 		Value:    item.Value,
 		Label:    item.Label,
+		TagType:  item.TagType,
 		Sort:     item.Sort,
 		Status:   item.Status,
 		Remark:   item.Remark,

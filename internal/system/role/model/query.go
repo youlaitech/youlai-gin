@@ -2,7 +2,7 @@ package model
 
 import "youlai-gin/pkg/common"
 
-type RolePageQuery struct {
-	common.PageQuery
+type RoleQuery struct {
+	common.BaseQuery
 	Keywords string `form:"keywords"`
 }

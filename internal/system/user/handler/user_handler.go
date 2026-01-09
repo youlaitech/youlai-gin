@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"youlai-gin/internal/system/user/model"
+	"youlai-gin/internal/system/user/api"
 	"youlai-gin/internal/system/user/service"
 	"youlai-gin/pkg/errs"
 	pkgContext "youlai-gin/pkg/context"
@@ -18,7 +18,7 @@ import (
 
 // RegisterUserRoutes 注册用户路由
 func RegisterUserRoutes(r *gin.RouterGroup) {
-	r.GET("/users/page", GetUserPage)
+	r.GET("/users", GetUserList)
 	r.POST("/users", SaveUser)
 	r.GET("/users/:userId/form", GetUserForm)
 	r.PUT("/users/:userId", UpdateUser)
@@ -33,7 +33,7 @@ func RegisterUserRoutes(r *gin.RouterGroup) {
 	r.PUT("/users/mobile", BindOrChangeMobile)
 	r.POST("/users/email/code", SendEmailCode)
 	r.PUT("/users/email", BindOrChangeEmail)
-	
+
 	// Excel 导入导出
 	r.GET("/users/export", ExportUsers)
 	r.GET("/users/template", DownloadUserTemplate)
@@ -41,9 +41,9 @@ func RegisterUserRoutes(r *gin.RouterGroup) {
 	r.GET("/users/options", GetUserOptions)
 }
 
-// GetUserPage 用户分页列表
-func GetUserPage(c *gin.Context) {
-	var query model.UserPageQuery
+// GetUserList 用户分页列表
+func GetUserList(c *gin.Context) {
+	var query api.UserQueryReq
 	if err := c.ShouldBindQuery(&query); err != nil {
 		response.Fail(c, "参数错误")
 		return
@@ -55,12 +55,12 @@ func GetUserPage(c *gin.Context) {
 		return
 	}
 
-	response.Ok(c, result)
+	response.OkPaged(c, result)
 }
 
 // SaveUser 保存用户（新增或更新）
 func SaveUser(c *gin.Context) {
-	var form model.UserForm
+	var form api.UserSaveReq
 	if err := c.ShouldBindJSON(&form); err != nil {
 		response.Fail(c, "参数错误")
 		return
@@ -93,7 +93,7 @@ func UpdateUser(c *gin.Context) {
 	userIdStr := c.Param("userId")
 	userId, _ := strconv.ParseInt(userIdStr, 10, 64)
 
-	var form model.UserForm
+	var form api.UserSaveReq
 	if err := c.ShouldBindJSON(&form); err != nil {
 		response.Fail(c, "参数错误")
 		return
@@ -180,7 +180,7 @@ func UpdateUserProfile(c *gin.Context) {
 		return
 	}
 
-	var form model.UserProfileForm
+	var form api.UserProfileUpdateReq
 	if err := c.ShouldBindJSON(&form); err != nil {
 		response.Fail(c, "参数错误")
 		return
@@ -217,7 +217,7 @@ func ChangeCurrentUserPassword(c *gin.Context) {
 		return
 	}
 
-	var form model.PasswordUpdateForm
+	var form api.PasswordUpdateReq
 	if err := c.ShouldBindJSON(&form); err != nil {
 		response.Fail(c, "参数错误")
 		return
@@ -251,7 +251,7 @@ func BindOrChangeMobile(c *gin.Context) {
 		return
 	}
 
-	var form model.MobileUpdateForm
+	var form api.MobileUpdateReq
 	if err := c.ShouldBindJSON(&form); err != nil {
 		response.Fail(c, "参数错误")
 		return
@@ -285,7 +285,7 @@ func BindOrChangeEmail(c *gin.Context) {
 		return
 	}
 
-	var form model.EmailUpdateForm
+	var form api.EmailUpdateReq
 	if err := c.ShouldBindJSON(&form); err != nil {
 		response.Fail(c, "参数错误")
 		return
@@ -313,7 +313,7 @@ func GetUserOptions(c *gin.Context) {
 // ExportUsers 导出用户列表
 func ExportUsers(c *gin.Context) {
 	// 绑定查询参数（支持过滤条件）
-	var query model.UserPageQuery
+	var query api.UserQueryReq
 	if err := c.ShouldBindQuery(&query); err != nil {
 		response.Fail(c, "参数错误")
 		return

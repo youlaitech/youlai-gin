@@ -9,7 +9,7 @@ import (
 )
 
 // GetLogPage 获取日志分页列表
-func GetLogPage(query *model.LogPageQuery) ([]model.LogPageVO, int64, error) {
+func GetLogPage(query *model.LogQuery) ([]model.LogPageVO, int64, error) {
 	var logs []model.LogPageVO
 	var total int64
 

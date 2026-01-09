@@ -13,7 +13,7 @@ import (
 func RegisterRoleRoutes(r *gin.RouterGroup) {
 	roles := r.Group("/roles")
 	{
-		roles.GET("/page", GetRolePage)
+		roles.GET("", GetRolePage)
 		roles.GET("/options", GetRoleOptions)
 		roles.POST("", SaveRole)
 		roles.GET("/:id/form", GetRoleForm)
@@ -30,9 +30,9 @@ func RegisterRoleRoutes(r *gin.RouterGroup) {
 // @Param pageSize query int false "每页数量"
 // @Param keywords query string false "关键字"
 // @Success 200 {object} map[string]interface{}
-// @Router /api/v1/roles/page [get]
+// @Router /api/v1/roles [get]
 func GetRolePage(c *gin.Context) {
-	var query model.RolePageQuery
+	var query model.RoleQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
 		response.BadRequest(c, "参数错误")
 		return
@@ -44,7 +44,7 @@ func GetRolePage(c *gin.Context) {
 		return
 	}
 
-	response.Ok(c, result)
+	response.OkPaged(c, result)
 }
 
 // @Summary 角色下拉列表

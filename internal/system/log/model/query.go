@@ -3,8 +3,8 @@ package model
 import "youlai-gin/pkg/common"
 
 // LogPageQuery 日志分页查询
-type LogPageQuery struct {
-	common.PageQuery
+type LogQuery struct {
+	common.BaseQuery
 	Module    string `form:"module"`    // 操作模块
 	Username  string `form:"username"`  // 操作用户
 	Status    *int   `form:"status"`    // 状态码

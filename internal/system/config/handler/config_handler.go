@@ -16,7 +16,7 @@ func RegisterRoutes(r *gin.RouterGroup) {
 	// 使用复数形式符合RESTful规范
 	config := r.Group("/configs")
 	{
-		config.GET("/page", GetConfigPage)
+		config.GET("", GetConfigPage)
 		config.GET("/:id/form", GetConfigForm)
 		config.GET("/:id", GetConfigByID)
 		config.GET("/key/:key", GetConfigByKey)
@@ -30,7 +30,7 @@ func RegisterRoutes(r *gin.RouterGroup) {
 
 // GetConfigPage 获取配置分页列表
 func GetConfigPage(c *gin.Context) {
-	var query model.ConfigPageQuery
+	var query model.ConfigQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
 		response.Fail(c, "参数错误")
 		return
@@ -42,7 +42,7 @@ func GetConfigPage(c *gin.Context) {
 		return
 	}
 
-	response.Ok(c, result)
+	response.OkPaged(c, result)
 }
 
 // GetConfigForm 获取配置表单数据

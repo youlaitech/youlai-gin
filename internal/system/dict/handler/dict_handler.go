@@ -2,6 +2,7 @@ package handler
 
 import (
 	"strconv"
+	"strings"
 	"youlai-gin/internal/system/dict/model"
 	"youlai-gin/internal/system/dict/service"
 	"youlai-gin/pkg/response"
@@ -11,15 +12,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// RegisterDictRoutes 注册字典模块路由
 func RegisterDictRoutes(r *gin.RouterGroup) {
 	dicts := r.Group("/dicts")
 	{
-		// 字典分页查询（固定路径，优先级最高）
-		dicts.GET("/page", GetDictPage)
+		// 字典分页查询（对齐 youlai-boot：GET /dicts）
+		dicts.GET("", GetDictPage)
+		// 字典下拉列表（对齐 youlai-boot：GET /dicts/options）
+		dicts.GET("/options", GetDictList)
 		dicts.POST("", SaveDict)
 
 		// RESTful风格的字典项路由（使用统一的参数名 :id 来避免冲突）
-		dicts.GET("/:id/items", GetDictItemsByCode)
+		dicts.GET("/:id/items", GetDictItemPageByCode)
+		dicts.GET("/:id/items/options", GetDictItemsByCode)
 		dicts.POST("/:id/items", SaveDictItemByCode)
 		dicts.GET("/:id/items/:itemId/form", GetDictItemFormByCode)
 		dicts.PUT("/:id/items/:itemId", UpdateDictItemByCode)
@@ -30,24 +35,15 @@ func RegisterDictRoutes(r *gin.RouterGroup) {
 		dicts.PUT("/:id", UpdateDict)
 		dicts.DELETE("/:id", DeleteDict)
 	}
-
-	// 保留原有路由（向后兼容）
-	dictItems := r.Group("/dict-items")
-	{
-		dictItems.GET("", GetDictItems)
-		dictItems.POST("", SaveDictItem)
-		dictItems.GET("/:id/form", GetDictItemForm)
-		dictItems.PUT("/:id", UpdateDictItem)
-		dictItems.DELETE("/:id", DeleteDictItem)
-	}
 }
 
+// GetDictPage 字典分页列表
 // @Summary 字典分页列表
 // @Tags 字典管理
 // @Success 200 {object} map[string]interface{}
-// @Router /api/v1/dicts/page [get]
+// @Router /api/v1/dicts [get]
 func GetDictPage(c *gin.Context) {
-	var query model.DictPageQuery
+	var query model.DictQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
 		response.BadRequest(c, "参数错误")
 		return
@@ -59,9 +55,44 @@ func GetDictPage(c *gin.Context) {
 		return
 	}
 
-	response.Ok(c, result)
+	response.OkPaged(c, result)
 }
 
+func GetDictItemPageByCode(c *gin.Context) {
+	dictCode := c.Param("id")
+
+	var query model.DictItemQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.BadRequest(c, "参数错误")
+		return
+	}
+	query.DictCode = dictCode
+
+	result, err := service.GetDictItemPage(&query)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.OkPaged(c, result)
+}
+
+// GetDictList 获取字典下拉列表
+// @Summary 字典下拉列表
+// @Tags 字典管理
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/dicts/options [get]
+func GetDictList(c *gin.Context) {
+	list, err := service.GetDictList()
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.Ok(c, list)
+}
+
+// SaveDict 新增字典
 // @Summary 新增字典
 // @Tags 字典管理
 // @Param body body model.DictForm true "字典信息"
@@ -82,6 +113,7 @@ func SaveDict(c *gin.Context) {
 	response.OkMsg(c, "保存成功")
 }
 
+// GetDictForm 获取字典表单数据
 // @Summary 获取字典表单数据
 // @Tags 字典管理
 // @Param id path int true "字典ID"
@@ -104,6 +136,7 @@ func GetDictForm(c *gin.Context) {
 	response.Ok(c, form)
 }
 
+// UpdateDict 更新字典
 // @Summary 更新字典
 // @Tags 字典管理
 // @Param id path int true "字典ID"
@@ -133,6 +166,7 @@ func UpdateDict(c *gin.Context) {
 	response.OkMsg(c, "更新成功")
 }
 
+// DeleteDict 删除字典
 // @Summary 删除字典
 // @Tags 字典管理
 // @Param id path int true "字典ID"
@@ -154,121 +188,9 @@ func DeleteDict(c *gin.Context) {
 	response.OkMsg(c, "删除成功")
 }
 
-// @Summary 字典项列表
-// @Tags 字典管理
-// @Param dictCode query string true "字典编码"
-// @Success 200 {object} map[string]interface{}
-// @Router /api/v1/dict-items [get]
-func GetDictItems(c *gin.Context) {
-	dictCode := c.Query("dictCode")
-	if dictCode == "" {
-		response.BadRequest(c, "字典编码不能为空")
-		return
-	}
-
-	items, err := service.GetDictItems(dictCode)
-	if err != nil {
-		c.Error(err)
-		return
-	}
-
-	response.Ok(c, items)
-}
-
-// @Summary 新增字典项
-// @Tags 字典管理
-// @Param body body model.DictItemForm true "字典项信息"
-// @Success 200 {object} map[string]interface{}
-// @Router /api/v1/dict-items [post]
-func SaveDictItem(c *gin.Context) {
-	var form model.DictItemForm
-	if err := validator.BindJSON(c, &form); err != nil {
-		c.Error(err)
-		return
-	}
-
-	if err := service.SaveDictItem(&form); err != nil {
-		c.Error(err)
-		return
-	}
-
-	response.OkMsg(c, "保存成功")
-}
-
-// @Summary 获取字典项表单数据
-// @Tags 字典管理
-// @Param id path int true "字典项ID"
-// @Success 200 {object} map[string]interface{}
-// @Router /api/v1/dict-items/{id}/form [get]
-func GetDictItemForm(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		response.BadRequest(c, "无效的字典项ID")
-		return
-	}
-
-	form, err := service.GetDictItemForm(id)
-	if err != nil {
-		c.Error(err)
-		return
-	}
-
-	response.Ok(c, form)
-}
-
-// @Summary 更新字典项
-// @Tags 字典管理
-// @Param id path int true "字典项ID"
-// @Param body body model.DictItemForm true "字典项信息"
-// @Success 200 {object} map[string]interface{}
-// @Router /api/v1/dict-items/{id} [put]
-func UpdateDictItem(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		response.BadRequest(c, "无效的字典项ID")
-		return
-	}
-
-	var form model.DictItemForm
-	if err := validator.BindJSON(c, &form); err != nil {
-		c.Error(err)
-		return
-	}
-
-	form.ID = types.BigInt(id)
-	if err := service.SaveDictItem(&form); err != nil {
-		c.Error(err)
-		return
-	}
-
-	response.OkMsg(c, "更新成功")
-}
-
-// @Summary 删除字典项
-// @Tags 字典管理
-// @Param id path int true "字典项ID"
-// @Success 200 {object} map[string]interface{}
-// @Router /api/v1/dict-items/{id} [delete]
-func DeleteDictItem(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		response.BadRequest(c, "无效的字典项ID")
-		return
-	}
-
-	if err := service.DeleteDictItem(id); err != nil {
-		c.Error(err)
-		return
-	}
-
-	response.OkMsg(c, "删除成功")
-}
-
 // ========== RESTful风格的字典项接口（匹配Java版本）==========
 
+// GetDictItemsByCode 字典项列表（RESTful）
 // @Summary 字典项列表（RESTful）
 // @Tags 字典管理
 // @Param id path string true "字典编码"
@@ -286,6 +208,7 @@ func GetDictItemsByCode(c *gin.Context) {
 	response.Ok(c, items)
 }
 
+// SaveDictItemByCode 新增字典项（RESTful）
 // @Summary 新增字典项（RESTful）
 // @Tags 字典管理
 // @Param id path string true "字典编码"
@@ -311,6 +234,7 @@ func SaveDictItemByCode(c *gin.Context) {
 	response.OkMsg(c, "新增成功")
 }
 
+// GetDictItemFormByCode 字典项表单数据（RESTful）
 // @Summary 字典项表单数据（RESTful）
 // @Tags 字典管理
 // @Param id path string true "字典编码"
@@ -334,6 +258,7 @@ func GetDictItemFormByCode(c *gin.Context) {
 	response.Ok(c, form)
 }
 
+// UpdateDictItemByCode 修改字典项（RESTful）
 // @Summary 修改字典项（RESTful）
 // @Tags 字典管理
 // @Param id path string true "字典编码"
@@ -367,6 +292,7 @@ func UpdateDictItemByCode(c *gin.Context) {
 	response.OkMsg(c, "更新成功")
 }
 
+// DeleteDictItemsByCode 删除字典项（RESTful）
 // @Summary 删除字典项（RESTful）
 // @Tags 字典管理
 // @Param id path string true "字典编码"
@@ -375,15 +301,31 @@ func UpdateDictItemByCode(c *gin.Context) {
 // @Router /api/v1/dicts/{id}/items/{itemIds} [delete]
 func DeleteDictItemsByCode(c *gin.Context) {
 	itemIdsStr := c.Param("itemIds")
-
-	// 解析ID列表（支持单个或多个，用逗号分隔）
-	id, err := strconv.ParseInt(itemIdsStr, 10, 64)
-	if err != nil {
+	if itemIdsStr == "" {
 		response.BadRequest(c, "无效的字典项ID")
 		return
 	}
 
-	if err := service.DeleteDictItem(id); err != nil {
+	idStrArr := strings.Split(itemIdsStr, ",")
+	ids := make([]int64, 0, len(idStrArr))
+	for _, idStr := range idStrArr {
+		idStr = strings.TrimSpace(idStr)
+		if idStr == "" {
+			continue
+		}
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			response.BadRequest(c, "无效的字典项ID")
+			return
+		}
+		ids = append(ids, id)
+	}
+	if len(ids) == 0 {
+		response.BadRequest(c, "无效的字典项ID")
+		return
+	}
+
+	if err := service.BatchDeleteDictItems(ids); err != nil {
 		c.Error(err)
 		return
 	}

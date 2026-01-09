@@ -10,16 +10,14 @@ import (
 )
 
 // GetLogPage 获取日志分页列表
-func GetLogPage(query *model.LogPageQuery) (*common.PageResult, error) {
+func GetLogPage(query *model.LogQuery) (*common.PagedData, error) {
 	logs, total, err := repository.GetLogPage(query)
 	if err != nil {
 		return nil, errs.SystemError("查询日志列表失败")
 	}
 
-	return &common.PageResult{
-		List:  logs,
-		Total: total,
-	}, nil
+	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
+	return &common.PagedData{Data: logs, Page: pageMeta}, nil
 }
 
 // GetVisitTrend 获取访问趋势

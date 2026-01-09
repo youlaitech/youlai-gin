@@ -9,7 +9,10 @@
 
 **基于 Gin + GORM + Redis 的前后端分离权限管理系统（Go 版本）**
 
-[在线预览](http://admin.youlai.tech) | [前端仓库](https://github.com/youlaitech/vue3-element-admin) | [Java 版本](https://github.com/youlaitech/youlai-boot) | [文档地址](./vue3-element-admin-docs)
+[在线预览](http://admin.youlai.tech) |
+[前端仓库](https://github.com/youlaitech/vue3-element-admin) |
+[Java 版本](https://github.com/youlaitech/youlai-boot) |
+[文档地址](./vue3-element-admin-docs)
 
 </div>
 
@@ -17,12 +20,16 @@
 
 ## 📖 项目简介
 
-`youlai-gin` 是一款基于 Go 语言的企业级权限管理系统，采用前后端分离架构，提供完善的 RBAC 权限控制、数据权限、操作日志、文件上传、Excel 导入导出、WebSocket 实时通知等功能。
+`youlai-gin` 是一款基于 Go 语言的企业级权限管理系统，采用前后端分离架构，提供完
+善的 RBAC 权限控制、数据权限、操作日志、文件上传、Excel 导入导出、WebSocket 实时
+通知等功能。
 
 ### ✨ 核心特性
 
-- 🔐 **完善的权限体系**：RBAC 权限控制 + 数据权限（全部、部门及以下、仅本部门、仅本人、自定义）
-- 🎯 **RESTful API**：标准 RESTful 风格接口设计，与 Java 版本（youlai-boot）保持 100% 接口协议一致
+- 🔐 **完善的权限体系**：RBAC 权限控制 + 数据权限（全部、部门及以下、仅本部门、
+  仅本人、自定义）
+- 🎯 **RESTful API**：标准 RESTful 风格接口设计，与 Java 版本（youlai-boot）保持
+  100% 接口协议一致
 - 📊 **数据驱动**：基于 GORM 的数据访问层，支持多种数据库（MySQL、PostgreSQL）
 - 🚀 **高性能缓存**：Redis 缓存用户权限、配置信息，提升系统性能
 - 📝 **完整日志**：操作日志记录、访问趋势统计、访问统计分析
@@ -35,7 +42,8 @@
 
 ### 🎨 前端项目
 
-- **Vue3 版本**：[vue3-element-admin](https://github.com/youlaitech/vue3-element-admin)
+- **Vue3 版
+  本**：[vue3-element-admin](https://github.com/youlaitech/vue3-element-admin)
 - **技术栈**：Vue3 + TypeScript + Element Plus + Vite + Pinia
 
 ---
@@ -44,19 +52,19 @@
 
 ### 技术栈
 
-| 技术 | 版本 | 说明 |
-|------|------|------|
-| Go | 1.21+ | 编程语言 |
-| Gin | 1.9+ | Web 框架 |
-| GORM | 1.25+ | ORM 框架 |
-| Redis | 7.0+ | 缓存数据库 |
-| MySQL | 8.0+ | 关系型数据库 |
-| JWT | - | 身份认证 |
-| Swaggo | 1.16+ | API 文档生成 |
-| Zap | 1.27+ | 日志框架 |
-| Viper | 1.18+ | 配置管理 |
-| Excelize | 2.8+ | Excel 处理 |
-| Gorilla WebSocket | 1.5+ | WebSocket 支持 |
+| 技术              | 版本  | 说明           |
+| ----------------- | ----- | -------------- |
+| Go                | 1.21+ | 编程语言       |
+| Gin               | 1.9+  | Web 框架       |
+| GORM              | 1.25+ | ORM 框架       |
+| Redis             | 7.0+  | 缓存数据库     |
+| MySQL             | 8.0+  | 关系型数据库   |
+| JWT               | -     | 身份认证       |
+| Swaggo            | 1.16+ | API 文档生成   |
+| Zap               | 1.27+ | 日志框架       |
+| Viper             | 1.18+ | 配置管理       |
+| Excelize          | 2.8+  | Excel 处理     |
+| Gorilla WebSocket | 1.5+  | WebSocket 支持 |
 
 ### 项目结构
 
@@ -119,12 +127,12 @@ youlai-gin/
 
 ### 环境要求
 
-| 软件 | 版本要求 | 说明 |
-|------|---------|------|
-| Go | 1.21+ | [下载地址](https://go.dev/dl/) |
-| MySQL | 8.0+ | 关系型数据库 |
-| Redis | 7.0+ | 缓存数据库 |
-| Node.js | 18+ | 前端开发环境（可选） |
+| 软件    | 版本要求 | 说明                           |
+| ------- | -------- | ------------------------------ |
+| Go      | 1.21+    | [下载地址](https://go.dev/dl/) |
+| MySQL   | 8.0+     | 关系型数据库                   |
+| Redis   | 7.0+     | 缓存数据库                     |
+| Node.js | 18+      | 前端开发环境（可选）           |
 
 ### 1️⃣ 克隆项目
 
@@ -161,6 +169,7 @@ mysql -u root -p youlai < scripts/sql/youlai.sql
 ```
 
 **初始账号密码：**
+
 - 超级管理员：`root` / `123456`
 - 普通管理员：`admin` / `123456`
 
@@ -195,12 +204,12 @@ redis:
 security:
   jwt:
     secret: your-secret-key-change-in-production
-    expiration: 7200  # 2小时
-    refreshExpiration: 604800  # 7天
+    expiration: 7200 # 2小时
+    refreshExpiration: 604800 # 7天
 
 # 文件存储配置
 storage:
-  type: local  # local, aliyun
+  type: local # local, aliyun
   local:
     path: ./uploads
     urlPrefix: http://localhost:8000/uploads
@@ -265,11 +274,11 @@ nohup ./youlai-gin > app.log 2>&1 &
 
 ### 7️⃣ 访问项目
 
-| 服务 | 地址 | 说明 |
-|------|------|------|
-| 后端 API | http://localhost:8000 | 后端接口服务 |
-| Swagger 文档 | http://localhost:8000/swagger/index.html | API 接口文档 |
-| 前端项目 | http://localhost:3000 | Vue3 前端项目 |
+| 服务         | 地址                                     | 说明          |
+| ------------ | ---------------------------------------- | ------------- |
+| 后端 API     | http://localhost:8000                    | 后端接口服务  |
+| Swagger 文档 | http://localhost:8000/swagger/index.html | API 接口文档  |
+| 前端项目     | http://localhost:3000                    | Vue3 前端项目 |
 
 ---
 
@@ -308,18 +317,18 @@ swag init -g main.go -o ./docs
 
 ### 常用注解说明
 
-| 注解 | 说明 | 示例 |
-|------|------|------|
-| @Summary | 接口简介 | `@Summary 用户分页列表` |
+| 注解         | 说明     | 示例                                            |
+| ------------ | -------- | ----------------------------------------------- |
+| @Summary     | 接口简介 | `@Summary 用户分页列表`                         |
 | @Description | 详细描述 | `@Description 查询用户分页列表，支持多条件筛选` |
-| @Tags | 接口分组 | `@Tags 用户管理` |
-| @Accept | 请求格式 | `@Accept json` |
-| @Produce | 响应格式 | `@Produce json` |
-| @Param | 参数说明 | `@Param id path int true "用户ID"` |
-| @Success | 成功响应 | `@Success 200 {object} response.Response` |
-| @Failure | 失败响应 | `@Failure 400 {object} response.Response` |
-| @Router | 路由信息 | `@Router /api/v1/users/{id} [get]` |
-| @Security | 安全认证 | `@Security Bearer` |
+| @Tags        | 接口分组 | `@Tags 用户管理`                                |
+| @Accept      | 请求格式 | `@Accept json`                                  |
+| @Produce     | 响应格式 | `@Produce json`                                 |
+| @Param       | 参数说明 | `@Param id path int true "用户ID"`              |
+| @Success     | 成功响应 | `@Success 200 {object} response.Response`       |
+| @Failure     | 失败响应 | `@Failure 400 {object} response.Response`       |
+| @Router      | 路由信息 | `@Router /api/v1/users/{id} [get]`              |
+| @Security    | 安全认证 | `@Security Bearer`                              |
 
 ---
 
@@ -357,7 +366,7 @@ export APP_ENV=prod
 # 服务器配置
 server:
   port: 8000
-  mode: debug  # debug, release
+  mode: debug # debug, release
 
 # 数据库配置
 database:
@@ -385,27 +394,27 @@ redis:
 security:
   jwt:
     secret: your-secret-key-change-in-production
-    expiration: 7200        # Access Token 过期时间（秒）
-    refreshExpiration: 604800  # Refresh Token 过期时间（秒）
+    expiration: 7200 # Access Token 过期时间（秒）
+    refreshExpiration: 604800 # Refresh Token 过期时间（秒）
 
 # 日志配置
 logger:
-  level: debug  # debug, info, warn, error
+  level: debug # debug, info, warn, error
   filename: logs/app.log
-  maxSize: 100  # MB
-  maxAge: 30    # 天
+  maxSize: 100 # MB
+  maxAge: 30 # 天
   maxBackups: 10
   compress: true
 
 # 文件存储配置
 storage:
-  type: local  # local, aliyun
-  
+  type: local # local, aliyun
+
   # 本地存储
   local:
     path: ./uploads
     urlPrefix: http://localhost:8000/uploads
-  
+
   # 阿里云 OSS
   aliyun:
     endpoint: oss-cn-hangzhou.aliyuncs.com
@@ -436,13 +445,13 @@ storage:
 
 支持 5 种数据权限范围：
 
-| 权限范围 | 说明 | DataScope 值 |
-|---------|------|--------------|
-| 全部数据 | 不限制数据范围 | 0 |
-| 部门及以下 | 本部门及子部门数据 | 1 |
-| 仅本部门 | 只看本部门数据 | 2 |
-| 仅本人 | 只看自己的数据 | 3 |
-| 自定义 | 指定部门数据 | 4 |
+| 权限范围   | 说明               | DataScope 值 |
+| ---------- | ------------------ | ------------ |
+| 全部数据   | 不限制数据范围     | 0            |
+| 部门及以下 | 本部门及子部门数据 | 1            |
+| 仅本部门   | 只看本部门数据     | 2            |
+| 仅本人     | 只看自己的数据     | 3            |
+| 自定义     | 指定部门数据       | 4            |
 
 ### 2. 系统管理
 
@@ -464,6 +473,7 @@ storage.type = "aliyun"
 ```
 
 **功能特性：**
+
 - 单文件上传
 - 批量文件上传
 - 图片上传（带格式、大小限制）
@@ -487,6 +497,7 @@ POST /api/v1/users/import
 ```
 
 **支持功能：**
+
 - 自定义表头
 - 数据验证
 - 错误行提示
@@ -577,9 +588,9 @@ return errs.New(40001, "自定义错误")
 response.Success(c, data)
 
 // 分页响应
-response.Success(c, &common.PageResult{
-    List:  list,
-    Total: total,
+response.OkPaged(c, &common.PagedData{
+    Data: list,
+    Page: common.NewPageMeta(pageNum, pageSize, total),
 })
 
 // 错误响应
@@ -771,7 +782,7 @@ docker run -d \
 创建 `docker-compose.yml`：
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   mysql:
@@ -908,11 +919,13 @@ server {
 ### 生产环境配置
 
 1. **修改默认密码**
+
    ```sql
    UPDATE sys_user SET password = MD5('new-password') WHERE username = 'root';
    ```
 
 2. **修改 JWT Secret**
+
    ```yaml
    security:
      jwt:
@@ -920,6 +933,7 @@ server {
    ```
 
 3. **启用 HTTPS**
+
    ```nginx
    server {
        listen 443 ssl http2;
@@ -929,6 +943,7 @@ server {
    ```
 
 4. **配置防火墙**
+
    ```bash
    # 只允许必要端口
    firewall-cmd --zone=public --add-port=80/tcp --permanent
@@ -971,8 +986,10 @@ server {
 
 ## 💬 联系方式
 
-- **项目地址**：[https://github.com/youlaitech/youlai-gin](https://github.com/youlaitech/youlai-gin)
-- **前端项目**：[https://github.com/youlaitech/vue3-element-admin](https://github.com/youlaitech/vue3-element-admin)
+- **项目地
+  址**：[https://github.com/youlaitech/youlai-gin](https://github.com/youlaitech/youlai-gin)
+- **前端项
+  目**：[https://github.com/youlaitech/vue3-element-admin](https://github.com/youlaitech/vue3-element-admin)
 - **在线预览**：[http://admin.youlai.tech](http://admin.youlai.tech)
 - **技术文档**：[查看文档](./vue3-element-admin-docs)
 - **问题反馈**：[提交 Issue](https://github.com/youlaitech/youlai-gin/issues)
@@ -989,7 +1006,7 @@ server {
 
 <div align="center">
 
-**感谢使用 Youlai-Gin！** 
+**感谢使用 Youlai-Gin！**
 
 Made with ❤️ by [Youlai Tech](https://github.com/youlaitech)
 

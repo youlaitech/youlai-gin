@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/time/rate"
 
+	"youlai-gin/pkg/constant"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/response"
 )
@@ -53,9 +54,9 @@ func (rl *RateLimiter) Middleware() gin.HandlerFunc {
 
 		if !limiter.Allow() {
 			response.FromAppError(c, &errs.AppError{
-				Code:       "A0501",
-				Msg:        "请求过于频繁，请稍后再试",
-				HTTPStatus: http.StatusTooManyRequests,
+				Code:       constant.CodeRequestConcurrencyLimitExceeded,
+				Msg:        constant.MsgRequestConcurrencyLimitExceeded,
+				HTTPStatus: http.StatusBadRequest,
 			})
 			c.Abort()
 			return

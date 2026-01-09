@@ -10,7 +10,7 @@ import (
 func RegisterRoutes(router *gin.RouterGroup) {
 	codegenGroup := router.Group("/codegen")
 	{
-		codegenGroup.GET("/table/page", handler.GetTablePage)
+		codegenGroup.GET("/table", handler.GetTablePage)
 		codegenGroup.GET("/:tableName/config", handler.GetGenConfig)
 		codegenGroup.POST("/:tableName/config", handler.SaveGenConfig)
 		codegenGroup.DELETE("/:tableName/config", handler.DeleteGenConfig)

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"time"
-	
+
 	"youlai-gin/internal/system/config/model"
 	"youlai-gin/internal/system/config/repository"
 	"youlai-gin/pkg/common"
@@ -20,26 +20,24 @@ const (
 )
 
 // GetConfigList 获取配置列表
-func GetConfigList(query *model.ConfigQuery) ([]model.Config, error) {
+func GetConfigList(query *model.ConfigListQuery) ([]model.Config, error) {
 	return repository.GetConfigList(query)
 }
 
 // GetConfigPage 获取配置分页列表
-func GetConfigPage(query *model.ConfigPageQuery) (*common.PageResult, error) {
+func GetConfigPage(query *model.ConfigQuery) (*common.PagedData, error) {
 	configs, total, err := repository.GetConfigPage(query)
 	if err != nil {
 		return nil, errs.SystemError("查询配置列表失败")
 	}
-	
-	return &common.PageResult{
-		List:  configs,
-		Total: total,
-	}, nil
+
+	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
+	return &common.PagedData{Data: configs, Page: pageMeta}, nil
 }
 
 // GetAllConfigs 获取所有配置
 func GetAllConfigs() ([]model.Config, error) {
-	return repository.GetConfigList(&model.ConfigQuery{})
+	return repository.GetConfigList(&model.ConfigListQuery{})
 }
 
 // GetConfigByKey 根据Key获取配置（带缓存）
@@ -47,25 +45,25 @@ func GetConfigByKey(configKey string) (*model.Config, error) {
 	// 先从缓存获取
 	cacheKey := configCachePrefix + configKey
 	cached, err := redis.Client.Get(context.Background(), cacheKey).Result()
-	
+
 	if err == nil && cached != "" {
 		var config model.Config
 		if err := json.Unmarshal([]byte(cached), &config); err == nil {
 			return &config, nil
 		}
 	}
-	
+
 	// 缓存未命中，从数据库查询
 	config, err := repository.GetConfigByKey(configKey)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// 写入缓存
 	if data, err := json.Marshal(config); err == nil {
 		redis.Client.Set(context.Background(), cacheKey, string(data), configCacheExpire)
 	}
-	
+
 	return config, nil
 }
 
@@ -116,7 +114,7 @@ func GetConfigFormData(id int64) (*model.ConfigForm, error) {
 	if err != nil {
 		return nil, errs.NotFound("配置不存在")
 	}
-	
+
 	return &model.ConfigForm{
 		ID:          config.ID,
 		ConfigKey:   config.ConfigKey,
@@ -139,7 +137,7 @@ func SaveConfig(form *model.ConfigForm) error {
 		Description: form.Description,
 		Sort:        form.Sort,
 	}
-	
+
 	var err error
 	if config.ID > 0 {
 		// 更新
@@ -152,14 +150,14 @@ func SaveConfig(form *model.ConfigForm) error {
 		}
 		err = repository.CreateConfig(config)
 	}
-	
+
 	if err != nil {
 		return errs.SystemError("保存配置失败")
 	}
-	
+
 	// 清除缓存
 	ClearConfigCache(config.ConfigKey)
-	
+
 	return nil
 }
 
@@ -169,14 +167,14 @@ func DeleteConfig(id int64) error {
 	if err != nil {
 		return errs.NotFound("配置不存在")
 	}
-	
+
 	if err := repository.DeleteConfig(id); err != nil {
 		return errs.SystemError("删除配置失败")
 	}
-	
+
 	// 清除缓存
 	ClearConfigCache(config.ConfigKey)
-	
+
 	return nil
 }
 
@@ -185,10 +183,10 @@ func BatchDeleteConfig(ids []int64) error {
 	if err := repository.BatchDeleteConfig(ids); err != nil {
 		return errs.SystemError("批量删除配置失败")
 	}
-	
+
 	// 清除所有配置缓存
 	ClearAllConfigCache()
-	
+
 	return nil
 }
 

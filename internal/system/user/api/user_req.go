@@ -1,9 +1,9 @@
-package model
+package api
 
 import "youlai-gin/pkg/types"
 
-// UserForm 用户表单
-type UserForm struct {
+// UserSaveReq 用户新增/更新请求
+type UserSaveReq struct {
 	ID       types.BigInt   `json:"id"`
 	Username string         `json:"username" binding:"required"`
 	Nickname string         `json:"nickname" binding:"required"`
@@ -17,8 +17,8 @@ type UserForm struct {
 	Openid   string         `json:"openId"`
 }
 
-// UserProfileForm 个人中心用户信息表单
-type UserProfileForm struct {
+// UserProfileUpdateReq 个人中心用户信息更新请求
+type UserProfileUpdateReq struct {
 	Nickname string `json:"nickname"`
 	Avatar   string `json:"avatar"`
 	Gender   int    `json:"gender"`
@@ -26,20 +26,20 @@ type UserProfileForm struct {
 	Email    string `json:"email"`
 }
 
-// PasswordUpdateForm 修改密码表单
-type PasswordUpdateForm struct {
+// PasswordUpdateReq 修改密码请求
+type PasswordUpdateReq struct {
 	OldPassword string `json:"oldPassword" binding:"required"`
 	NewPassword string `json:"newPassword" binding:"required"`
 }
 
-// MobileUpdateForm 绑定或更换手机号表单
-type MobileUpdateForm struct {
+// MobileUpdateReq 绑定或更换手机号请求
+type MobileUpdateReq struct {
 	Mobile string `json:"mobile" binding:"required"`
 	Code   string `json:"code" binding:"required"`
 }
 
-// EmailUpdateForm 绑定或更换邮箱表单
-type EmailUpdateForm struct {
+// EmailUpdateReq 绑定或更换邮箱请求
+type EmailUpdateReq struct {
 	Email string `json:"email" binding:"required"`
 	Code  string `json:"code" binding:"required"`
 }

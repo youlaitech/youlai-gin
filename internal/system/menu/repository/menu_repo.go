@@ -73,12 +73,12 @@ func GetUserMenus(userId int64) ([]model.Menu, error) {
 	`, userId).Scan(&isAdmin)
 	
 	// 超级管理员返回所有菜单
-	if isAdmin > 0 {
+		if isAdmin > 0 {
+		// include hidden routes as well so frontend routing still works even if menu is hidden
 		err := database.DB.Raw(`
 			SELECT DISTINCT m.*
 			FROM sys_menu m
-			WHERE m.visible = 1
-			AND m.type IN ('C','M')
+			WHERE m.type IN ('C','M')
 			ORDER BY m.sort ASC, m.id ASC
 		`).Scan(&menus).Error
 		return menus, err
@@ -93,7 +93,6 @@ func GetUserMenus(userId int64) ([]model.Menu, error) {
 		INNER JOIN sys_role r ON ur.role_id = r.id
 		WHERE ur.user_id = ?
 		AND r.status = 1
-		AND m.visible = 1
 		AND m.type IN ('C','M')
 		ORDER BY m.sort ASC, m.id ASC
 	`, userId).Scan(&menus).Error

@@ -32,7 +32,7 @@ func Wrap(base *AppError, err error) *AppError {
 		Err:        err,
 	}
 }
- 
+
 // BadRequest 用户端错误（A0400）
 // msg 为空时使用统一文案
 func BadRequest(msg string) *AppError {
@@ -55,7 +55,7 @@ func SystemError(msg string) *AppError {
 	return &AppError{
 		Code:       constant.CodeSystemError,
 		Msg:        msg,
-		HTTPStatus: http.StatusInternalServerError,
+		HTTPStatus: http.StatusBadRequest,
 	}
 }
 
@@ -73,21 +73,12 @@ func As(err error) (*AppError, bool) {
 
 // ========== 常用业务错误（典型示例）==========
 
-// UsernameExists 用户名已存在
-func UsernameExists() *AppError {
-	return &AppError{
-		Code:       constant.CodeUsernameExists,
-		Msg:        constant.MsgUsernameExists,
-		HTTPStatus: http.StatusBadRequest,
-	}
-}
-
 // UserNotFound 用户不存在
 func UserNotFound() *AppError {
 	return &AppError{
 		Code:       constant.CodeUserNotExist,
 		Msg:        constant.MsgUserNotExist,
-		HTTPStatus: http.StatusNotFound,
+		HTTPStatus: http.StatusBadRequest,
 	}
 }
 
@@ -108,7 +99,7 @@ func NotFound(msg string) *AppError {
 	return &AppError{
 		Code:       constant.CodeBadRequest,
 		Msg:        msg,
-		HTTPStatus: http.StatusNotFound,
+		HTTPStatus: http.StatusBadRequest,
 	}
 }
 

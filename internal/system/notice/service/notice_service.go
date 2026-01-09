@@ -13,16 +13,14 @@ import (
 )
 
 // GetNoticePage 通知分页查询
-func GetNoticePage(query *model.NoticePageQuery) (*common.PageResult, error) {
+func GetNoticePage(query *model.NoticeQuery) (*common.PagedData, error) {
 	list, total, err := repository.GetNoticePage(query)
 	if err != nil {
 		return nil, errs.SystemError("查询通知列表失败")
 	}
 
-	return &common.PageResult{
-		List:  list,
-		Total: total,
-	}, nil
+	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
+	return &common.PagedData{Data: list, Page: pageMeta}, nil
 }
 
 // GetNoticeByID 根据ID获取通知
@@ -82,16 +80,14 @@ func DeleteNotice(id int64) error {
 }
 
 // GetUserNoticePage 获取用户通知列表
-func GetUserNoticePage(userID int64, query *model.UserNoticeQuery) (*common.PageResult, error) {
+func GetUserNoticePage(userID int64, query *model.UserNoticeQuery) (*common.PagedData, error) {
 	list, total, err := repository.GetUserNoticePage(userID, query)
 	if err != nil {
 		return nil, errs.SystemError("查询用户通知列表失败")
 	}
 
-	return &common.PageResult{
-		List:  list,
-		Total: total,
-	}, nil
+	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
+	return &common.PagedData{Data: list, Page: pageMeta}, nil
 }
 
 // MarkNoticeAsRead 标记通知为已读

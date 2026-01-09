@@ -14,14 +14,14 @@ type ConfigForm struct {
 }
 
 // ConfigQuery 配置查询
-type ConfigQuery struct {
+type ConfigListQuery struct {
 	ConfigKey  string `form:"configKey"`
 	ConfigName string `form:"configName"`
 }
 
 // ConfigPageQuery 配置分页查询
-type ConfigPageQuery struct {
-	common.PageQuery
+type ConfigQuery struct {
+	common.BaseQuery
 	ConfigKey  string `form:"configKey"`
 	ConfigName string `form:"configName"`
 }

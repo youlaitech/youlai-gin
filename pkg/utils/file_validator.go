@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"mime"
 	"mime/multipart"
 	"path/filepath"
 	"strings"
@@ -50,7 +51,7 @@ func (v *FileValidator) Validate(file *multipart.FileHeader) error {
 
 	// 2. 检查文件扩展名
 	ext := strings.ToLower(filepath.Ext(file.Filename))
-	
+
 	// 2.1 检查是否在禁止列表中
 	if len(v.ForbiddenExts) > 0 {
 		for _, forbidden := range v.ForbiddenExts {
@@ -76,7 +77,13 @@ func (v *FileValidator) Validate(file *multipart.FileHeader) error {
 
 	// 3. 检查 MIME 类型
 	if len(v.AllowedMimes) > 0 {
-		contentType := file.Header.Get("Content-Type")
+		contentType := strings.TrimSpace(file.Header.Get("Content-Type"))
+		if contentType == "" {
+			guessed := mime.TypeByExtension(ext)
+			if guessed != "" {
+				contentType = strings.TrimSpace(strings.SplitN(guessed, ";", 2)[0])
+			}
+		}
 		allowed := false
 		for _, allowedMime := range v.AllowedMimes {
 			if strings.HasPrefix(contentType, allowedMime) {

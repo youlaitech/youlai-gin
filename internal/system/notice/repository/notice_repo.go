@@ -10,7 +10,7 @@ import (
 )
 
 // GetNoticePage 通知分页查询
-func GetNoticePage(query *model.NoticePageQuery) ([]model.Notice, int64, error) {
+func GetNoticePage(query *model.NoticeQuery) ([]model.Notice, int64, error) {
 	var notices []model.Notice
 	var total int64
 

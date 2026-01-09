@@ -9,7 +9,7 @@ import (
 )
 
 // GetRolePage 角色分页查询
-func GetRolePage(query *model.RolePageQuery) ([]model.Role, int64, error) {
+func GetRolePage(query *model.RoleQuery) ([]model.Role, int64, error) {
 	var roles []model.Role
 	var total int64
 

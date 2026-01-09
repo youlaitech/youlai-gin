@@ -6,15 +6,18 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"strconv"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
-	"youlai-gin/internal/system/user/model"
+	"youlai-gin/internal/system/user/api"
+	"youlai-gin/internal/system/user/domain"
 	"youlai-gin/internal/system/user/repository"
 	"youlai-gin/pkg/common"
+	"youlai-gin/pkg/constant"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/excel"
 	"youlai-gin/pkg/redis"
@@ -23,31 +26,29 @@ import (
 )
 
 // GetUserPage 用户分页列表
-func GetUserPage(query *model.UserPageQuery) (*common.PageResult, error) {
+func GetUserPage(query *api.UserQueryReq) (*common.PagedData, error) {
 	users, total, err := repository.GetUserPage(query)
 	if err != nil {
 		return nil, errs.SystemError("查询用户列表失败")
 	}
 
-	return &common.PageResult{
-		List:  users,
-		Total: total,
-	}, nil
+	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
+	return &common.PagedData{Data: users, Page: pageMeta}, nil
 }
 
 // SaveUser 保存用户（新增或更新）
-func SaveUser(form *model.UserForm) error {
+func SaveUser(form *api.UserSaveReq) error {
 	// 检查用户名是否已存在
 	exists, err := repository.CheckUsernameExists(form.Username, int64(form.ID))
 	if err != nil {
 		return errs.SystemError("检查用户名失败")
 	}
 	if exists {
-		return errs.BadRequest("用户名已存在")
+		return errs.New(constant.CodeUserRegistrationError, "用户名已存在", http.StatusBadRequest)
 	}
 
 	// 转换为实体
-	user := &model.User{
+	user := &domain.User{
 		Username: form.Username,
 		Nickname: form.Nickname,
 		Mobile:   form.Mobile,
@@ -102,10 +103,10 @@ func SaveUser(form *model.UserForm) error {
 }
 
 // GetUserForm 获取用户表单数据
-func GetUserForm(userId int64) (*model.UserForm, error) {
+func GetUserForm(userId int64) (*api.UserFormResp, error) {
 	if userId == 0 {
 		// 新增用户，返回空表单
-		return &model.UserForm{}, nil
+		return &api.UserFormResp{}, nil
 	}
 
 	// 查询用户信息
@@ -129,7 +130,7 @@ func GetUserForm(userId int64) (*model.UserForm, error) {
 		bigIntRoleIDs[i] = types.BigInt(roleID)
 	}
 
-	return &model.UserForm{
+	return &api.UserFormResp{
 		ID:       types.BigInt(user.ID),
 		Username: user.Username,
 		Nickname: user.Nickname,
@@ -181,7 +182,7 @@ func UpdateUserStatus(userId int64, status int) error {
 }
 
 // GetCurrentUserInfoWithRoles 获取当前登录用户信息（需要传入token中的userDetails）
-func GetCurrentUserInfoWithRoles(userId int64, roles []string) (*model.CurrentUserDTO, error) {
+func GetCurrentUserInfoWithRoles(userId int64, roles []string) (*api.CurrentUserResp, error) {
 	user, err := repository.GetUserByID(userId)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -199,7 +200,7 @@ func GetCurrentUserInfoWithRoles(userId int64, roles []string) (*model.CurrentUs
 		}
 	}
 
-	return &model.CurrentUserDTO{
+	return &api.CurrentUserResp{
 		UserID:   types.BigInt(user.ID),
 		Username: user.Username,
 		Nickname: user.Nickname,
@@ -210,7 +211,7 @@ func GetCurrentUserInfoWithRoles(userId int64, roles []string) (*model.CurrentUs
 }
 
 // GetCurrentUserInfo 获取当前登录用户信息（从数据库查询角色）
-func GetCurrentUserInfo(userId int64) (*model.CurrentUserDTO, error) {
+func GetCurrentUserInfo(userId int64) (*api.CurrentUserResp, error) {
 	user, err := repository.GetUserByID(userId)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -234,7 +235,7 @@ func GetCurrentUserInfo(userId int64) (*model.CurrentUserDTO, error) {
 		}
 	}
 
-	return &model.CurrentUserDTO{
+	return &api.CurrentUserResp{
 		UserID:   types.BigInt(user.ID),
 		Username: user.Username,
 		Nickname: user.Nickname,
@@ -335,7 +336,7 @@ func getRolePermsFromDB(roleCodes []string) ([]string, error) {
 }
 
 // GetUserProfile 获取用户个人信息
-func GetUserProfile(userId int64) (*model.UserProfileVO, error) {
+func GetUserProfile(userId int64) (*api.UserProfileResp, error) {
 	profile, err := repository.GetUserProfile(userId)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -347,8 +348,8 @@ func GetUserProfile(userId int64) (*model.UserProfileVO, error) {
 }
 
 // UpdateUserProfile 更新用户个人信息
-func UpdateUserProfile(userId int64, form *model.UserProfileForm) error {
-	if err := repository.UpdateUserProfile(userId, form); err != nil {
+func UpdateUserProfile(userId int64, req *api.UserProfileUpdateReq) error {
+	if err := repository.UpdateUserProfile(userId, req); err != nil {
 		return errs.SystemError("更新用户信息失败")
 	}
 	return nil
@@ -368,7 +369,7 @@ func ResetUserPassword(userId int64, password string) error {
 }
 
 // ChangeUserPassword 当前用户修改密码
-func ChangeUserPassword(userId int64, form *model.PasswordUpdateForm) error {
+func ChangeUserPassword(userId int64, form *api.PasswordUpdateReq) error {
 	user, err := repository.GetUserByID(userId)
 	if err != nil {
 		return errs.SystemError("查询用户失败")
@@ -421,7 +422,7 @@ func SendMobileCode(mobile string) error {
 }
 
 // BindOrChangeMobile 绑定或更换手机号
-func BindOrChangeMobile(userId int64, form *model.MobileUpdateForm) error {
+func BindOrChangeMobile(userId int64, form *api.MobileUpdateReq) error {
 	ctx := context.Background()
 
 	// 1. 验证短信验证码
@@ -474,7 +475,7 @@ func SendEmailCode(email string) error {
 }
 
 // BindOrChangeEmail 绑定或更换邮箱
-func BindOrChangeEmail(userId int64, form *model.EmailUpdateForm) error {
+func BindOrChangeEmail(userId int64, form *api.EmailUpdateReq) error {
 	ctx := context.Background()
 
 	// 1. 验证邮箱验证码
@@ -510,7 +511,7 @@ func GetUserOptions() ([]common.Option[string], error) {
 }
 
 // ExportUsersToExcel 导出用户数据到Excel
-func ExportUsersToExcel(query *model.UserPageQuery) (*excel.ExcelExporter, error) {
+func ExportUsersToExcel(query *api.UserQueryReq) (*excel.ExcelExporter, error) {
 	// 查询所有符合条件的用户（不分页）
 	query.PageNum = 1
 	query.PageSize = 10000 // 设置一个较大的值
@@ -663,7 +664,7 @@ func ImportUsersFromExcel(file io.Reader) (map[string]interface{}, error) {
 		}
 
 		// 创建用户
-		user := &model.User{
+		user := &domain.User{
 			Username: username,
 			Nickname: nickname,
 			Mobile:   mobile,

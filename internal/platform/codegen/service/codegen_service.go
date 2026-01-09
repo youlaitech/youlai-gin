@@ -128,7 +128,7 @@ type genTableColumnRow struct {
 	DictType     string `gorm:"column:dict_type"`
 }
 
-func GetTablePage(query *model.TablePageQuery) (*common.PageResult, error) {
+func GetTablePage(query *model.TableQuery) (*common.PagedData, error) {
 	offset := query.GetOffset()
 	limit := query.GetLimit()
 
@@ -166,7 +166,8 @@ LIMIT ? OFFSET ?`, where)
 		return nil, errs.SystemError("查询数据表失败")
 	}
 
-	return &common.PageResult{List: list, Total: total}, nil
+	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
+	return &common.PagedData{Data: list, Page: pageMeta}, nil
 }
 
 func GetGenConfig(tableName string) (*model.GenConfigFormDto, error) {

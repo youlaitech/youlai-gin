@@ -15,7 +15,7 @@ import (
 
 // RegisterRoutes 注册通知公告路由
 func RegisterRoutes(r *gin.RouterGroup) {
-	r.GET("/notices/page", GetNoticePage)
+	r.GET("/notices", GetNoticePage)
 	r.POST("/notices", SaveNotice)
 	r.GET("/notices/:id/form", GetNoticeForm)
 	r.GET("/notices/:id/detail", GetNoticeDetail)
@@ -30,7 +30,7 @@ func RegisterRoutes(r *gin.RouterGroup) {
 
 // GetNoticePage 通知公告分页列表
 func GetNoticePage(c *gin.Context) {
-	var query model.NoticePageQuery
+	var query model.NoticeQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
 		response.Fail(c, "参数错误")
 		return
@@ -42,7 +42,7 @@ func GetNoticePage(c *gin.Context) {
 		return
 	}
 
-	response.Ok(c, result)
+	response.OkPaged(c, result)
 }
 
 // SaveNotice 新增通知公告
@@ -212,7 +212,7 @@ func GetMyNoticePage(c *gin.Context) {
 		return
 	}
 
-	response.Ok(c, result)
+	response.OkPaged(c, result)
 }
 
 // ReadAllNotices 全部已读

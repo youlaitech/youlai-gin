@@ -3,8 +3,8 @@ package model
 import "youlai-gin/pkg/common"
 
 // TablePageQuery 数据表分页查询参数
-type TablePageQuery struct {
-	common.PageQuery
+type TableQuery struct {
+	common.BaseQuery
 	Keywords string `form:"keywords"`
 }
 

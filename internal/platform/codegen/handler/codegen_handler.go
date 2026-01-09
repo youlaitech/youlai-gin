@@ -12,7 +12,7 @@ import (
 )
 
 func GetTablePage(c *gin.Context) {
-	var query model.TablePageQuery
+	var query model.TableQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
 		response.Fail(c, "参数错误")
 		return
@@ -24,7 +24,7 @@ func GetTablePage(c *gin.Context) {
 		return
 	}
 
-	response.Ok(c, result)
+	response.OkPaged(c, result)
 }
 
 func GetGenConfig(c *gin.Context) {

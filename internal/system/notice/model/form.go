@@ -19,8 +19,8 @@ type NoticeForm struct {
 }
 
 // NoticePageQuery 通知分页查询
-type NoticePageQuery struct {
-	common.PageQuery
+type NoticeQuery struct {
+	common.BaseQuery
 	Title  string `form:"title"`
 	Type   *int   `form:"type"`
 	Status *int   `form:"status"`
@@ -28,7 +28,7 @@ type NoticePageQuery struct {
 
 // UserNoticeQuery 用户通知查询
 type UserNoticeQuery struct {
-	common.PageQuery
+	common.BaseQuery
 	Type   *int `form:"type"`
 	IsRead *int `form:"isRead"` // 0:未读 1:已读
 }

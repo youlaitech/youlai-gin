@@ -9,8 +9,8 @@ import (
 
 // RegisterRoutes 注册统计分析路由
 func RegisterRoutes(r *gin.RouterGroup) {
-	r.GET("/statistics/visits/trend", GetVisitTrend)
-	r.GET("/statistics/visits/overview", GetVisitOverview)
+	r.GET("statistics/visits/trend", GetVisitTrend)
+	r.GET("statistics/visits/overview", GetVisitOverview)
 }
 
 // GetVisitTrend 访问趋势统计

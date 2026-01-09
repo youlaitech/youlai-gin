@@ -1,13 +1,13 @@
 package common
 
-// PageQuery 分页查询参数
-type PageQuery struct {
+// BaseQuery 分页查询参数
+type BaseQuery struct {
 	PageNum  int `form:"pageNum" binding:"min=1" default:"1"`
 	PageSize int `form:"pageSize" binding:"min=1,max=100" default:"10"`
 }
 
 // GetOffset 计算偏移量（用于数据库分页）
-func (p *PageQuery) GetOffset() int {
+func (p *BaseQuery) GetOffset() int {
 	if p.PageNum <= 0 {
 		p.PageNum = 1
 	}
@@ -15,7 +15,7 @@ func (p *PageQuery) GetOffset() int {
 }
 
 // GetLimit 获取限制数量
-func (p *PageQuery) GetLimit() int {
+func (p *BaseQuery) GetLimit() int {
 	if p.PageSize <= 0 {
 		p.PageSize = 10
 	}
@@ -23,17 +23,32 @@ func (p *PageQuery) GetLimit() int {
 }
 
 // GetPage 获取页码（用于新分页函数）
-func (p *PageQuery) GetPage() int {
+func (p *BaseQuery) GetPage() int {
 	return p.PageNum
 }
 
 // GetPageSize 获取每页大小（用于新分页函数）
-func (p *PageQuery) GetPageSize() int {
+func (p *BaseQuery) GetPageSize() int {
 	return p.PageSize
 }
 
-// PageResult 分页响应
-type PageResult struct {
-	List  interface{} `json:"list"`
-	Total int64       `json:"total"`
+type PageMeta struct {
+	PageNum  int   `json:"pageNum"`
+	PageSize int   `json:"pageSize"`
+	Total    int64 `json:"total"`
+}
+
+type PagedData struct {
+	Data interface{} `json:"data"`
+	Page PageMeta    `json:"page"`
+}
+
+func NewPageMeta(pageNum int, pageSize int, total int64) PageMeta {
+	if pageNum <= 0 {
+		pageNum = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+	return PageMeta{PageNum: pageNum, PageSize: pageSize, Total: total}
 }

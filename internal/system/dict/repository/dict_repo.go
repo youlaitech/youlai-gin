@@ -6,7 +6,7 @@ import (
 )
 
 // GetDictPage 字典分页查询
-func GetDictPage(query *model.DictPageQuery) ([]model.Dict, int64, error) {
+func GetDictPage(query *model.DictQuery) ([]model.Dict, int64, error) {
 	var dicts []model.Dict
 	var total int64
 
@@ -27,6 +27,16 @@ func GetDictPage(query *model.DictPageQuery) ([]model.Dict, int64, error) {
 	}
 
 	return dicts, total, nil
+}
+
+// GetDictList 获取字典列表
+func GetDictList() ([]model.Dict, error) {
+	var dicts []model.Dict
+	err := database.DB.Model(&model.Dict{}).
+		Where("status = 1 AND is_deleted = 0").
+		Order("create_time DESC").
+		Find(&dicts).Error
+	return dicts, err
 }
 
 // GetDictByID 根据ID查询字典
@@ -72,6 +82,33 @@ func GetDictItems(dictCode string) ([]model.DictItem, error) {
 	return items, err
 }
 
+// GetDictItemPage 字典项分页查询
+func GetDictItemPage(query *model.DictItemQuery) ([]model.DictItem, int64, error) {
+	var items []model.DictItem
+	var total int64
+
+	db := database.DB.Model(&model.DictItem{})
+	if query.DictCode != "" {
+		db = db.Where("dict_code = ?", query.DictCode)
+	}
+	if query.Keywords != "" {
+		kw := "%" + query.Keywords + "%"
+		db = db.Where("label LIKE ? OR value LIKE ?", kw, kw)
+	}
+
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := query.GetOffset()
+	limit := query.GetLimit()
+	if err := db.Offset(offset).Limit(limit).Order("sort ASC, id ASC").Find(&items).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return items, total, nil
+}
+
 // GetDictItemByID 根据ID查询字典项
 func GetDictItemByID(id int64) (*model.DictItem, error) {
 	var item model.DictItem
@@ -86,12 +123,25 @@ func CreateDictItem(item *model.DictItem) error {
 
 // UpdateDictItem 更新字典项
 func UpdateDictItem(item *model.DictItem) error {
-	return database.DB.Model(&model.DictItem{}).Where("id = ?", item.ID).Updates(item).Error
+	return database.DB.Model(&model.DictItem{}).Where("id = ?", item.ID).Select(
+		"dict_code",
+		"value",
+		"label",
+		"tag_type",
+		"sort",
+		"status",
+		"remark",
+	).Updates(item).Error
 }
 
 // DeleteDictItem 删除字典项（物理删除）
 func DeleteDictItem(id int64) error {
 	return database.DB.Where("id = ?", id).Delete(&model.DictItem{}).Error
+}
+
+// BatchDeleteDictItems 批量删除字典项
+func BatchDeleteDictItems(ids []int64) error {
+	return database.DB.Where("id IN ?", ids).Delete(&model.DictItem{}).Error
 }
 
 // GetDictItemsCount 获取字典项数量（用于删除前校验）

@@ -13,7 +13,7 @@ import (
 )
 
 // GetRolePage 角色分页列表
-func GetRolePage(query *model.RolePageQuery) (*common.PageResult, error) {
+func GetRolePage(query *model.RoleQuery) (*common.PagedData, error) {
 	roles, total, err := repository.GetRolePage(query)
 	if err != nil {
 		return nil, errs.SystemError("查询角色列表失败")
@@ -33,10 +33,8 @@ func GetRolePage(query *model.RolePageQuery) (*common.PageResult, error) {
 		}
 	}
 
-	return &common.PageResult{
-		List:  voList,
-		Total: total,
-	}, nil
+	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
+	return &common.PagedData{Data: voList, Page: pageMeta}, nil
 }
 
 // GetRoleOptions 角色下拉选项

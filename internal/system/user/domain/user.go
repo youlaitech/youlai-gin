@@ -1,4 +1,4 @@
-package model
+package domain
 
 import (
 	"youlai-gin/pkg/common"

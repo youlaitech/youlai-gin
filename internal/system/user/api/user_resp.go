@@ -1,9 +1,9 @@
-package model
+package api
 
 import "youlai-gin/pkg/types"
 
-// UserPageVO 用户分页视图对象
-type UserPageVO struct {
+// UserPageResp 用户分页响应
+type UserPageResp struct {
 	ID         types.BigInt     `json:"id"`
 	Username   string           `json:"username"`
 	Nickname   string           `json:"nickname"`
@@ -17,8 +17,8 @@ type UserPageVO struct {
 	CreateTime types.LocalTime  `json:"createTime"`
 }
 
-// UserProfileVO 个人中心用户信息
-type UserProfileVO struct {
+// UserProfileResp 个人中心用户信息响应
+type UserProfileResp struct {
 	ID       types.BigInt `json:"id"`
 	Username string       `json:"username"`
 	Nickname string       `json:"nickname"`
@@ -30,12 +30,27 @@ type UserProfileVO struct {
 	RoleNames string      `json:"roleNames"`
 }
 
-// CurrentUserDTO 当前登录用户信息
-type CurrentUserDTO struct {
+// CurrentUserResp 当前登录用户信息响应
+type CurrentUserResp struct {
 	UserID   types.BigInt `json:"userId"`
 	Username string       `json:"username"`
 	Nickname string       `json:"nickname"`
 	Avatar   string       `json:"avatar"`
 	Roles    []string     `json:"roles"`
 	Perms    []string     `json:"perms"`
+}
+
+// UserFormResp 用户表单响应
+type UserFormResp struct {
+	ID       types.BigInt   `json:"id"`
+	Username string         `json:"username"`
+	Nickname string         `json:"nickname"`
+	Mobile   string         `json:"mobile"`
+	Gender   int            `json:"gender"`
+	Avatar   string         `json:"avatar"`
+	Email    string         `json:"email"`
+	Status   int            `json:"status"`
+	DeptID   types.BigInt   `json:"deptId"`
+	RoleIDs  []types.BigInt `json:"roleIds"`
+	Openid   string         `json:"openId"`
 }
