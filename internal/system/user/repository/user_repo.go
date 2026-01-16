@@ -26,7 +26,17 @@ func GetUserPage(query *api.UserQueryReq) ([]api.UserPageResp, int64, error) {
 		Joins("LEFT JOIN sys_dept d ON u.dept_id = d.id").
 		Joins("LEFT JOIN sys_user_role ur ON u.id = ur.user_id").
 		Joins("LEFT JOIN sys_role r ON ur.role_id = r.id").
-		Where("u.is_deleted = 0")
+		Where("u.is_deleted = 0").
+		Where(
+			`NOT EXISTS (
+				SELECT 1
+				FROM sys_user_role sur
+					INNER JOIN sys_role sr ON sur.role_id = sr.id
+				WHERE sur.user_id = u.id
+					AND sr.code = ?
+			)`,
+			"ROOT",
+		)
 
 	if query.Keywords != "" {
 		db = db.Where("u.username LIKE ? OR u.nickname LIKE ? OR u.mobile LIKE ?",
@@ -82,6 +92,13 @@ func FindByUsername(username string) (*domain.User, error) {
 func GetUserByMobile(mobile string) (*domain.User, error) {
 	var user domain.User
 	err := database.DB.Where("mobile = ? AND is_deleted = 0", mobile).First(&user).Error
+	return &user, err
+}
+
+// GetUserByEmail 根据邮箱查询用户
+func GetUserByEmail(email string) (*domain.User, error) {
+	var user domain.User
+	err := database.DB.Where("email = ? AND is_deleted = 0", email).First(&user).Error
 	return &user, err
 }
 
@@ -192,13 +209,17 @@ func GetUserProfile(userId int64) (*api.UserProfileResp, error) {
 
 // UpdateUserProfile 更新用户个人信息
 func UpdateUserProfile(userId int64, req *api.UserProfileUpdateReq) error {
-	return database.DB.Model(&domain.User{}).Where("id = ?", userId).Updates(map[string]interface{}{
-		"nickname": req.Nickname,
-		"avatar":   req.Avatar,
-		"gender":   req.Gender,
-		"mobile":   req.Mobile,
-		"email":    req.Email,
-	}).Error
+	updates := map[string]interface{}{}
+	if req.Nickname != "" {
+		updates["nickname"] = req.Nickname
+	}
+	if req.Avatar != "" {
+		updates["avatar"] = req.Avatar
+	}
+	if req.Gender != nil {
+		updates["gender"] = *req.Gender
+	}
+	return database.DB.Model(&domain.User{}).Where("id = ?", userId).Updates(updates).Error
 }
 
 // UpdateUserPassword 更新用户密码
@@ -211,9 +232,19 @@ func UpdateUserMobile(userId int64, mobile string) error {
 	return database.DB.Model(&domain.User{}).Where("id = ?", userId).Update("mobile", mobile).Error
 }
 
+// UnbindUserMobile 解绑用户手机号
+func UnbindUserMobile(userId int64) error {
+	return database.DB.Model(&domain.User{}).Where("id = ?", userId).Update("mobile", nil).Error
+}
+
 // UpdateUserEmail 更新用户邮箱
 func UpdateUserEmail(userId int64, email string) error {
 	return database.DB.Model(&domain.User{}).Where("id = ?", userId).Update("email", email).Error
+}
+
+// UnbindUserEmail 解绑用户邮箱
+func UnbindUserEmail(userId int64) error {
+	return database.DB.Model(&domain.User{}).Where("id = ?", userId).Update("email", nil).Error
 }
 
 // GetUserOptions 获取用户下拉选项

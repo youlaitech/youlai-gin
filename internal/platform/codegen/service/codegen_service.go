@@ -16,6 +16,7 @@ import (
 	"youlai-gin/internal/platform/codegen/model"
 	"youlai-gin/pkg/common"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/types"
 )
 
 type templateName string
@@ -30,6 +31,7 @@ type templateFieldConfig struct {
 	ColumnName    string `velty:"name=columnName"`
 	ColumnType    string `velty:"name=columnType"`
 	FieldName     string `velty:"name=fieldName"`
+	GoFieldName   string `velty:"name=goFieldName"`
 	FieldType     string `velty:"name=fieldType"`
 	FieldComment  string `velty:"name=fieldComment"`
 	IsShowInList  int    `velty:"name=isShowInList"`
@@ -43,22 +45,21 @@ type templateFieldConfig struct {
 	DictType      string `velty:"name=dictType"`
 	JavaType      string `velty:"name=javaType"`
 	TsType        string `velty:"name=tsType"`
+	GoType        string `velty:"name=goType"`
 }
 
 const (
 	tplAPI        templateName = "API"
 	tplAPITypes   templateName = "API_TYPES"
 	tplView       templateName = "VIEW"
-	tplController templateName = "Controller"
+	tplHandler    templateName = "Handler"
 	tplService    templateName = "Service"
-	tplServiceImpl templateName = "ServiceImpl"
-	tplMapper     templateName = "Mapper"
-	tplMapperXml  templateName = "MapperXml"
-	tplConverter  templateName = "Converter"
-	tplQuery      templateName = "Query"
-	tplForm       templateName = "Form"
-	tplVo         templateName = "Vo"
-	tplEntity     templateName = "Entity"
+	tplRepository templateName = "Repository"
+	tplModelEntity templateName = "ModelEntity"
+	tplModelForm   templateName = "ModelForm"
+	tplModelQuery  templateName = "ModelQuery"
+	tplModelVo     templateName = "ModelVo"
+	tplRouter     templateName = "Router"
 )
 
 var codegenConfig = struct {
@@ -71,7 +72,7 @@ var codegenConfig = struct {
 	defaultRemoveTablePrefix string
 }{
 	downloadFileName:       "youlai-admin-code.zip",
-	backendAppName:         "youlai-boot",
+	backendAppName:         "youlai-gin",
 	frontendAppName:        "vue3-element-admin",
 	defaultAuthor:          "youlaitech",
 	defaultModuleName:      "system",
@@ -80,19 +81,42 @@ var codegenConfig = struct {
 }
 
 var templateConfigs = map[templateName]templateConfig{
-	tplAPI:        {templatePath: "codegen/api.ts.vm", subpackageName: "api", extension: ".ts"},
-	tplAPITypes:   {templatePath: "codegen/api-types.ts.vm", subpackageName: "types", extension: ".ts"},
-	tplView:       {templatePath: "codegen/index.vue.vm", subpackageName: "views", extension: ".vue"},
-	tplController: {templatePath: "codegen/controller.java.vm", subpackageName: "controller", extension: ".java"},
-	tplService:    {templatePath: "codegen/service.java.vm", subpackageName: "service", extension: ".java"},
-	tplServiceImpl:{templatePath: "codegen/serviceImpl.java.vm", subpackageName: "service.impl", extension: ".java"},
-	tplMapper:     {templatePath: "codegen/mapper.java.vm", subpackageName: "mapper", extension: ".java"},
-	tplMapperXml:  {templatePath: "codegen/mapper.xml.vm", subpackageName: "mapper", extension: ".xml"},
-	tplConverter:  {templatePath: "codegen/converter.java.vm", subpackageName: "converter", extension: ".java"},
-	tplQuery:      {templatePath: "codegen/query.java.vm", subpackageName: "model.query", extension: ".java"},
-	tplForm:       {templatePath: "codegen/form.java.vm", subpackageName: "model.form", extension: ".java"},
-	tplVo:         {templatePath: "codegen/vo.java.vm", subpackageName: "model.vo", extension: ".java"},
-	tplEntity:     {templatePath: "codegen/entity.java.vm", subpackageName: "model.entity", extension: ".java"},
+	tplAPI:        {templatePath: "api.ts.vm", subpackageName: "api", extension: ".ts"},
+	tplAPITypes:   {templatePath: "api-types.ts.vm", subpackageName: "types", extension: ".ts"},
+	tplView:       {templatePath: "index.vue.vm", subpackageName: "views", extension: ".vue"},
+	tplHandler:    {templatePath: "handler.go.vm", subpackageName: "handler", extension: ".go"},
+	tplService:    {templatePath: "service.go.vm", subpackageName: "service", extension: ".go"},
+	tplRepository: {templatePath: "repository.go.vm", subpackageName: "repository", extension: ".go"},
+	tplModelEntity:{templatePath: "model-entity.go.vm", subpackageName: "model", extension: ".go"},
+	tplModelForm:  {templatePath: "model-form.go.vm", subpackageName: "model", extension: ".go"},
+	tplModelQuery: {templatePath: "model-query.go.vm", subpackageName: "model", extension: ".go"},
+	tplModelVo:    {templatePath: "model-vo.go.vm", subpackageName: "model", extension: ".go"},
+	tplRouter:     {templatePath: "router.go.vm", subpackageName: "", extension: ".go"},
+}
+
+// resolveFrontendTemplatePath 解析前端模板路径
+func resolveFrontendTemplatePath(name templateName, tc templateConfig, frontendType string) string {
+	if frontendType != "js" {
+		return tc.templatePath
+	}
+	if name == tplAPI {
+		return "api.js.vm"
+	}
+	if name == tplView {
+		return "index.js.vue.vm"
+	}
+	return tc.templatePath
+}
+
+// resolveFrontendExtension 解析前端文件后缀
+func resolveFrontendExtension(name templateName, tc templateConfig, frontendType string) string {
+	if frontendType != "js" {
+		return tc.extension
+	}
+	if name == tplAPI {
+		return ".js"
+	}
+	return tc.extension
 }
 
 type genTableRow struct {
@@ -443,18 +467,28 @@ func DeleteGenConfig(tableName string) error {
 	return nil
 }
 
-func GetPreview(tableName string, pageType string) ([]model.CodegenPreviewVo, error) {
+func GetPreview(tableName string, pageType string, typeParam string) ([]model.CodegenPreviewVo, error) {
 	cfg, err := GetGenConfig(tableName)
 	if err != nil {
 		return nil, err
 	}
+	frontendType := "ts"
+	if strings.ToLower(strings.TrimSpace(typeParam)) == "js" {
+		frontendType = "js"
+	}
 
 	previews := make([]model.CodegenPreviewVo, 0)
 	for name, tc := range templateConfigs {
-		fileName := getFileName(cfg.EntityName, name, tc.extension)
+		if frontendType == "js" && name == tplAPITypes {
+			continue
+		}
+
+		templatePath := resolveFrontendTemplatePath(name, tc, frontendType)
+		extension := resolveFrontendExtension(name, tc, frontendType)
+		fileName := getFileName(cfg.EntityName, name, extension)
 		filePath := getFilePath(name, cfg.ModuleName, cfg.PackageName, tc.subpackageName, cfg.EntityName)
 
-		content, err := renderTemplate(name, tc, cfg, pageType)
+		content, err := renderTemplate(name, templatePath, tc.subpackageName, cfg, pageType)
 		if err != nil {
 			return nil, err
 		}
@@ -465,12 +499,12 @@ func GetPreview(tableName string, pageType string) ([]model.CodegenPreviewVo, er
 	return previews, nil
 }
 
-func DownloadZip(tableNames []string, pageType string) (string, []byte, error) {
+func DownloadZip(tableNames []string, pageType string, typeParam string) (string, []byte, error) {
 	buf := new(bytes.Buffer)
 	zw := zip.NewWriter(buf)
 
 	for _, t := range tableNames {
-		list, err := GetPreview(t, pageType)
+		list, err := GetPreview(t, pageType, typeParam)
 		if err != nil {
 			_ = zw.Close()
 			return "", nil, err
@@ -494,13 +528,23 @@ func DownloadZip(tableNames []string, pageType string) (string, []byte, error) {
 	return codegenConfig.downloadFileName, buf.Bytes(), nil
 }
 
-func renderTemplate(name templateName, tc templateConfig, cfg *model.GenConfigFormDto, pageType string) (string, error) {
-	tplPath := tc.templatePath
-	if name == tplView && pageType == "curd" && strings.HasSuffix(tplPath, "index.vue.vm") {
-		tplPath = strings.Replace(tplPath, "index.vue.vm", "index.curd.vue.vm", 1)
+func renderTemplate(
+	name templateName,
+	templatePath string,
+	subpackageName string,
+	cfg *model.GenConfigFormDto,
+	pageType string,
+) (string, error) {
+	effectivePath := templatePath
+	if name == tplView && pageType == "curd" {
+		if strings.HasSuffix(effectivePath, "index.js.vue.vm") {
+			effectivePath = strings.Replace(effectivePath, "index.js.vue.vm", "index.curd.js.vue.vm", 1)
+		} else if strings.HasSuffix(effectivePath, "index.vue.vm") {
+			effectivePath = strings.Replace(effectivePath, "index.vue.vm", "index.curd.vue.vm", 1)
+		}
 	}
 
-	absPath := resolveBootTemplatePath(tplPath)
+	absPath := resolveBootTemplatePath(effectivePath)
 	content, err := os.ReadFile(absPath)
 	if err != nil {
 		return "", errs.SystemError("读取模板失败")
@@ -525,6 +569,7 @@ func renderTemplate(name templateName, tc templateConfig, cfg *model.GenConfigFo
 	_ = planner.DefineVariable("entityLowerCamel", "")
 	_ = planner.DefineVariable("entityKebab", "")
 	_ = planner.DefineVariable("entityUpperSnake", "")
+	_ = planner.DefineVariable("entitySnake", "")
 	_ = planner.DefineVariable("businessName", "")
 	_ = planner.DefineVariable("fieldConfigs", reflect.TypeOf([]templateFieldConfig{}))
 
@@ -536,7 +581,7 @@ func renderTemplate(name templateName, tc templateConfig, cfg *model.GenConfigFo
 	state := newState()
 	_ = state.SetValue("packageName", cfg.PackageName)
 	_ = state.SetValue("moduleName", cfg.ModuleName)
-	_ = state.SetValue("subpackageName", tc.subpackageName)
+	_ = state.SetValue("subpackageName", subpackageName)
 	_ = state.SetValue("date", formatDateTime(time.Now()))
 	_ = state.SetValue("entityName", cfg.EntityName)
 	_ = state.SetValue("tableName", cfg.TableName)
@@ -544,16 +589,19 @@ func renderTemplate(name templateName, tc templateConfig, cfg *model.GenConfigFo
 	_ = state.SetValue("entityLowerCamel", lowerFirst(cfg.EntityName))
 	_ = state.SetValue("entityKebab", toKebabCase(cfg.EntityName))
 	_ = state.SetValue("entityUpperSnake", toSnakeUpper(cfg.EntityName))
+	_ = state.SetValue("entitySnake", toSnakeLower(cfg.EntityName))
 	_ = state.SetValue("businessName", cfg.BusinessName)
 
 	fields := make([]templateFieldConfig, 0, len(cfg.FieldConfigs))
 	for i := range cfg.FieldConfigs {
 		f := cfg.FieldConfigs[i]
 		javaType := defaultStr(f.FieldType, getJavaTypeByColumnType(f.ColumnType))
+		goType := getGoTypeByColumnType(f.ColumnType)
 		fields = append(fields, templateFieldConfig{
 			ColumnName:    f.ColumnName,
 			ColumnType:    f.ColumnType,
 			FieldName:     f.FieldName,
+			GoFieldName:   toGoFieldName(f.FieldName),
 			FieldType:     javaType,
 			FieldComment:  f.FieldComment,
 			IsShowInList:  f.IsShowInList,
@@ -567,6 +615,7 @@ func renderTemplate(name templateName, tc templateConfig, cfg *model.GenConfigFo
 			DictType:      f.DictType,
 			JavaType:      javaType,
 			TsType:        getTsTypeByJavaType(javaType),
+			GoType:        goType,
 		})
 	}
 	_ = state.SetValue("fieldConfigs", fields)
@@ -579,17 +628,10 @@ func renderTemplate(name templateName, tc templateConfig, cfg *model.GenConfigFo
 }
 
 func resolveBootTemplatePath(templatePath string) string {
-	// 以 youlai-gin 为工作目录启动时，模板位于 ../youlai-boot/...
-	return filepath.Join("..", "youlai-boot", "src", "main", "resources", "templates", filepath.FromSlash(templatePath))
+	return filepath.Join("internal", "platform", "codegen", "templates", filepath.FromSlash(templatePath))
 }
 
 func getFileName(entityName string, name templateName, extension string) string {
-	if name == tplEntity {
-		return entityName + extension
-	}
-	if name == tplMapperXml {
-		return entityName + "Mapper" + extension
-	}
 	if name == tplAPI {
 		return toKebabCase(entityName) + extension
 	}
@@ -599,6 +641,30 @@ func getFileName(entityName string, name templateName, extension string) string 
 	if name == tplView {
 		return "index.vue"
 	}
+	if name == tplHandler {
+		return toSnakeLower(entityName) + "_handler" + extension
+	}
+	if name == tplService {
+		return toSnakeLower(entityName) + "_service" + extension
+	}
+	if name == tplRepository {
+		return toSnakeLower(entityName) + "_repo" + extension
+	}
+	if name == tplModelEntity {
+		return "entity" + extension
+	}
+	if name == tplModelForm {
+		return "form" + extension
+	}
+	if name == tplModelQuery {
+		return "query" + extension
+	}
+	if name == tplModelVo {
+		return "vo" + extension
+	}
+	if name == tplRouter {
+		return "router" + extension
+	}
 	return entityName + string(name) + extension
 }
 
@@ -606,9 +672,6 @@ func getFilePath(name templateName, moduleName string, packageName string, subpa
 	backend := codegenConfig.backendAppName
 	frontend := codegenConfig.frontendAppName
 
-	if name == tplMapperXml {
-		return filepath.Join(backend, "src", "main", "resources", subpackageName, moduleName)
-	}
 	if name == tplAPI {
 		return filepath.Join(frontend, "src", subpackageName, moduleName)
 	}
@@ -619,12 +682,11 @@ func getFilePath(name templateName, moduleName string, packageName string, subpa
 		return filepath.Join(frontend, "src", subpackageName, moduleName, toKebabCase(entityName))
 	}
 
-	parts := make([]string, 0, 16)
-	parts = append(parts, backend, "src", "main", "java")
-	parts = append(parts, strings.Split(packageName, ".")...)
-	parts = append(parts, moduleName)
-	parts = append(parts, strings.Split(subpackageName, ".")...)
-	return filepath.Join(parts...)
+	base := filepath.Join(backend, "internal", moduleName, toKebabCase(entityName))
+	if subpackageName == "" {
+		return base
+	}
+	return filepath.Join(base, subpackageName)
 }
 
 func defaultStr(v string, dv string) string {
@@ -646,6 +708,20 @@ func lowerFirst(s string) string {
 		return s
 	}
 	return strings.ToLower(s[:1]) + s[1:]
+}
+
+func toGoFieldName(name string) string {
+	if name == "" {
+		return name
+	}
+	if strings.Contains(name, "_") || strings.Contains(name, "-") {
+		name = toPascalCase(name)
+	} else {
+		name = strings.ToUpper(name[:1]) + name[1:]
+	}
+	name = strings.ReplaceAll(name, "Ids", "IDs")
+	name = strings.ReplaceAll(name, "Id", "ID")
+	return name
 }
 
 func toCamelCase(s string) string {
@@ -688,6 +764,26 @@ func toKebabCase(s string) string {
 	return strings.ToLower(b.String())
 }
 
+func getGoTypeByColumnType(columnType string) string {
+	t := normalizeColumnType(columnType)
+	switch t {
+	case "varchar", "char", "text", "longtext", "mediumtext", "json":
+		return "string"
+	case "int", "tinyint", "smallint", "mediumint":
+		return "int"
+	case "bigint":
+		return "types.BigInt"
+	case "float", "double", "decimal":
+		return "float64"
+	case "date", "datetime", "timestamp":
+		return "string"
+	case "boolean", "bool", "bit":
+		return "int"
+	default:
+		return "string"
+	}
+}
+
 func toSnakeUpper(s string) string {
 	var b strings.Builder
 	for i, r := range s {
@@ -701,6 +797,21 @@ func toSnakeUpper(s string) string {
 		b.WriteRune(r)
 	}
 	return strings.ToUpper(b.String())
+}
+
+func toSnakeLower(s string) string {
+	var b strings.Builder
+	for i, r := range s {
+		if i > 0 && r >= 'A' && r <= 'Z' {
+			b.WriteByte('_')
+		}
+		if r == '-' {
+			b.WriteByte('_')
+			continue
+		}
+		b.WriteRune(r)
+	}
+	return strings.ToLower(b.String())
 }
 
 func formatDateTime(t time.Time) string {

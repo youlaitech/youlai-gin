@@ -1,0 +1,99 @@
+package service
+
+import (
+	"errors"
+
+	"gorm.io/gorm"
+
+	"youlai-gin/internal/${moduleName}/${entityKebab}/model"
+	"youlai-gin/internal/${moduleName}/${entityKebab}/repository"
+	"youlai-gin/pkg/common"
+	"youlai-gin/pkg/errs"
+)
+
+// Get${entityName}Page ${businessName}分页列表
+// 说明：聚合数据并转换为列表 VO
+func Get${entityName}Page(query *model.${entityName}Query) (*common.PagedData, error) {
+	list, total, err := repository.Get${entityName}Page(query)
+	if err != nil {
+		return nil, errs.SystemError("查询${businessName}列表失败")
+	}
+
+	voList := make([]model.${entityName}PageVO, len(list))
+	for i, item := range list {
+		voList[i] = model.${entityName}PageVO{
+#foreach($fieldConfig in ${fieldConfigs})
+#	#if($fieldConfig.isShowInList)
+			${fieldConfig.goFieldName}: item.${fieldConfig.goFieldName},
+#	#end
+#end
+		}
+	}
+
+	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
+	return &common.PagedData{Data: voList, Page: pageMeta}, nil
+}
+
+// Save${entityName} 保存${businessName}（新增或更新）
+// 说明：仅映射表单字段到实体，业务校验可在此扩展
+func Save${entityName}(form *model.${entityName}Form) error {
+	item := &model.${entityName}{
+#foreach($fieldConfig in ${fieldConfigs})
+#	#if($fieldConfig.isShowInForm)
+		${fieldConfig.goFieldName}: form.${fieldConfig.goFieldName},
+#	#end
+#end
+	}
+
+	if form.ID == 0 {
+		if err := repository.Create${entityName}(item); err != nil {
+			return errs.SystemError("创建${businessName}失败")
+		}
+		form.ID = item.ID
+		return nil
+	}
+
+	if err := repository.Update${entityName}(item); err != nil {
+		return errs.SystemError("更新${businessName}失败")
+	}
+
+	return nil
+}
+
+// Get${entityName}Form 获取${businessName}表单数据
+// 说明：从实体反向填充表单
+func Get${entityName}Form(id int64) (*model.${entityName}Form, error) {
+	item, err := repository.Get${entityName}ByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errs.NotFound("${businessName}不存在")
+		}
+		return nil, errs.SystemError("查询${businessName}失败")
+	}
+
+	return &model.${entityName}Form{
+#foreach($fieldConfig in ${fieldConfigs})
+#	#if($fieldConfig.isShowInForm)
+		${fieldConfig.goFieldName}: item.${fieldConfig.goFieldName},
+#	#end
+#end
+	}, nil
+}
+
+// Delete${entityName} 删除${businessName}
+// 说明：先校验数据是否存在，再执行删除
+func Delete${entityName}(id int64) error {
+	_, err := repository.Get${entityName}ByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.NotFound("${businessName}不存在")
+		}
+		return errs.SystemError("查询${businessName}失败")
+	}
+
+	if err := repository.Delete${entityName}(id); err != nil {
+		return errs.SystemError("删除${businessName}失败")
+	}
+
+	return nil
+}

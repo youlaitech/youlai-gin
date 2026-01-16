@@ -13,7 +13,7 @@ func GetRolePage(query *model.RoleQuery) ([]model.Role, int64, error) {
 	var roles []model.Role
 	var total int64
 
-	db := database.DB.Model(&model.Role{}).Where("is_deleted = 0")
+	db := database.DB.Model(&model.Role{}).Where("is_deleted = 0").Where("code <> ?", "ROOT")
 
 	if query.Keywords != "" {
 		db = db.Where("name LIKE ? OR code LIKE ?", "%"+query.Keywords+"%", "%"+query.Keywords+"%")
@@ -59,6 +59,7 @@ func GetRoleOptions() ([]model.Role, error) {
 	var roles []model.Role
 	err := database.DB.Model(&model.Role{}).
 		Where("status = 1 AND is_deleted = 0").
+		Where("code <> ?", "ROOT").
 		Order("sort ASC").
 		Find(&roles).Error
 	return roles, err

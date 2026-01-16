@@ -1,0 +1,68 @@
+import request from "@/utils/request";
+import type { ${entityName}Form, ${entityName}QueryParams, ${entityName}Item } from "@/types/api";
+
+const ${entityUpperSnake}_BASE_URL = "/api/v1/${entityKebab}";
+
+const ${entityName}API = {
+    /** 获取${businessName}分页数据 */
+    getPage(queryParams?: ${entityName}QueryParams) {
+        return request<any, PageResult<${entityName}Item>>({
+            url: `${${entityUpperSnake}_BASE_URL}`,
+            method: "get",
+            params: queryParams,
+        });
+    },
+    /**
+     * 获取${businessName}表单数据
+     *
+     * @param id ${businessName}ID
+     * @returns ${businessName}表单数据
+     */
+    getFormData(id: string) {
+        return request<any, ${entityName}Form>({
+            url: `${${entityUpperSnake}_BASE_URL}/${id}/form`,
+            method: "get",
+        });
+    },
+
+    /**
+     *  添加${businessName}
+     *
+     *  @param data ${businessName}表单数据
+     */
+    create(data: ${entityName}Form) {
+        return request({
+            url: `${${entityUpperSnake}_BASE_URL}`,
+            method: "post",
+            data,
+        });
+    },
+
+    /**
+     * 更新${businessName}
+     *
+     * @param id ${businessName}ID
+     * @param data ${businessName}表单数据
+     */
+     update(id: string, data: ${entityName}Form) {
+        return request({
+            url: `${${entityUpperSnake}_BASE_URL}/${id}`,
+            method: "put",
+            data,
+        });
+    },
+
+    /**
+     * 批量删除${businessName}，多个以英文逗号(,)分割
+     *
+     * @param ids ${businessName}ID字符串，多个以英文逗号(,)分割
+     */
+     deleteByIds(ids: string) {
+        return request({
+            url: `${${entityUpperSnake}_BASE_URL}/${ids}`,
+            method: "delete",
+        });
+    }
+}
+
+export default ${entityName}API;

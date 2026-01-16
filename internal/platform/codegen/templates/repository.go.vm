@@ -1,0 +1,56 @@
+package repository
+
+import (
+	"youlai-gin/internal/${moduleName}/${entitySnake}/model"
+	"youlai-gin/pkg/database"
+)
+
+// Get${entityName}Page ${businessName}分页查询
+func Get${entityName}Page(query *model.${entityName}Query) ([]model.${entityName}, int64, error) {
+	var list []model.${entityName}
+	var total int64
+
+	db := database.DB.Model(&model.${entityName}{}).Where("is_deleted = 0")
+
+#foreach($fieldConfig in ${fieldConfigs})
+#	#if($fieldConfig.isShowInQuery)
+	if query.${fieldConfig.goFieldName} != "" {
+		db = db.Where("${fieldConfig.columnName} = ?", query.${fieldConfig.goFieldName})
+	}
+#	#end
+#end
+
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := query.GetOffset()
+	limit := query.GetLimit()
+	if err := db.Offset(offset).Limit(limit).Order("create_time DESC").Find(&list).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return list, total, nil
+}
+
+// Get${entityName}ByID 根据ID查询${businessName}
+func Get${entityName}ByID(id int64) (*model.${entityName}, error) {
+	var item model.${entityName}
+	err := database.DB.Where("id = ? AND is_deleted = 0", id).First(&item).Error
+	return &item, err
+}
+
+// Create${entityName} 创建${businessName}
+func Create${entityName}(item *model.${entityName}) error {
+	return database.DB.Create(item).Error
+}
+
+// Update${entityName} 更新${businessName}
+func Update${entityName}(item *model.${entityName}) error {
+	return database.DB.Model(&model.${entityName}{}).Where("id = ?", item.ID).Updates(item).Error
+}
+
+// Delete${entityName} 删除${businessName}（逻辑删除）
+func Delete${entityName}(id int64) error {
+	return database.DB.Model(&model.${entityName}{}).Where("id = ?", id).Update("is_deleted", 1).Error
+}

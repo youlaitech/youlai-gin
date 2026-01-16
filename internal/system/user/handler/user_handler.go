@@ -31,8 +31,10 @@ func RegisterUserRoutes(r *gin.RouterGroup) {
 	r.PUT("/users/password", ChangeCurrentUserPassword)
 	r.POST("/users/mobile/code", SendMobileCode)
 	r.PUT("/users/mobile", BindOrChangeMobile)
+	r.DELETE("/users/mobile", UnbindMobile)
 	r.POST("/users/email/code", SendEmailCode)
 	r.PUT("/users/email", BindOrChangeEmail)
+	r.DELETE("/users/email", UnbindEmail)
 
 	// Excel 导入导出
 	r.GET("/users/export", ExportUsers)
@@ -190,8 +192,7 @@ func UpdateUserProfile(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-
-	response.OkMsg(c, "修改成功")
+	response.Ok(c, true)
 }
 
 // ResetUserPassword 重置指定用户密码
@@ -227,8 +228,7 @@ func ChangeCurrentUserPassword(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-
-	response.OkMsg(c, "修改成功")
+	response.Ok(c, true)
 }
 
 // SendMobileCode 发送短信验证码
@@ -239,8 +239,7 @@ func SendMobileCode(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-
-	response.OkMsg(c, "发送成功")
+	response.Ok(c, true)
 }
 
 // BindOrChangeMobile 绑定或更换手机号
@@ -261,8 +260,29 @@ func BindOrChangeMobile(c *gin.Context) {
 		c.Error(err)
 		return
 	}
+	response.Ok(c, true)
+}
 
-	response.OkMsg(c, "绑定成功")
+// UnbindMobile 解绑手机号
+func UnbindMobile(c *gin.Context) {
+	userId, err := pkgContext.GetCurrentUserID(c)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	var form api.PasswordVerifyReq
+	if err := c.ShouldBindJSON(&form); err != nil {
+		response.Fail(c, "参数错误")
+		return
+	}
+
+	if err := service.UnbindMobile(userId, &form); err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.Ok(c, true)
 }
 
 // SendEmailCode 发送邮箱验证码
@@ -273,8 +293,7 @@ func SendEmailCode(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-
-	response.OkMsg(c, "发送成功")
+	response.Ok(c, true)
 }
 
 // BindOrChangeEmail 绑定或更换邮箱
@@ -295,8 +314,29 @@ func BindOrChangeEmail(c *gin.Context) {
 		c.Error(err)
 		return
 	}
+	response.Ok(c, true)
+}
 
-	response.OkMsg(c, "绑定成功")
+// UnbindEmail 解绑邮箱
+func UnbindEmail(c *gin.Context) {
+	userId, err := pkgContext.GetCurrentUserID(c)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	var form api.PasswordVerifyReq
+	if err := c.ShouldBindJSON(&form); err != nil {
+		response.Fail(c, "参数错误")
+		return
+	}
+
+	if err := service.UnbindEmail(userId, &form); err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.Ok(c, true)
 }
 
 // GetUserOptions 获取用户下拉选项

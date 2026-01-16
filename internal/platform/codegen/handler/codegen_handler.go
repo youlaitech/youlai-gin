@@ -65,8 +65,9 @@ func DeleteGenConfig(c *gin.Context) {
 func GetPreview(c *gin.Context) {
 	tableName := c.Param("tableName")
 	pageType := c.DefaultQuery("pageType", "classic")
+	typeParam := c.DefaultQuery("type", "ts")
 
-	list, err := service.GetPreview(tableName, pageType)
+	list, err := service.GetPreview(tableName, pageType, typeParam)
 	if err != nil {
 		c.Error(err)
 		return
@@ -77,6 +78,7 @@ func GetPreview(c *gin.Context) {
 func Download(c *gin.Context) {
 	tableName := c.Param("tableName")
 	pageType := c.DefaultQuery("pageType", "classic")
+	typeParam := c.DefaultQuery("type", "ts")
 
 	tableNames := make([]string, 0)
 	for _, t := range strings.Split(tableName, ",") {
@@ -90,7 +92,7 @@ func Download(c *gin.Context) {
 		return
 	}
 
-	fileName, data, err := service.DownloadZip(tableNames, pageType)
+	fileName, data, err := service.DownloadZip(tableNames, pageType, typeParam)
 	if err != nil {
 		c.Error(err)
 		return

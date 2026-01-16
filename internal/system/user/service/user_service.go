@@ -349,6 +349,9 @@ func GetUserProfile(userId int64) (*api.UserProfileResp, error) {
 
 // UpdateUserProfile 更新用户个人信息
 func UpdateUserProfile(userId int64, req *api.UserProfileUpdateReq) error {
+	if req.Nickname == "" && req.Avatar == "" && req.Gender == nil {
+		return errs.BadRequest("请至少修改一项")
+	}
 	if err := repository.UpdateUserProfile(userId, req); err != nil {
 		return errs.SystemError("更新用户信息失败")
 	}
@@ -378,6 +381,14 @@ func ChangeUserPassword(userId int64, form *api.PasswordUpdateReq) error {
 	// 验证旧密码
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(form.OldPassword)); err != nil {
 		return errs.BadRequest("旧密码错误")
+	}
+
+	if form.NewPassword != form.ConfirmPassword {
+		return errs.BadRequest("新密码和确认密码不一致")
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(form.NewPassword)); err == nil {
+		return errs.BadRequest("新密码不能与原密码相同")
 	}
 
 	// 加密新密码
@@ -425,6 +436,18 @@ func SendMobileCode(mobile string) error {
 func BindOrChangeMobile(userId int64, form *api.MobileUpdateReq) error {
 	ctx := context.Background()
 
+	// 0. 校验当前密码
+	user, err := repository.GetUserByID(userId)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.NotFound("用户不存在")
+		}
+		return errs.SystemError("查询用户失败")
+	}
+	if err := utils.VerifyPassword(user.Password, form.Password); err != nil {
+		return errs.BadRequest("当前密码错误")
+	}
+
 	// 1. 验证短信验证码
 	codeKey := utils.GetMobileCodeKey(form.Mobile)
 	if err := utils.VerifyCode(ctx, codeKey, form.Code); err != nil {
@@ -434,7 +457,7 @@ func BindOrChangeMobile(userId int64, form *api.MobileUpdateReq) error {
 	// 2. 检查手机号是否已被其他用户使用
 	existingUser, err := repository.GetUserByMobile(form.Mobile)
 	if err == nil && existingUser != nil && existingUser.ID != types.BigInt(userId) {
-		return errs.BadRequest("该手机号已被其他用户使用")
+		return errs.BadRequest("手机号已被其他账号绑定")
 	}
 
 	// 3. 更新手机号
@@ -478,17 +501,77 @@ func SendEmailCode(email string) error {
 func BindOrChangeEmail(userId int64, form *api.EmailUpdateReq) error {
 	ctx := context.Background()
 
+	// 0. 校验当前密码
+	user, err := repository.GetUserByID(userId)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.NotFound("用户不存在")
+		}
+		return errs.SystemError("查询用户失败")
+	}
+	if err := utils.VerifyPassword(user.Password, form.Password); err != nil {
+		return errs.BadRequest("当前密码错误")
+	}
+
 	// 1. 验证邮箱验证码
 	codeKey := utils.GetEmailCodeKey(form.Email)
 	if err := utils.VerifyCode(ctx, codeKey, form.Code); err != nil {
 		return err
 	}
 
-	// 2. 更新邮箱
+	// 2. 检查邮箱是否已被其他用户使用
+	existingUser, err := repository.GetUserByEmail(form.Email)
+	if err == nil && existingUser != nil && existingUser.ID != types.BigInt(userId) {
+		return errs.BadRequest("邮箱已被其他账号绑定")
+	}
+
+	// 3. 更新邮箱
 	if err := repository.UpdateUserEmail(userId, form.Email); err != nil {
 		return errs.SystemError("更新邮箱失败")
 	}
 
+	return nil
+}
+
+// UnbindMobile 解绑手机号
+func UnbindMobile(userId int64, form *api.PasswordVerifyReq) error {
+	user, err := repository.GetUserByID(userId)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.NotFound("用户不存在")
+		}
+		return errs.SystemError("查询用户失败")
+	}
+	if user.Mobile == "" {
+		return errs.BadRequest("当前账号未绑定手机号")
+	}
+	if err := utils.VerifyPassword(user.Password, form.Password); err != nil {
+		return errs.BadRequest("当前密码错误")
+	}
+	if err := repository.UnbindUserMobile(userId); err != nil {
+		return errs.SystemError("解绑手机号失败")
+	}
+	return nil
+}
+
+// UnbindEmail 解绑邮箱
+func UnbindEmail(userId int64, form *api.PasswordVerifyReq) error {
+	user, err := repository.GetUserByID(userId)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.NotFound("用户不存在")
+		}
+		return errs.SystemError("查询用户失败")
+	}
+	if user.Email == "" {
+		return errs.BadRequest("当前账号未绑定邮箱")
+	}
+	if err := utils.VerifyPassword(user.Password, form.Password); err != nil {
+		return errs.BadRequest("当前密码错误")
+	}
+	if err := repository.UnbindUserEmail(userId); err != nil {
+		return errs.SystemError("解绑邮箱失败")
+	}
 	return nil
 }
 

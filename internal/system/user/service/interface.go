@@ -33,10 +33,12 @@ type UserService interface {
 	// 手机号管理
 	SendMobileCode(mobile string) error
 	BindOrChangeMobile(userId int64, form *api.MobileUpdateReq) error
+	UnbindMobile(userId int64, form *api.PasswordVerifyReq) error
 
 	// 邮箱管理
 	SendEmailCode(email string) error
 	BindOrChangeEmail(userId int64, form *api.EmailUpdateReq) error
+	UnbindEmail(userId int64, form *api.PasswordVerifyReq) error
 
 	// Excel 导入导出
 	ExportUsersToExcel(query *api.UserQueryReq) (*excel.ExcelExporter, error)
@@ -103,12 +105,20 @@ func (s *userService) BindOrChangeMobile(userId int64, form *api.MobileUpdateReq
 	return BindOrChangeMobile(userId, form)
 }
 
+func (s *userService) UnbindMobile(userId int64, form *api.PasswordVerifyReq) error {
+	return UnbindMobile(userId, form)
+}
+
 func (s *userService) SendEmailCode(email string) error {
 	return SendEmailCode(email)
 }
 
 func (s *userService) BindOrChangeEmail(userId int64, form *api.EmailUpdateReq) error {
 	return BindOrChangeEmail(userId, form)
+}
+
+func (s *userService) UnbindEmail(userId int64, form *api.PasswordVerifyReq) error {
+	return UnbindEmail(userId, form)
 }
 
 func (s *userService) ExportUsersToExcel(query *api.UserQueryReq) (*excel.ExcelExporter, error) {
