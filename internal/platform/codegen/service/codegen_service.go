@@ -119,6 +119,20 @@ func resolveFrontendExtension(name templateName, tc templateConfig, frontendType
 	return tc.extension
 }
 
+// resolveScope 解析文件范围
+func resolveScope(name templateName) string {
+	if name == tplAPI || name == tplAPITypes || name == tplView {
+		return "frontend"
+	}
+	return "backend"
+}
+
+// resolveLanguage 解析文件语言（扩展名）
+func resolveLanguage(fileName string) string {
+	ext := strings.ToLower(filepath.Ext(fileName))
+	return strings.TrimPrefix(ext, ".")
+}
+
 type genTableRow struct {
 	ID              int64  `gorm:"column:id"`
 	TableName        string `gorm:"column:table_name"`
@@ -493,7 +507,13 @@ func GetPreview(tableName string, pageType string, typeParam string) ([]model.Co
 			return nil, err
 		}
 
-		previews = append(previews, model.CodegenPreviewVo{Path: filepath.ToSlash(filePath), FileName: fileName, Content: content})
+		previews = append(previews, model.CodegenPreviewVo{
+			Path:     filepath.ToSlash(filePath),
+			FileName: fileName,
+			Content:  content,
+			Scope:    resolveScope(name),
+			Language: resolveLanguage(fileName),
+		})
 	}
 
 	return previews, nil

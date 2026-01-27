@@ -59,4 +59,6 @@ type CodegenPreviewVo struct {
 	Path     string `json:"path"`
 	FileName string `json:"fileName"`
 	Content  string `json:"content"`
+	Scope    string `json:"scope"`
+	Language string `json:"language"`
 }
