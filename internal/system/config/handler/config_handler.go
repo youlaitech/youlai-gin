@@ -29,6 +29,9 @@ func RegisterRoutes(r *gin.RouterGroup) {
 }
 
 // GetConfigPage 获取配置分页列表
+// @Summary 配置分页
+// @Tags 08.系统配置
+// @Router /api/v1/configs [get]
 func GetConfigPage(c *gin.Context) {
 	var query model.ConfigQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -46,6 +49,10 @@ func GetConfigPage(c *gin.Context) {
 }
 
 // GetConfigForm 获取配置表单数据
+// @Summary 配置表单
+// @Tags 08.系统配置
+// @Param id path int true "配置ID"
+// @Router /api/v1/configs/{id}/form [get]
 func GetConfigForm(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -64,6 +71,10 @@ func GetConfigForm(c *gin.Context) {
 }
 
 // GetConfigByID 根据ID获取配置
+// @Summary 配置详情
+// @Tags 08.系统配置
+// @Param id path int true "配置ID"
+// @Router /api/v1/configs/{id} [get]
 func GetConfigByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -82,6 +93,10 @@ func GetConfigByID(c *gin.Context) {
 }
 
 // GetConfigByKey 根据Key获取配置
+// @Summary 根据键获取配置
+// @Tags 08.系统配置
+// @Param key path string true "配置键"
+// @Router /api/v1/configs/key/{key} [get]
 func GetConfigByKey(c *gin.Context) {
 	key := c.Param("key")
 	if key == "" {
@@ -99,6 +114,9 @@ func GetConfigByKey(c *gin.Context) {
 }
 
 // SaveConfig 保存配置（新增）
+// @Summary 新增配置
+// @Tags 08.系统配置
+// @Router /api/v1/configs [post]
 func SaveConfig(c *gin.Context) {
 	var form model.ConfigForm
 	if err := c.ShouldBindJSON(&form); err != nil {
@@ -115,6 +133,10 @@ func SaveConfig(c *gin.Context) {
 }
 
 // UpdateConfig 更新配置
+// @Summary 更新配置
+// @Tags 08.系统配置
+// @Param id path int true "配置ID"
+// @Router /api/v1/configs/{id} [put]
 func UpdateConfig(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -139,6 +161,10 @@ func UpdateConfig(c *gin.Context) {
 }
 
 // DeleteConfigs 删除配置（支持批量）
+// @Summary 删除配置
+// @Tags 08.系统配置
+// @Param ids path string true "配置ID列表"
+// @Router /api/v1/configs/{ids} [delete]
 func DeleteConfigs(c *gin.Context) {
 	idsStr := c.Param("ids")
 	if idsStr == "" {
@@ -180,6 +206,10 @@ func DeleteConfigs(c *gin.Context) {
 }
 
 // RefreshConfigCache 刷新指定配置缓存
+// @Summary 刷新配置缓存
+// @Tags 08.系统配置
+// @Param key path string true "配置键"
+// @Router /api/v1/configs/refresh/{key} [post]
 func RefreshConfigCache(c *gin.Context) {
 	key := c.Param("key")
 	if key == "" {
@@ -196,6 +226,9 @@ func RefreshConfigCache(c *gin.Context) {
 }
 
 // RefreshAllConfigCache 刷新所有配置缓存
+// @Summary 刷新全部配置缓存
+// @Tags 08.系统配置
+// @Router /api/v1/configs/refresh [post]
 func RefreshAllConfigCache(c *gin.Context) {
 	service.ClearAllConfigCache()
 	response.OkMsg(c, "刷新成功")

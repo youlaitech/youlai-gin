@@ -15,6 +15,45 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/ai/assistant/execute": {
+            "post": {
+                "tags": [
+                    "99.AI助手"
+                ],
+                "summary": "执行已解析的命令",
+                "responses": {}
+            }
+        },
+        "/api/v1/ai/assistant/parse": {
+            "post": {
+                "tags": [
+                    "99.AI助手"
+                ],
+                "summary": "解析自然语言命令",
+                "responses": {}
+            }
+        },
+        "/api/v1/auth/captcha": {
+            "get": {
+                "description": "获取图形验证码",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "01.认证接口"
+                ],
+                "summary": "获取验证码",
+                "responses": {
+                    "200": {
+                        "description": "code/msg/data，data 为 CaptchaVO",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/login": {
             "post": {
                 "description": "用户名密码登录，返回访问令牌和刷新令牌",
@@ -25,7 +64,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "认证中心"
+                    "01.认证接口"
                 ],
                 "summary": "账号密码登录",
                 "parameters": [
@@ -36,6 +75,79 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/model.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "code/msg/data，data 为 AuthenticationToken",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/login/sms": {
+            "post": {
+                "description": "使用手机号和短信验证码登录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "01.认证接口"
+                ],
+                "summary": "短信验证码登录",
+                "parameters": [
+                    {
+                        "description": "短信登录信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SmsLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "code/msg/data，data 为 AuthenticationToken",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/login/wechat": {
+            "post": {
+                "description": "使用微信授权码登录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "01.认证接口"
+                ],
+                "summary": "微信授权登录",
+                "parameters": [
+                    {
+                        "description": "微信授权信息 {\\",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 ],
@@ -65,7 +177,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "认证中心"
+                    "01.认证接口"
                 ],
                 "summary": "退出登录",
                 "responses": {
@@ -89,16 +201,21 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "认证中心"
+                    "01.认证接口"
                 ],
                 "summary": "刷新令牌",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "刷新令牌",
-                        "name": "refreshToken",
-                        "in": "query",
-                        "required": true
+                        "description": "刷新令牌信息 {\\",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 ],
                 "responses": {
@@ -112,10 +229,344 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/auth/sms/code": {
+            "post": {
+                "description": "发送短信验证码到指定手机号",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "01.认证接口"
+                ],
+                "summary": "发送登录短信验证码",
+                "parameters": [
+                    {
+                        "description": "手机号信息 {\\",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "code/msg",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/wx/miniapp/code-login": {
+            "post": {
+                "description": "使用微信小程序Code登录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "01.认证接口"
+                ],
+                "summary": "微信小程序Code登录",
+                "parameters": [
+                    {
+                        "description": "微信小程序Code登录信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.WxMiniAppCodeLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "code/msg/data，data 为 AuthenticationToken",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/wx/miniapp/phone-login": {
+            "post": {
+                "description": "使用微信小程序获取手机号登录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "01.认证接口"
+                ],
+                "summary": "微信小程序手机号登录",
+                "parameters": [
+                    {
+                        "description": "微信小程序手机号登录信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.WxMiniAppPhoneLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "code/msg/data，data 为 AuthenticationToken",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/codegen/table": {
+            "get": {
+                "tags": [
+                    "13.代码生成"
+                ],
+                "summary": "数据表分页",
+                "responses": {}
+            }
+        },
+        "/api/v1/codegen/{tableName}/config": {
+            "get": {
+                "tags": [
+                    "13.代码生成"
+                ],
+                "summary": "获取生成配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "表名",
+                        "name": "tableName",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "post": {
+                "tags": [
+                    "13.代码生成"
+                ],
+                "summary": "保存生成配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "表名",
+                        "name": "tableName",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "delete": {
+                "tags": [
+                    "13.代码生成"
+                ],
+                "summary": "删除生成配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "表名",
+                        "name": "tableName",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/codegen/{tableName}/download": {
+            "get": {
+                "tags": [
+                    "13.代码生成"
+                ],
+                "summary": "下载代码",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "表名（可逗号分隔）",
+                        "name": "tableName",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/codegen/{tableName}/preview": {
+            "get": {
+                "tags": [
+                    "13.代码生成"
+                ],
+                "summary": "预览代码",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "表名",
+                        "name": "tableName",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/configs": {
+            "get": {
+                "tags": [
+                    "08.系统配置"
+                ],
+                "summary": "配置分页",
+                "responses": {}
+            },
+            "post": {
+                "tags": [
+                    "08.系统配置"
+                ],
+                "summary": "新增配置",
+                "responses": {}
+            }
+        },
+        "/api/v1/configs/key/{key}": {
+            "get": {
+                "tags": [
+                    "08.系统配置"
+                ],
+                "summary": "根据键获取配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "配置键",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/configs/refresh": {
+            "post": {
+                "tags": [
+                    "08.系统配置"
+                ],
+                "summary": "刷新全部配置缓存",
+                "responses": {}
+            }
+        },
+        "/api/v1/configs/refresh/{key}": {
+            "post": {
+                "tags": [
+                    "08.系统配置"
+                ],
+                "summary": "刷新配置缓存",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "配置键",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/configs/{ids}": {
+            "delete": {
+                "tags": [
+                    "08.系统配置"
+                ],
+                "summary": "删除配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "配置ID列表",
+                        "name": "ids",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/configs/{id}": {
+            "get": {
+                "tags": [
+                    "08.系统配置"
+                ],
+                "summary": "配置详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "配置ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "put": {
+                "tags": [
+                    "08.系统配置"
+                ],
+                "summary": "更新配置",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "配置ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/configs/{id}/form": {
+            "get": {
+                "tags": [
+                    "08.系统配置"
+                ],
+                "summary": "配置表单",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "配置ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/v1/depts": {
             "get": {
                 "tags": [
-                    "部门管理"
+                    "05.部门接口"
                 ],
                 "summary": "部门列表",
                 "responses": {
@@ -130,7 +581,7 @@ const docTemplate = `{
             },
             "post": {
                 "tags": [
-                    "部门管理"
+                    "05.部门接口"
                 ],
                 "summary": "新增部门",
                 "parameters": [
@@ -158,7 +609,7 @@ const docTemplate = `{
         "/api/v1/depts/options": {
             "get": {
                 "tags": [
-                    "部门管理"
+                    "05.部门接口"
                 ],
                 "summary": "部门下拉列表",
                 "responses": {
@@ -175,7 +626,7 @@ const docTemplate = `{
         "/api/v1/depts/{id}": {
             "put": {
                 "tags": [
-                    "部门管理"
+                    "05.部门接口"
                 ],
                 "summary": "更新部门",
                 "parameters": [
@@ -208,7 +659,7 @@ const docTemplate = `{
             },
             "delete": {
                 "tags": [
-                    "部门管理"
+                    "05.部门接口"
                 ],
                 "summary": "删除部门",
                 "parameters": [
@@ -234,7 +685,7 @@ const docTemplate = `{
         "/api/v1/depts/{id}/form": {
             "get": {
                 "tags": [
-                    "部门管理"
+                    "05.部门接口"
                 ],
                 "summary": "获取部门表单数据",
                 "parameters": [
@@ -258,9 +709,24 @@ const docTemplate = `{
             }
         },
         "/api/v1/dicts": {
+            "get": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "字典分页列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
             "post": {
                 "tags": [
-                    "字典管理"
+                    "06.字典接口"
                 ],
                 "summary": "新增字典",
                 "parameters": [
@@ -285,10 +751,27 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/dicts/options": {
+            "get": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "字典下拉列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/dicts/{id}": {
             "put": {
                 "tags": [
-                    "字典管理"
+                    "06.字典接口"
                 ],
                 "summary": "更新字典",
                 "parameters": [
@@ -321,7 +804,7 @@ const docTemplate = `{
             },
             "delete": {
                 "tags": [
-                    "字典管理"
+                    "06.字典接口"
                 ],
                 "summary": "删除字典",
                 "parameters": [
@@ -347,7 +830,7 @@ const docTemplate = `{
         "/api/v1/dicts/{id}/form": {
             "get": {
                 "tags": [
-                    "字典管理"
+                    "06.字典接口"
                 ],
                 "summary": "获取字典表单数据",
                 "parameters": [
@@ -355,6 +838,173 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "字典ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/dicts/{id}/items": {
+            "get": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "字典项列表（RESTful）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典编码",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "新增字典项（RESTful）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典编码",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "字典项信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.DictItemForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/dicts/{id}/items/{itemIds}": {
+            "delete": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "删除字典项（RESTful）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典编码",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "字典项ID（多个用逗号分隔）",
+                        "name": "itemIds",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/dicts/{id}/items/{itemId}": {
+            "put": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "修改字典项（RESTful）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典编码",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "字典项ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "字典项信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.DictItemForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/dicts/{id}/items/{itemId}/form": {
+            "get": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "字典项表单数据（RESTful）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典编码",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "字典项ID",
+                        "name": "itemId",
                         "in": "path",
                         "required": true
                     }
@@ -379,7 +1029,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "文件管理"
+                    "11.文件接口"
                 ],
                 "summary": "文件上传",
                 "parameters": [
@@ -423,7 +1073,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "文件管理"
+                    "11.文件接口"
                 ],
                 "summary": "删除文件",
                 "parameters": [
@@ -454,7 +1104,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "文件管理"
+                    "11.文件接口"
                 ],
                 "summary": "批量文件上传",
                 "parameters": [
@@ -506,7 +1156,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "文件管理"
+                    "11.文件接口"
                 ],
                 "summary": "图片上传",
                 "parameters": [
@@ -546,7 +1196,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "系统"
+                    "98.基础能力"
                 ],
                 "summary": "健康检查",
                 "responses": {
@@ -559,10 +1209,19 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/logs": {
+            "get": {
+                "tags": [
+                    "10.日志接口"
+                ],
+                "summary": "日志分页",
+                "responses": {}
+            }
+        },
         "/api/v1/menus": {
             "get": {
                 "tags": [
-                    "菜单管理"
+                    "04.菜单接口"
                 ],
                 "summary": "菜单列表",
                 "responses": {
@@ -577,7 +1236,7 @@ const docTemplate = `{
             },
             "post": {
                 "tags": [
-                    "菜单管理"
+                    "04.菜单接口"
                 ],
                 "summary": "新增菜单",
                 "parameters": [
@@ -605,7 +1264,7 @@ const docTemplate = `{
         "/api/v1/menus/options": {
             "get": {
                 "tags": [
-                    "菜单管理"
+                    "04.菜单接口"
                 ],
                 "summary": "菜单下拉列表",
                 "responses": {
@@ -622,7 +1281,7 @@ const docTemplate = `{
         "/api/v1/menus/routes": {
             "get": {
                 "tags": [
-                    "菜单管理"
+                    "04.菜单接口"
                 ],
                 "summary": "获取当前用户路由",
                 "responses": {
@@ -639,7 +1298,7 @@ const docTemplate = `{
         "/api/v1/menus/{id}": {
             "put": {
                 "tags": [
-                    "菜单管理"
+                    "04.菜单接口"
                 ],
                 "summary": "更新菜单",
                 "parameters": [
@@ -672,7 +1331,7 @@ const docTemplate = `{
             },
             "delete": {
                 "tags": [
-                    "菜单管理"
+                    "04.菜单接口"
                 ],
                 "summary": "删除菜单",
                 "parameters": [
@@ -698,7 +1357,7 @@ const docTemplate = `{
         "/api/v1/menus/{id}/form": {
             "get": {
                 "tags": [
-                    "菜单管理"
+                    "04.菜单接口"
                 ],
                 "summary": "获取菜单表单数据",
                 "parameters": [
@@ -721,10 +1380,196 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/roles": {
+        "/api/v1/notices": {
+            "get": {
+                "tags": [
+                    "09.通知公告"
+                ],
+                "summary": "通知公告分页",
+                "responses": {}
+            },
             "post": {
                 "tags": [
-                    "角色管理"
+                    "09.通知公告"
+                ],
+                "summary": "新增通知公告",
+                "responses": {}
+            }
+        },
+        "/api/v1/notices/my": {
+            "get": {
+                "tags": [
+                    "09.通知公告"
+                ],
+                "summary": "我的通知公告",
+                "responses": {}
+            }
+        },
+        "/api/v1/notices/read-all": {
+            "put": {
+                "tags": [
+                    "09.通知公告"
+                ],
+                "summary": "通知全部已读",
+                "responses": {}
+            }
+        },
+        "/api/v1/notices/unread-count": {
+            "get": {
+                "tags": [
+                    "09.通知公告"
+                ],
+                "summary": "未读通知数量",
+                "responses": {}
+            }
+        },
+        "/api/v1/notices/{ids}": {
+            "delete": {
+                "tags": [
+                    "09.通知公告"
+                ],
+                "summary": "删除通知公告",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "公告ID列表",
+                        "name": "ids",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/notices/{id}": {
+            "put": {
+                "tags": [
+                    "09.通知公告"
+                ],
+                "summary": "修改通知公告",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "公告ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/notices/{id}/detail": {
+            "get": {
+                "tags": [
+                    "09.通知公告"
+                ],
+                "summary": "通知公告详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "公告ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/notices/{id}/form": {
+            "get": {
+                "tags": [
+                    "09.通知公告"
+                ],
+                "summary": "通知公告表单",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "公告ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/notices/{id}/publish": {
+            "put": {
+                "tags": [
+                    "09.通知公告"
+                ],
+                "summary": "发布通知公告",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "公告ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/notices/{id}/revoke": {
+            "put": {
+                "tags": [
+                    "09.通知公告"
+                ],
+                "summary": "撤回通知公告",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "公告ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/roles": {
+            "get": {
+                "tags": [
+                    "03.角色接口"
+                ],
+                "summary": "角色分页列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "pageNum",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键字",
+                        "name": "keywords",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "03.角色接口"
                 ],
                 "summary": "新增角色",
                 "parameters": [
@@ -752,7 +1597,7 @@ const docTemplate = `{
         "/api/v1/roles/options": {
             "get": {
                 "tags": [
-                    "角色管理"
+                    "03.角色接口"
                 ],
                 "summary": "角色下拉列表",
                 "responses": {
@@ -769,7 +1614,7 @@ const docTemplate = `{
         "/api/v1/roles/{id}": {
             "put": {
                 "tags": [
-                    "角色管理"
+                    "03.角色接口"
                 ],
                 "summary": "更新角色",
                 "parameters": [
@@ -802,7 +1647,7 @@ const docTemplate = `{
             },
             "delete": {
                 "tags": [
-                    "角色管理"
+                    "03.角色接口"
                 ],
                 "summary": "删除角色",
                 "parameters": [
@@ -828,7 +1673,7 @@ const docTemplate = `{
         "/api/v1/roles/{id}/form": {
             "get": {
                 "tags": [
-                    "角色管理"
+                    "03.角色接口"
                 ],
                 "summary": "获取角色表单数据",
                 "parameters": [
@@ -854,7 +1699,7 @@ const docTemplate = `{
         "/api/v1/roles/{id}/menu-ids": {
             "get": {
                 "tags": [
-                    "角色管理"
+                    "03.角色接口"
                 ],
                 "summary": "获取角色菜单ID列表",
                 "parameters": [
@@ -880,7 +1725,7 @@ const docTemplate = `{
         "/api/v1/roles/{id}/menus": {
             "put": {
                 "tags": [
-                    "角色管理"
+                    "03.角色接口"
                 ],
                 "summary": "分配菜单权限",
                 "parameters": [
@@ -915,10 +1760,28 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/statistics/visits/overview": {
+            "get": {
+                "tags": [
+                    "12.统计接口"
+                ],
+                "summary": "访问概览",
+                "responses": {}
+            }
+        },
+        "/api/v1/statistics/visits/trend": {
+            "get": {
+                "tags": [
+                    "12.统计接口"
+                ],
+                "summary": "访问趋势",
+                "responses": {}
+            }
+        },
         "/api/v1/user/perms": {
             "get": {
                 "tags": [
-                    "菜单管理"
+                    "04.菜单接口"
                 ],
                 "summary": "获取当前用户权限（按钮权限）",
                 "responses": {
@@ -930,6 +1793,232 @@ const docTemplate = `{
                         }
                     }
                 }
+            }
+        },
+        "/api/v1/users": {
+            "get": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "用户分页列表",
+                "responses": {}
+            },
+            "post": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "保存用户",
+                "responses": {}
+            }
+        },
+        "/api/v1/users/email": {
+            "put": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "绑定或更换邮箱",
+                "responses": {}
+            },
+            "delete": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "解绑邮箱",
+                "responses": {}
+            }
+        },
+        "/api/v1/users/email/code": {
+            "post": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "发送邮箱验证码",
+                "responses": {}
+            }
+        },
+        "/api/v1/users/export": {
+            "get": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "导出用户",
+                "responses": {}
+            }
+        },
+        "/api/v1/users/import": {
+            "post": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "导入用户",
+                "responses": {}
+            }
+        },
+        "/api/v1/users/me": {
+            "get": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "当前登录用户",
+                "responses": {}
+            }
+        },
+        "/api/v1/users/mobile": {
+            "put": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "绑定或更换手机号",
+                "responses": {}
+            },
+            "delete": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "解绑手机号",
+                "responses": {}
+            }
+        },
+        "/api/v1/users/mobile/code": {
+            "post": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "发送手机号验证码",
+                "responses": {}
+            }
+        },
+        "/api/v1/users/options": {
+            "get": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "用户下拉选项",
+                "responses": {}
+            }
+        },
+        "/api/v1/users/password": {
+            "put": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "修改当前用户密码",
+                "responses": {}
+            }
+        },
+        "/api/v1/users/profile": {
+            "get": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "个人中心信息",
+                "responses": {}
+            },
+            "put": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "更新个人中心信息",
+                "responses": {}
+            }
+        },
+        "/api/v1/users/template": {
+            "get": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "下载用户导入模板",
+                "responses": {}
+            }
+        },
+        "/api/v1/users/{ids}": {
+            "delete": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "删除用户",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户ID列表",
+                        "name": "ids",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/users/{userId}": {
+            "put": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "更新用户",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/users/{userId}/form": {
+            "get": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "获取用户表单",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/users/{userId}/password/reset": {
+            "put": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "重置用户密码",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/users/{userId}/status": {
+            "patch": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "修改用户状态",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
             }
         }
     },
@@ -1068,6 +2157,9 @@ const docTemplate = `{
                         1
                     ]
                 },
+                "tagType": {
+                    "type": "string"
+                },
                 "value": {
                     "type": "string"
                 }
@@ -1139,12 +2231,11 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "type": {
-                    "type": "integer",
+                    "type": "string",
                     "enum": [
-                        1,
-                        2,
-                        3,
-                        4
+                        "C",
+                        "M",
+                        "B"
                     ]
                 },
                 "visible": {
@@ -1193,6 +2284,57 @@ const docTemplate = `{
                 }
             }
         },
+        "model.SmsLoginRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "mobile"
+            ],
+            "properties": {
+                "code": {
+                    "description": "验证码",
+                    "type": "string",
+                    "example": "1234"
+                },
+                "mobile": {
+                    "description": "手机号",
+                    "type": "string",
+                    "example": "18812345678"
+                }
+            }
+        },
+        "model.WxMiniAppCodeLoginRequest": {
+            "type": "object",
+            "required": [
+                "code"
+            ],
+            "properties": {
+                "code": {
+                    "description": "微信小程序登录时获取的code",
+                    "type": "string"
+                }
+            }
+        },
+        "model.WxMiniAppPhoneLoginRequest": {
+            "type": "object",
+            "required": [
+                "code"
+            ],
+            "properties": {
+                "code": {
+                    "description": "微信小程序登录时获取的code",
+                    "type": "string"
+                },
+                "encryptedData": {
+                    "description": "包括敏感数据在内的完整用户信息的加密数据",
+                    "type": "string"
+                },
+                "iv": {
+                    "description": "加密算法的初始向量",
+                    "type": "string"
+                }
+            }
+        },
         "response.Result": {
             "type": "object",
             "properties": {
@@ -1202,7 +2344,8 @@ const docTemplate = `{
                 "data": {},
                 "msg": {
                     "type": "string"
-                }
+                },
+                "page": {}
             }
         }
     }

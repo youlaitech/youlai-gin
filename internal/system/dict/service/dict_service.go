@@ -27,8 +27,8 @@ func GetDictPage(query *model.DictQuery) (*common.PagedData, error) {
 			Name:       dict.Name,
 			Status:     dict.Status,
 			Remark:     dict.Remark,
-			CreateTime: dict.CreateTime,
-			UpdateTime: dict.UpdateTime,
+			CreateTime: types.LocalTime(dict.CreateTime),
+			UpdateTime: types.LocalTime(dict.UpdateTime),
 		}
 	}
 

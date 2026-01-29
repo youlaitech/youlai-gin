@@ -10,7 +10,15 @@ type DeptVO struct {
 	TreePath   string       `json:"treePath,omitempty"`
 	Sort       int          `json:"sort"`
 	Status     int          `json:"status"`
-	CreateTime string       `json:"createTime,omitempty"`
-	UpdateTime string       `json:"updateTime,omitempty"`
+	CreateTime types.LocalTime `json:"createTime,omitempty"`
+	UpdateTime types.LocalTime `json:"updateTime,omitempty"`
 	Children   []*DeptVO    `json:"children,omitempty"`
+}
+
+// DeptOption 部门下拉树选项
+type DeptOption struct {
+	Value    types.BigInt   `json:"value"`
+	Label    string         `json:"label"`
+	ParentID types.BigInt   `json:"-"`
+	Children []*DeptOption  `json:"children,omitempty"`
 }

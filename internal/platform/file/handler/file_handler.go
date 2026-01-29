@@ -18,7 +18,7 @@ type UploadResult struct {
 
 // UploadFile 单文件上传
 // @Summary 文件上传
-// @Tags 文件管理
+// @Tags 11.文件接口
 // @Accept multipart/form-data
 // @Produce json
 // @Param file formData file true "文件"
@@ -73,7 +73,7 @@ func UploadFile(c *gin.Context) {
 
 // UploadFiles 批量文件上传
 // @Summary 批量文件上传
-// @Tags 文件管理
+// @Tags 11.文件接口
 // @Accept multipart/form-data
 // @Produce json
 // @Param files formData file true "文件列表"
@@ -134,7 +134,7 @@ func UploadFiles(c *gin.Context) {
 
 // UploadImage 图片上传（带限制）
 // @Summary 图片上传
-// @Tags 文件管理
+// @Tags 11.文件接口
 // @Accept multipart/form-data
 // @Produce json
 // @Param file formData file true "图片文件"
@@ -185,7 +185,7 @@ func UploadImage(c *gin.Context) {
 
 // DeleteFile 删除文件
 // @Summary 删除文件
-// @Tags 文件管理
+// @Tags 11.文件接口
 // @Produce json
 // @Param path query string true "文件路径"
 // @Success 200 {object} response.Result

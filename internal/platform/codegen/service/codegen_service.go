@@ -16,7 +16,6 @@ import (
 	"youlai-gin/internal/platform/codegen/model"
 	"youlai-gin/pkg/common"
 	"youlai-gin/pkg/errs"
-	"youlai-gin/pkg/types"
 )
 
 type templateName string
@@ -592,10 +591,13 @@ func renderTemplate(
 	_ = planner.DefineVariable("entitySnake", "")
 	_ = planner.DefineVariable("businessName", "")
 	_ = planner.DefineVariable("fieldConfigs", reflect.TypeOf([]templateFieldConfig{}))
+	_ = planner.DefineVariable("fieldConfigsInList", reflect.TypeOf([]templateFieldConfig{}))
+	_ = planner.DefineVariable("fieldConfigsInForm", reflect.TypeOf([]templateFieldConfig{}))
+	_ = planner.DefineVariable("fieldConfigsInQuery", reflect.TypeOf([]templateFieldConfig{}))
 
 	exec, newState, err := planner.Compile(content)
 	if err != nil {
-		return "", errs.SystemError("编译模板失败")
+		return "", errs.SystemError("编译模板失败: " + err.Error())
 	}
 
 	state := newState()
@@ -638,7 +640,27 @@ func renderTemplate(
 			GoType:        goType,
 		})
 	}
+
+	fieldsInList := make([]templateFieldConfig, 0, len(fields))
+	fieldsInForm := make([]templateFieldConfig, 0, len(fields))
+	fieldsInQuery := make([]templateFieldConfig, 0, len(fields))
+	for i := range fields {
+		f := fields[i]
+		if f.IsShowInList == 1 {
+			fieldsInList = append(fieldsInList, f)
+		}
+		if f.IsShowInForm == 1 {
+			fieldsInForm = append(fieldsInForm, f)
+		}
+		if f.IsShowInQuery == 1 {
+			fieldsInQuery = append(fieldsInQuery, f)
+		}
+	}
+
 	_ = state.SetValue("fieldConfigs", fields)
+	_ = state.SetValue("fieldConfigsInList", fieldsInList)
+	_ = state.SetValue("fieldConfigsInForm", fieldsInForm)
+	_ = state.SetValue("fieldConfigsInQuery", fieldsInQuery)
 
 	exec.Exec(state)
 	if !state.IsValid() {

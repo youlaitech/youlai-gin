@@ -8,7 +8,6 @@ import (
 
 	"youlai-gin/internal/system/dept/model"
 	"youlai-gin/internal/system/dept/repository"
-	"youlai-gin/pkg/common"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/utils"
@@ -31,8 +30,8 @@ func GetDeptList(query *model.DeptQuery) ([]*model.DeptVO, error) {
 			TreePath:   dept.TreePath,
 			Sort:       dept.Sort,
 			Status:     dept.Status,
-			CreateTime: dept.CreateTime,
-			UpdateTime: dept.UpdateTime,
+			CreateTime: types.LocalTime(dept.CreateTime),
+			UpdateTime: types.LocalTime(dept.UpdateTime),
 		}
 	}
 
@@ -49,21 +48,36 @@ func GetDeptList(query *model.DeptQuery) ([]*model.DeptVO, error) {
 }
 
 // GetDeptOptions 部门下拉选项
-func GetDeptOptions() ([]common.Option[types.BigInt], error) {
+func GetDeptOptions() ([]model.DeptOption, error) {
 	depts, err := repository.GetDeptOptions()
 	if err != nil {
 		return nil, errs.SystemError("查询部门选项失败")
 	}
 
-	options := make([]common.Option[types.BigInt], len(depts))
+	options := make([]model.DeptOption, len(depts))
 	for i, dept := range depts {
-		options[i] = common.Option[types.BigInt]{
-			Value: types.BigInt(dept.ID),
-			Label: dept.Name,
+		options[i] = model.DeptOption{
+			Value:    types.BigInt(dept.ID),
+			Label:    dept.Name,
+			ParentID: types.BigInt(dept.ParentID),
 		}
 	}
 
-	return options, nil
+	tree := utils.BuildTreeSimple(
+		options,
+		func(d model.DeptOption) int64 { return int64(d.Value) },
+		func(d model.DeptOption) int64 { return int64(d.ParentID) },
+		func(d *model.DeptOption, children []model.DeptOption) {
+			childNodes := make([]*model.DeptOption, len(children))
+			for i := range children {
+				child := children[i]
+				childNodes[i] = &child
+			}
+			d.Children = childNodes
+		},
+	)
+
+	return tree, nil
 }
 
 // SaveDept 保存部门（新增或更新）

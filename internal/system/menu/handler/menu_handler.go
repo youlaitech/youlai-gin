@@ -29,7 +29,7 @@ func RegisterMenuRoutes(r *gin.RouterGroup) {
 }
 
 // @Summary 菜单列表
-// @Tags 菜单管理
+// @Tags 04.菜单接口
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus [get]
 func GetMenuList(c *gin.Context) {
@@ -49,7 +49,7 @@ func GetMenuList(c *gin.Context) {
 }
 
 // @Summary 菜单下拉列表
-// @Tags 菜单管理
+// @Tags 04.菜单接口
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/options [get]
 func GetMenuOptions(c *gin.Context) {
@@ -65,7 +65,7 @@ func GetMenuOptions(c *gin.Context) {
 }
 
 // @Summary 获取当前用户路由
-// @Tags 菜单管理
+// @Tags 04.菜单接口
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/routes [get]
 func GetCurrentUserRoutes(c *gin.Context) {
@@ -81,7 +81,7 @@ func GetCurrentUserRoutes(c *gin.Context) {
 }
 
 // @Summary 新增菜单
-// @Tags 菜单管理
+// @Tags 04.菜单接口
 // @Param body body model.MenuForm true "菜单信息"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus [post]
@@ -101,7 +101,7 @@ func SaveMenu(c *gin.Context) {
 }
 
 // @Summary 获取菜单表单数据
-// @Tags 菜单管理
+// @Tags 04.菜单接口
 // @Param id path int true "菜单ID"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/{id}/form [get]
@@ -123,7 +123,7 @@ func GetMenuForm(c *gin.Context) {
 }
 
 // @Summary 更新菜单
-// @Tags 菜单管理
+// @Tags 04.菜单接口
 // @Param id path int true "菜单ID"
 // @Param body body model.MenuForm true "菜单信息"
 // @Success 200 {object} map[string]interface{}
@@ -152,7 +152,7 @@ func UpdateMenu(c *gin.Context) {
 }
 
 // @Summary 删除菜单
-// @Tags 菜单管理
+// @Tags 04.菜单接口
 // @Param id path int true "菜单ID"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/{id} [delete]
@@ -173,7 +173,7 @@ func DeleteMenu(c *gin.Context) {
 }
 
 // @Summary 获取当前用户权限（按钮权限）
-// @Tags 菜单管理
+// @Tags 04.菜单接口
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/user/perms [get]
 func GetCurrentUserPermissions(c *gin.Context) {

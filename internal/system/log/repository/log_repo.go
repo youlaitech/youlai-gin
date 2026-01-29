@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"strings"
 	"time"
 
 	"youlai-gin/pkg/database"
@@ -13,27 +14,34 @@ func GetLogPage(query *model.LogQuery) ([]model.LogPageVO, int64, error) {
 	var logs []model.LogPageVO
 	var total int64
 
-	db := database.DB.Table("sys_log")
+	db := database.DB.Table("sys_log t1").
+		Select("t1.id, t1.module, t1.content, t1.request_uri, t1.request_method as method, t1.ip, " +
+			"CONCAT(t1.province,' ', t1.city) as region, t1.execution_time, " +
+			"CONCAT(t1.browser,' ', t1.browser_version) as browser, t1.os, t1.create_by, t1.create_time, " +
+			"t2.nickname as operator").
+		Joins("LEFT JOIN sys_user t2 ON t1.create_by = t2.id")
 
 	// 查询条件
-	if query.Module != "" {
-		db = db.Where("module = ?", query.Module)
+	if query.Keywords != "" {
+		keyword := "%" + query.Keywords + "%"
+		db = db.Where("(t1.content LIKE ? OR t1.ip LIKE ? OR t2.nickname LIKE ?)", keyword, keyword, keyword)
 	}
 
-	if query.Username != "" {
-		db = db.Where("username LIKE ?", "%"+query.Username+"%")
-	}
-
-	if query.Status != nil {
-		db = db.Where("status = ?", *query.Status)
-	}
-
-	if query.StartTime != "" {
-		db = db.Where("create_time >= ?", query.StartTime)
-	}
-
-	if query.EndTime != "" {
-		db = db.Where("create_time <= ?", query.EndTime)
+	if len(query.CreateTime) == 2 {
+		startTime := strings.TrimSpace(query.CreateTime[0])
+		endTime := strings.TrimSpace(query.CreateTime[1])
+		if startTime != "" {
+			if len(startTime) == 10 {
+				startTime += " 00:00:00"
+			}
+			db = db.Where("t1.create_time >= ?", startTime)
+		}
+		if endTime != "" {
+			if len(endTime) == 10 {
+				endTime += " 23:59:59"
+			}
+			db = db.Where("t1.create_time <= ?", endTime)
+		}
 	}
 
 	// 统计总数
@@ -43,7 +51,7 @@ func GetLogPage(query *model.LogQuery) ([]model.LogPageVO, int64, error) {
 
 	// 分页查询
 	err := db.Scopes(pkgDatabase.PaginateFromQuery(query)).
-		Order("create_time DESC").
+		Order("t1.create_time DESC").
 		Find(&logs).Error
 
 	return logs, total, err

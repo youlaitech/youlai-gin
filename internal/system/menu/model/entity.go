@@ -1,6 +1,10 @@
 package model
 
-import "youlai-gin/pkg/types"
+import (
+	"time"
+
+	"youlai-gin/pkg/types"
+)
 
 type Menu struct {
 	ID         types.BigInt `gorm:"primaryKey;autoIncrement" json:"id"`
@@ -18,8 +22,8 @@ type Menu struct {
 	Sort       int          `gorm:"column:sort;default:0" json:"sort"`
 	Icon       string       `gorm:"column:icon" json:"icon"`
 	Redirect   string       `gorm:"column:redirect" json:"redirect"`
-	CreateTime string       `gorm:"column:create_time;autoCreateTime" json:"createTime"`
-	UpdateTime string       `gorm:"column:update_time;autoUpdateTime" json:"updateTime"`
+	CreateTime time.Time    `gorm:"column:create_time;autoCreateTime" json:"createTime"`
+	UpdateTime time.Time    `gorm:"column:update_time;autoUpdateTime" json:"updateTime"`
 	Params     string       `gorm:"column:params" json:"params"`
 }
 

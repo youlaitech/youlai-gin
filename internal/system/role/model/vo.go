@@ -9,6 +9,6 @@ type RolePageVO struct {
 	Sort       int          `json:"sort"`
 	Status     int          `json:"status"`
 	DataScope  int          `json:"dataScope"`
-	CreateTime string       `json:"createTime"`
-	UpdateTime string       `json:"updateTime"`
+	CreateTime types.LocalTime `json:"createTime"`
+	UpdateTime types.LocalTime `json:"updateTime"`
 }

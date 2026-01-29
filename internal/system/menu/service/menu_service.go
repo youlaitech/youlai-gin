@@ -13,6 +13,7 @@ import (
 	roleService "youlai-gin/internal/system/role/service"
 	"youlai-gin/pkg/common"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/utils"
 )
 
@@ -40,8 +41,8 @@ func GetMenuList(query *model.MenuQuery) ([]*model.MenuVO, error) {
 			Sort:       menu.Sort,
 			Icon:       menu.Icon,
 			Redirect:   menu.Redirect,
-			CreateTime: menu.CreateTime,
-			UpdateTime: menu.UpdateTime,
+			CreateTime: types.LocalTime(menu.CreateTime),
+			UpdateTime: types.LocalTime(menu.UpdateTime),
 		}
 	}
 
@@ -64,15 +65,29 @@ func GetMenuOptions(onlyParent bool) ([]common.Option[int64], error) {
 		return nil, errs.SystemError("查询菜单选项失败")
 	}
 
-	options := make([]common.Option[int64], len(menus))
-	for i, menu := range menus {
-		options[i] = common.Option[int64]{
+	options := buildMenuOptions(0, menus)
+	return options, nil
+}
+
+func buildMenuOptions(parentID int64, menus []model.Menu) []common.Option[int64] {
+	options := make([]common.Option[int64], 0)
+	for _, menu := range menus {
+		if int64(menu.ParentID) != parentID {
+			continue
+		}
+
+		option := common.Option[int64]{
 			Value: int64(menu.ID),
 			Label: menu.Name,
 		}
+		children := buildMenuOptions(int64(menu.ID), menus)
+		if len(children) > 0 {
+			option.Children = children
+		}
+		options = append(options, option)
 	}
 
-	return options, nil
+	return options
 }
 
 // GetCurrentUserRoutes 获取当前用户路由

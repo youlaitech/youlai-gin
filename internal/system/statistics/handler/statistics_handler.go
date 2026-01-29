@@ -14,6 +14,9 @@ func RegisterRoutes(r *gin.RouterGroup) {
 }
 
 // GetVisitTrend 访问趋势统计
+// @Summary 访问趋势
+// @Tags 12.统计接口
+// @Router /api/v1/statistics/visits/trend [get]
 func GetVisitTrend(c *gin.Context) {
 	startDate := c.Query("startDate")
 	endDate := c.Query("endDate")
@@ -33,6 +36,9 @@ func GetVisitTrend(c *gin.Context) {
 }
 
 // GetVisitOverview 访问概览统计
+// @Summary 访问概览
+// @Tags 12.统计接口
+// @Router /api/v1/statistics/visits/overview [get]
 func GetVisitOverview(c *gin.Context) {
 	result, err := service.GetVisitStats()
 	if err != nil {

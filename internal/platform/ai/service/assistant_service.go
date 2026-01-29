@@ -16,6 +16,7 @@ import (
 	"youlai-gin/internal/platform/ai/model"
 	userRepo "youlai-gin/internal/system/user/repository"
 	"youlai-gin/pkg/ai"
+	"youlai-gin/pkg/common"
 	appConfig "youlai-gin/pkg/config"
 	"youlai-gin/pkg/database"
 	"youlai-gin/pkg/errs"
@@ -121,6 +122,55 @@ func ParseCommand(ctx context.Context, req *model.AiParseRequest, userID int64, 
 		Model:         record.AiModel,
 		RawResponse:   raw,
 	}, nil
+}
+
+// GetRecordPage 获取 AI 命令记录分页列表
+func GetRecordPage(query *model.AiAssistantQuery) (*common.PagedData, error) {
+	if query == nil {
+		query = &model.AiAssistantQuery{}
+	}
+
+	db := database.DB.Model(&model.AiAssistantRecord{})
+
+	if keywords := strings.TrimSpace(query.Keywords); keywords != "" {
+		like := "%%" + keywords + "%%"
+		db = db.Where("original_command LIKE ? OR function_name LIKE ? OR username LIKE ?", like, like, like)
+	}
+	if query.ExecuteStatus != nil {
+		db = db.Where("execute_status = ?", *query.ExecuteStatus)
+	}
+	if query.UserID != nil {
+		db = db.Where("user_id = ?", *query.UserID)
+	}
+	if query.ParseStatus != nil {
+		db = db.Where("parse_status = ?", *query.ParseStatus)
+	}
+	if len(query.CreateTime) == 2 {
+		db = db.Where("create_time BETWEEN ? AND ?", query.CreateTime[0], query.CreateTime[1])
+	}
+	if strings.TrimSpace(query.FunctionName) != "" {
+		like := "%%" + strings.TrimSpace(query.FunctionName) + "%%"
+		db = db.Where("function_name LIKE ?", like)
+	}
+	if strings.TrimSpace(query.AiProvider) != "" {
+		db = db.Where("ai_provider = ?", strings.TrimSpace(query.AiProvider))
+	}
+	if strings.TrimSpace(query.AiModel) != "" {
+		db = db.Where("ai_model = ?", strings.TrimSpace(query.AiModel))
+	}
+
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
+		return nil, errs.SystemError("查询 AI 命令记录失败")
+	}
+
+	var list []model.AiAssistantRecordVO
+	if err := db.Scopes(database.PaginateFromQuery(query)).Order("create_time DESC").Find(&list).Error; err != nil {
+		return nil, errs.SystemError("查询 AI 命令记录失败")
+	}
+
+	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
+	return &common.PagedData{Data: list, Page: pageMeta}, nil
 }
 
 // ExecuteCommand 执行解析后的命令

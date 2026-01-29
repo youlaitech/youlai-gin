@@ -13,6 +13,9 @@ import (
 )
 
 // ParseCommand 解析自然语言命令
+// @Summary 解析自然语言命令
+// @Tags 13.AI助手接口
+// @Router /api/v1/ai/assistant/parse [post]
 func ParseCommand(c *gin.Context) {
 	var req model.AiParseRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -36,7 +39,30 @@ func ParseCommand(c *gin.Context) {
 	response.Ok(c, result)
 }
 
+// GetRecordPage 获取 AI 命令记录分页列表
+// @Summary 获取 AI 命令记录分页列表
+// @Tags 13.AI助手接口
+// @Router /api/v1/ai/assistant/records [get]
+func GetRecordPage(c *gin.Context) {
+	var query model.AiAssistantQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.Fail(c, "参数错误")
+		return
+	}
+
+	result, err := service.GetRecordPage(&query)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.OkPaged(c, result)
+}
+
 // ExecuteCommand 执行已解析的命令
+// @Summary 执行已解析的命令
+// @Tags 13.AI助手接口
+// @Router /api/v1/ai/assistant/execute [post]
 func ExecuteCommand(c *gin.Context) {
 	var req model.AiExecuteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

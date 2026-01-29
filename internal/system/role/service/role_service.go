@@ -28,8 +28,8 @@ func GetRolePage(query *model.RoleQuery) (*common.PagedData, error) {
 			Sort:       role.Sort,
 			Status:     role.Status,
 			DataScope:  role.DataScope,
-			CreateTime: role.CreateTime,
-			UpdateTime: role.UpdateTime,
+			CreateTime: types.LocalTime(role.CreateTime),
+			UpdateTime: types.LocalTime(role.UpdateTime),
 		}
 	}
 

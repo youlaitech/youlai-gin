@@ -12,5 +12,6 @@ func RegisterRoutes(router *gin.RouterGroup) {
 	{
 		aiGroup.POST("/parse", handler.ParseCommand)
 		aiGroup.POST("/execute", handler.ExecuteCommand)
+		aiGroup.GET("/records", handler.GetRecordPage)
 	}
 }

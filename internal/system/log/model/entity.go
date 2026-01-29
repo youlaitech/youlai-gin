@@ -1,6 +1,10 @@
 package model
 
-import "youlai-gin/pkg/types"
+import (
+	"time"
+
+	"youlai-gin/pkg/types"
+)
 
 // Log 操作日志实体（对应 sys_log 表）
 type Log struct {
@@ -18,7 +22,7 @@ type Log struct {
 	Status       int          `gorm:"column:status" json:"status"`                         // 响应状态码
 	Duration     int64        `gorm:"column:duration" json:"duration"`                     // 执行时长（毫秒）
 	ErrorMsg     string       `gorm:"column:error_msg;size:500" json:"errorMsg"`           // 错误信息
-	CreateTime   string       `gorm:"column:create_time;autoCreateTime" json:"createTime"` // 创建时间
+	CreateTime   time.Time    `gorm:"column:create_time;autoCreateTime" json:"createTime"` // 创建时间
 }
 
 func (Log) TableName() string {

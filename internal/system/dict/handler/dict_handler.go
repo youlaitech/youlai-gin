@@ -39,7 +39,7 @@ func RegisterDictRoutes(r *gin.RouterGroup) {
 
 // GetDictPage 字典分页列表
 // @Summary 字典分页列表
-// @Tags 字典管理
+// @Tags 06.字典接口
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/dicts [get]
 func GetDictPage(c *gin.Context) {
@@ -79,7 +79,7 @@ func GetDictItemPageByCode(c *gin.Context) {
 
 // GetDictList 获取字典下拉列表
 // @Summary 字典下拉列表
-// @Tags 字典管理
+// @Tags 06.字典接口
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/dicts/options [get]
 func GetDictList(c *gin.Context) {
@@ -94,7 +94,7 @@ func GetDictList(c *gin.Context) {
 
 // SaveDict 新增字典
 // @Summary 新增字典
-// @Tags 字典管理
+// @Tags 06.字典接口
 // @Param body body model.DictForm true "字典信息"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/dicts [post]
@@ -115,7 +115,7 @@ func SaveDict(c *gin.Context) {
 
 // GetDictForm 获取字典表单数据
 // @Summary 获取字典表单数据
-// @Tags 字典管理
+// @Tags 06.字典接口
 // @Param id path int true "字典ID"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/dicts/{id}/form [get]
@@ -138,7 +138,7 @@ func GetDictForm(c *gin.Context) {
 
 // UpdateDict 更新字典
 // @Summary 更新字典
-// @Tags 字典管理
+// @Tags 06.字典接口
 // @Param id path int true "字典ID"
 // @Param body body model.DictForm true "字典信息"
 // @Success 200 {object} map[string]interface{}
@@ -168,7 +168,7 @@ func UpdateDict(c *gin.Context) {
 
 // DeleteDict 删除字典
 // @Summary 删除字典
-// @Tags 字典管理
+// @Tags 06.字典接口
 // @Param id path int true "字典ID"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/dicts/{id} [delete]
@@ -192,7 +192,7 @@ func DeleteDict(c *gin.Context) {
 
 // GetDictItemsByCode 字典项列表（RESTful）
 // @Summary 字典项列表（RESTful）
-// @Tags 字典管理
+// @Tags 06.字典接口
 // @Param id path string true "字典编码"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/dicts/{id}/items [get]
@@ -210,7 +210,7 @@ func GetDictItemsByCode(c *gin.Context) {
 
 // SaveDictItemByCode 新增字典项（RESTful）
 // @Summary 新增字典项（RESTful）
-// @Tags 字典管理
+// @Tags 06.字典接口
 // @Param id path string true "字典编码"
 // @Param body body model.DictItemForm true "字典项信息"
 // @Success 200 {object} map[string]interface{}
@@ -236,7 +236,7 @@ func SaveDictItemByCode(c *gin.Context) {
 
 // GetDictItemFormByCode 字典项表单数据（RESTful）
 // @Summary 字典项表单数据（RESTful）
-// @Tags 字典管理
+// @Tags 06.字典接口
 // @Param id path string true "字典编码"
 // @Param itemId path int true "字典项ID"
 // @Success 200 {object} map[string]interface{}
@@ -260,7 +260,7 @@ func GetDictItemFormByCode(c *gin.Context) {
 
 // UpdateDictItemByCode 修改字典项（RESTful）
 // @Summary 修改字典项（RESTful）
-// @Tags 字典管理
+// @Tags 06.字典接口
 // @Param id path string true "字典编码"
 // @Param itemId path int true "字典项ID"
 // @Param body body model.DictItemForm true "字典项信息"
@@ -294,7 +294,7 @@ func UpdateDictItemByCode(c *gin.Context) {
 
 // DeleteDictItemsByCode 删除字典项（RESTful）
 // @Summary 删除字典项（RESTful）
-// @Tags 字典管理
+// @Tags 06.字典接口
 // @Param id path string true "字典编码"
 // @Param itemIds path string true "字典项ID（多个用逗号分隔）"
 // @Success 200 {object} map[string]interface{}

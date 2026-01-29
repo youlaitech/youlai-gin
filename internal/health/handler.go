@@ -26,7 +26,7 @@ func RegisterRoutes(router *gin.Engine) {
 
 // HealthCheck 健康检查
 // @Summary 健康检查
-// @Tags 系统
+// @Tags 98.基础能力
 // @Produce json
 // @Success 200 {object} HealthResponse
 // @Router /api/v1/health [get]

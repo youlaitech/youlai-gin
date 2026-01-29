@@ -25,7 +25,7 @@ func RegisterDeptRoutes(r *gin.RouterGroup) {
 }
 
 // @Summary 部门列表
-// @Tags 部门管理
+// @Tags 05.部门接口
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/depts [get]
 func GetDeptList(c *gin.Context) {
@@ -45,7 +45,7 @@ func GetDeptList(c *gin.Context) {
 }
 
 // @Summary 部门下拉列表
-// @Tags 部门管理
+// @Tags 05.部门接口
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/depts/options [get]
 func GetDeptOptions(c *gin.Context) {
@@ -59,7 +59,7 @@ func GetDeptOptions(c *gin.Context) {
 }
 
 // @Summary 新增部门
-// @Tags 部门管理
+// @Tags 05.部门接口
 // @Param body body model.DeptForm true "部门信息"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/depts [post]
@@ -79,7 +79,7 @@ func SaveDept(c *gin.Context) {
 }
 
 // @Summary 获取部门表单数据
-// @Tags 部门管理
+// @Tags 05.部门接口
 // @Param id path int true "部门ID"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/depts/{id}/form [get]
@@ -101,7 +101,7 @@ func GetDeptForm(c *gin.Context) {
 }
 
 // @Summary 更新部门
-// @Tags 部门管理
+// @Tags 05.部门接口
 // @Param id path int true "部门ID"
 // @Param body body model.DeptForm true "部门信息"
 // @Success 200 {object} map[string]interface{}
@@ -130,7 +130,7 @@ func UpdateDept(c *gin.Context) {
 }
 
 // @Summary 删除部门
-// @Tags 部门管理
+// @Tags 05.部门接口
 // @Param id path int true "部门ID"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/depts/{id} [delete]

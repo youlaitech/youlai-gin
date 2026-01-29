@@ -21,13 +21,9 @@ func Get${entityName}Page(query *model.${entityName}Query) (*common.PagedData, e
 
 	voList := make([]model.${entityName}PageVO, len(list))
 	for i, item := range list {
-		voList[i] = model.${entityName}PageVO{
-#foreach($fieldConfig in ${fieldConfigs})
-#	#if($fieldConfig.isShowInList)
+		voList[i] = model.${entityName}PageVO{#foreach($fieldConfig in $fieldConfigsInList)
 			${fieldConfig.goFieldName}: item.${fieldConfig.goFieldName},
-#	#end
-#end
-		}
+#end		}
 	}
 
 	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
@@ -37,13 +33,9 @@ func Get${entityName}Page(query *model.${entityName}Query) (*common.PagedData, e
 // Save${entityName} 保存${businessName}（新增或更新）
 // 说明：仅映射表单字段到实体，业务校验可在此扩展
 func Save${entityName}(form *model.${entityName}Form) error {
-	item := &model.${entityName}{
-#foreach($fieldConfig in ${fieldConfigs})
-#	#if($fieldConfig.isShowInForm)
+	item := &model.${entityName}{#foreach($fieldConfig in $fieldConfigsInForm)
 		${fieldConfig.goFieldName}: form.${fieldConfig.goFieldName},
-#	#end
-#end
-	}
+#end	}
 
 	if form.ID == 0 {
 		if err := repository.Create${entityName}(item); err != nil {
@@ -71,13 +63,9 @@ func Get${entityName}Form(id int64) (*model.${entityName}Form, error) {
 		return nil, errs.SystemError("查询${businessName}失败")
 	}
 
-	return &model.${entityName}Form{
-#foreach($fieldConfig in ${fieldConfigs})
-#	#if($fieldConfig.isShowInForm)
+	return &model.${entityName}Form{#foreach($fieldConfig in $fieldConfigsInForm)
 		${fieldConfig.goFieldName}: item.${fieldConfig.goFieldName},
-#	#end
-#end
-	}, nil
+#end	}, nil
 }
 
 // Delete${entityName} 删除${businessName}

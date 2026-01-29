@@ -18,8 +18,8 @@ type MenuVO struct {
 	Sort       int          `json:"sort"`
 	Icon       string       `json:"icon"`
 	Redirect   string       `json:"redirect"`
-	CreateTime string       `json:"createTime"`
-	UpdateTime string       `json:"updateTime"`
+	CreateTime types.LocalTime `json:"createTime"`
+	UpdateTime types.LocalTime `json:"updateTime"`
 	Children   []*MenuVO    `json:"children,omitempty"`
 }
 

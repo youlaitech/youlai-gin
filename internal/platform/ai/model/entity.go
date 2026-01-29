@@ -1,6 +1,10 @@
 package model
 
-import "youlai-gin/pkg/types"
+import (
+	"time"
+
+	"youlai-gin/pkg/types"
+)
 
 // AiAssistantRecord AI 助手命令记录
 // 对应表 ai_assistant_record
@@ -24,8 +28,8 @@ type AiAssistantRecord struct {
 	ExecuteStatus     *int         `gorm:"column:execute_status" json:"executeStatus"`
 	ExecuteErrorMsg   string       `gorm:"column:execute_error_message;type:text" json:"executeErrorMessage"`
 	IPAddress         string       `gorm:"column:ip_address" json:"ipAddress"`
-	CreateTime        string       `gorm:"column:create_time;autoCreateTime" json:"createTime"`
-	UpdateTime        string       `gorm:"column:update_time;autoUpdateTime" json:"updateTime"`
+	CreateTime        time.Time    `gorm:"column:create_time;autoCreateTime" json:"createTime"`
+	UpdateTime        time.Time    `gorm:"column:update_time;autoUpdateTime" json:"updateTime"`
 }
 
 func (AiAssistantRecord) TableName() string {

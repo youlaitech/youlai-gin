@@ -28,7 +28,7 @@ func RegisterAuthRoutes(r *gin.RouterGroup) {
 // GetCaptcha 获取验证码
 // @Summary 获取验证码
 // @Description 获取图形验证码
-// @Tags 认证中心
+// @Tags 01.认证接口
 // @Produce json
 // @Success 200 {object} map[string]interface{} "code/msg/data，data 为 CaptchaVO"
 // @Router /api/v1/auth/captcha [get]
@@ -45,7 +45,7 @@ func GetCaptcha(c *gin.Context) {
 // Login 账号密码登录
 // @Summary 账号密码登录
 // @Description 用户名密码登录，返回访问令牌和刷新令牌
-// @Tags 认证中心
+// @Tags 01.认证接口
 // @Accept application/json
 // @Produce json
 // @Param body body model.LoginRequest true "登录信息"
@@ -75,7 +75,7 @@ func Login(c *gin.Context) {
 // Logout 退出登录
 // @Summary 退出登录
 // @Description 使当前访问令牌失效
-// @Tags 认证中心
+// @Tags 01.认证接口
 // @Accept json
 // @Produce json
 // @Security Bearer
@@ -97,7 +97,7 @@ func Logout(c *gin.Context) {
 // RefreshToken 刷新令牌
 // @Summary 刷新令牌
 // @Description 使用刷新令牌获取新的访问令牌
-// @Tags 认证中心
+// @Tags 01.认证接口
 // @Accept json
 // @Produce json
 // @Param body body map[string]string true "刷新令牌信息 {\"refreshToken\":\"刷新令牌\"}"
@@ -128,7 +128,7 @@ func RefreshToken(c *gin.Context) {
 // SendSmsCode 发送登录短信验证码
 // @Summary 发送登录短信验证码
 // @Description 发送短信验证码到指定手机号
-// @Tags 认证中心
+// @Tags 01.认证接口
 // @Accept json
 // @Produce json
 // @Param body body map[string]string true "手机号信息 {\"mobile\":\"手机号\"}"
@@ -159,7 +159,7 @@ func SendSmsCode(c *gin.Context) {
 // LoginBySms 短信验证码登录
 // @Summary 短信验证码登录
 // @Description 使用手机号和短信验证码登录
-// @Tags 认证中心
+// @Tags 01.认证接口
 // @Accept json
 // @Produce json
 // @Param body body model.SmsLoginRequest true "短信登录信息"
@@ -189,7 +189,7 @@ func LoginBySms(c *gin.Context) {
 // LoginByWechat 微信授权登录(Web)
 // @Summary 微信授权登录
 // @Description 使用微信授权码登录
-// @Tags 认证中心
+// @Tags 01.认证接口
 // @Accept json
 // @Produce json
 // @Param body body map[string]string true "微信授权信息 {\"code\":\"授权码\"}"
@@ -220,7 +220,7 @@ func LoginByWechat(c *gin.Context) {
 // LoginByWxMiniAppCode 微信小程序登录(Code)
 // @Summary 微信小程序Code登录
 // @Description 使用微信小程序Code登录
-// @Tags 认证中心
+// @Tags 01.认证接口
 // @Accept json
 // @Produce json
 // @Param body body model.WxMiniAppCodeLoginRequest true "微信小程序Code登录信息"
@@ -245,7 +245,7 @@ func LoginByWxMiniAppCode(c *gin.Context) {
 // LoginByWxMiniAppPhone 微信小程序登录(手机号)
 // @Summary 微信小程序手机号登录
 // @Description 使用微信小程序获取手机号登录
-// @Tags 认证中心
+// @Tags 01.认证接口
 // @Accept json
 // @Produce json
 // @Param body body model.WxMiniAppPhoneLoginRequest true "微信小程序手机号登录信息"

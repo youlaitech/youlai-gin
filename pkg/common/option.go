@@ -4,4 +4,5 @@ package common
 type Option[T any] struct {
 	Value T      `json:"value"`
 	Label string `json:"label"`
+	Children []Option[T] `json:"children,omitempty"`
 }

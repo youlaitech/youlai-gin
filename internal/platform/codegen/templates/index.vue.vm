@@ -13,7 +13,7 @@
                           @keyup.enter="handleQuery()"
                       />
                     #elseif($fieldConfig.formType == "SELECT")
-                        #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+                        #if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
                           <Dict v-model="queryParams.$fieldConfig.fieldName" code="$fieldConfig.dictType" />
                         #else
                           <el-select v-model="queryParams.$fieldConfig.fieldName" placeholder="请选择$fieldConfig.fieldComment">
@@ -22,7 +22,7 @@
                           </el-select>
                         #end
                     #elseif($fieldConfig.formType == "RADIO")
-                        #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+                        #if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
                           <Dict v-model="formData.$fieldConfig.fieldName" type="radio" code="$fieldConfig.dictType" />
                         #else
                           <el-radio-group v-model="queryParams.$fieldConfig.fieldName">
@@ -31,7 +31,7 @@
                           </el-radio-group>
                         #end
                     #elseif($fieldConfig.formType == "CHECK_BOX")
-                        #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+                        #if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
                           <Dict v-model="formData.$fieldConfig.fieldName" type="checkbox" code="$fieldConfig.dictType" />
                         #else
                           <el-checkbox-group v-model="queryParams.$fieldConfig.fieldName">
@@ -123,7 +123,7 @@
         <el-table-column type="selection" width="55" align="center" />
         #foreach($fieldConfig in $fieldConfigs)
           #if($fieldConfig.isShowInList == 1)
-            #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+            #if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
               <el-table-column label="$fieldConfig.fieldComment" width="150" align="center">
                 <template #default="scope">
                   <DictLabel v-model="scope.row.$fieldConfig.fieldName" code="$fieldConfig.dictType" />
@@ -184,7 +184,7 @@
     >
       <el-form ref="dataFormRef" :model="formData" :rules="rules" label-width="100px">
           #foreach($fieldConfig in $fieldConfigs)
-              #if($fieldConfig.isShowInForm == 1 && $fieldConfig.formType != "HIDDEN")
+              #if($fieldConfig.isShowInForm == 1 and $fieldConfig.formType != "HIDDEN")
                 <el-form-item label="$fieldConfig.fieldComment" prop="$fieldConfig.fieldName">
                     #if($fieldConfig.formType == "INPUT")
                       <el-input
@@ -192,7 +192,7 @@
                           placeholder="$fieldConfig.fieldComment"
                       />
                     #elseif($fieldConfig.formType == "SELECT")
-                        #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+                        #if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
                           <Dict v-model="formData.$fieldConfig.fieldName" code="$fieldConfig.dictType" />
                         #else
                           <el-select v-model="formData.$fieldConfig.fieldName" placeholder="请选择$fieldConfig.fieldComment">
@@ -201,7 +201,7 @@
                           </el-select>
                         #end
                     #elseif($fieldConfig.formType == "RADIO")
-                        #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+                        #if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
                           <Dict v-model="queryParams.$fieldConfig.fieldName" type="radio" code="$fieldConfig.dictType" />
                         #else
                           <el-radio-group v-model="formData.$fieldConfig.fieldName">
@@ -210,7 +210,7 @@
                           </el-radio-group>
                         #end
                     #elseif($fieldConfig.formType == "CHECK_BOX")
-                        #if($fieldConfig.dictType && $fieldConfig.dictType.trim() != "")
+                        #if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
                           <Dict v-model="queryParams.$fieldConfig.fieldName" type="checkbox" code="$fieldConfig.dictType" />
                         #else
                           <el-checkbox-group v-model="formData.$fieldConfig.fieldName">
@@ -304,7 +304,7 @@
   const rules = reactive({
       #if($fieldConfigs)
           #foreach($fieldConfig in ${fieldConfigs})
-              #if($fieldConfig.isShowInForm && $fieldConfig.isRequired)
+              #if($fieldConfig.isShowInForm and $fieldConfig.isRequired)
                       ${fieldConfig.fieldName}: [{ required: true, message: "请输入${fieldConfig.fieldComment}", trigger: "blur" }],
               #end
           #end

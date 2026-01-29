@@ -44,6 +44,9 @@ func RegisterUserRoutes(r *gin.RouterGroup) {
 }
 
 // GetUserList 用户分页列表
+// @Summary 用户分页列表
+// @Tags 02.用户接口
+// @Router /api/v1/users [get]
 func GetUserList(c *gin.Context) {
 	var query api.UserQueryReq
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -61,6 +64,9 @@ func GetUserList(c *gin.Context) {
 }
 
 // SaveUser 保存用户（新增或更新）
+// @Summary 保存用户
+// @Tags 02.用户接口
+// @Router /api/v1/users [post]
 func SaveUser(c *gin.Context) {
 	var form api.UserSaveReq
 	if err := c.ShouldBindJSON(&form); err != nil {
@@ -77,6 +83,10 @@ func SaveUser(c *gin.Context) {
 }
 
 // GetUserForm 获取用户表单数据
+// @Summary 获取用户表单
+// @Tags 02.用户接口
+// @Param userId path int true "用户ID"
+// @Router /api/v1/users/{userId}/form [get]
 func GetUserForm(c *gin.Context) {
 	userIdStr := c.Param("userId")
 	userId, _ := strconv.ParseInt(userIdStr, 10, 64)
@@ -91,6 +101,10 @@ func GetUserForm(c *gin.Context) {
 }
 
 // UpdateUser 修改用户
+// @Summary 更新用户
+// @Tags 02.用户接口
+// @Param userId path int true "用户ID"
+// @Router /api/v1/users/{userId} [put]
 func UpdateUser(c *gin.Context) {
 	userIdStr := c.Param("userId")
 	userId, _ := strconv.ParseInt(userIdStr, 10, 64)
@@ -111,6 +125,10 @@ func UpdateUser(c *gin.Context) {
 }
 
 // DeleteUsers 删除用户
+// @Summary 删除用户
+// @Tags 02.用户接口
+// @Param ids path string true "用户ID列表"
+// @Router /api/v1/users/{ids} [delete]
 func DeleteUsers(c *gin.Context) {
 	ids := c.Param("ids")
 
@@ -123,6 +141,10 @@ func DeleteUsers(c *gin.Context) {
 }
 
 // UpdateUserStatus 修改用户状态
+// @Summary 修改用户状态
+// @Tags 02.用户接口
+// @Param userId path int true "用户ID"
+// @Router /api/v1/users/{userId}/status [patch]
 func UpdateUserStatus(c *gin.Context) {
 	userIdStr := c.Param("userId")
 	userId, _ := strconv.ParseInt(userIdStr, 10, 64)
@@ -139,6 +161,9 @@ func UpdateUserStatus(c *gin.Context) {
 }
 
 // GetCurrentUser 获取当前登录用户信息
+// @Summary 当前登录用户
+// @Tags 02.用户接口
+// @Router /api/v1/users/me [get]
 func GetCurrentUser(c *gin.Context) {
 	// 从token中获取用户详情（包含角色信息）
 	userDetails, err := pkgContext.GetCurrentUser(c)
@@ -158,6 +183,9 @@ func GetCurrentUser(c *gin.Context) {
 }
 
 // GetUserProfile 获取个人中心用户信息
+// @Summary 个人中心信息
+// @Tags 02.用户接口
+// @Router /api/v1/users/profile [get]
 func GetUserProfile(c *gin.Context) {
 	userId, err := pkgContext.GetCurrentUserID(c)
 	if err != nil {
@@ -175,6 +203,9 @@ func GetUserProfile(c *gin.Context) {
 }
 
 // UpdateUserProfile 个人中心修改用户信息
+// @Summary 更新个人中心信息
+// @Tags 02.用户接口
+// @Router /api/v1/users/profile [put]
 func UpdateUserProfile(c *gin.Context) {
 	userId, err := pkgContext.GetCurrentUserID(c)
 	if err != nil {
@@ -196,6 +227,10 @@ func UpdateUserProfile(c *gin.Context) {
 }
 
 // ResetUserPassword 重置指定用户密码
+// @Summary 重置用户密码
+// @Tags 02.用户接口
+// @Param userId path int true "用户ID"
+// @Router /api/v1/users/{userId}/password/reset [put]
 func ResetUserPassword(c *gin.Context) {
 	userIdStr := c.Param("userId")
 	userId, _ := strconv.ParseInt(userIdStr, 10, 64)
@@ -211,6 +246,9 @@ func ResetUserPassword(c *gin.Context) {
 }
 
 // ChangeCurrentUserPassword 当前用户修改密码
+// @Summary 修改当前用户密码
+// @Tags 02.用户接口
+// @Router /api/v1/users/password [put]
 func ChangeCurrentUserPassword(c *gin.Context) {
 	userId, err := pkgContext.GetCurrentUserID(c)
 	if err != nil {
@@ -232,6 +270,9 @@ func ChangeCurrentUserPassword(c *gin.Context) {
 }
 
 // SendMobileCode 发送短信验证码
+// @Summary 发送手机号验证码
+// @Tags 02.用户接口
+// @Router /api/v1/users/mobile/code [post]
 func SendMobileCode(c *gin.Context) {
 	mobile := c.Query("mobile")
 
@@ -243,6 +284,9 @@ func SendMobileCode(c *gin.Context) {
 }
 
 // BindOrChangeMobile 绑定或更换手机号
+// @Summary 绑定或更换手机号
+// @Tags 02.用户接口
+// @Router /api/v1/users/mobile [put]
 func BindOrChangeMobile(c *gin.Context) {
 	userId, err := pkgContext.GetCurrentUserID(c)
 	if err != nil {
@@ -264,6 +308,9 @@ func BindOrChangeMobile(c *gin.Context) {
 }
 
 // UnbindMobile 解绑手机号
+// @Summary 解绑手机号
+// @Tags 02.用户接口
+// @Router /api/v1/users/mobile [delete]
 func UnbindMobile(c *gin.Context) {
 	userId, err := pkgContext.GetCurrentUserID(c)
 	if err != nil {
@@ -286,6 +333,9 @@ func UnbindMobile(c *gin.Context) {
 }
 
 // SendEmailCode 发送邮箱验证码
+// @Summary 发送邮箱验证码
+// @Tags 02.用户接口
+// @Router /api/v1/users/email/code [post]
 func SendEmailCode(c *gin.Context) {
 	email := c.Query("email")
 
@@ -297,6 +347,9 @@ func SendEmailCode(c *gin.Context) {
 }
 
 // BindOrChangeEmail 绑定或更换邮箱
+// @Summary 绑定或更换邮箱
+// @Tags 02.用户接口
+// @Router /api/v1/users/email [put]
 func BindOrChangeEmail(c *gin.Context) {
 	userId, err := pkgContext.GetCurrentUserID(c)
 	if err != nil {
@@ -318,6 +371,9 @@ func BindOrChangeEmail(c *gin.Context) {
 }
 
 // UnbindEmail 解绑邮箱
+// @Summary 解绑邮箱
+// @Tags 02.用户接口
+// @Router /api/v1/users/email [delete]
 func UnbindEmail(c *gin.Context) {
 	userId, err := pkgContext.GetCurrentUserID(c)
 	if err != nil {
@@ -340,6 +396,9 @@ func UnbindEmail(c *gin.Context) {
 }
 
 // GetUserOptions 获取用户下拉选项
+// @Summary 用户下拉选项
+// @Tags 02.用户接口
+// @Router /api/v1/users/options [get]
 func GetUserOptions(c *gin.Context) {
 	options, err := service.GetUserOptions()
 	if err != nil {
@@ -351,6 +410,9 @@ func GetUserOptions(c *gin.Context) {
 }
 
 // ExportUsers 导出用户列表
+// @Summary 导出用户
+// @Tags 02.用户接口
+// @Router /api/v1/users/export [get]
 func ExportUsers(c *gin.Context) {
 	// 绑定查询参数（支持过滤条件）
 	var query api.UserQueryReq
@@ -382,6 +444,9 @@ func ExportUsers(c *gin.Context) {
 }
 
 // DownloadUserTemplate 下载用户导入模板
+// @Summary 下载用户导入模板
+// @Tags 02.用户接口
+// @Router /api/v1/users/template [get]
 func DownloadUserTemplate(c *gin.Context) {
 	exporter, err := service.GenerateUserTemplate()
 	if err != nil {
@@ -405,6 +470,9 @@ func DownloadUserTemplate(c *gin.Context) {
 }
 
 // ImportUsers 导入用户数据
+// @Summary 导入用户
+// @Tags 02.用户接口
+// @Router /api/v1/users/import [post]
 func ImportUsers(c *gin.Context) {
 	// 获取上传的文件
 	file, err := c.FormFile("file")

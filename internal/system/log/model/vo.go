@@ -6,16 +6,17 @@ import "youlai-gin/pkg/types"
 type LogPageVO struct {
 	ID         types.BigInt `json:"id"`
 	Module     string       `json:"module"`
-	Operation  string       `json:"operation"`
+	Content    string       `json:"content"`
+	RequestURI string       `json:"requestUri"`
 	Method     string       `json:"method"`
-	Path       string       `json:"path"`
-	UserID     types.BigInt `json:"userId"`
-	Username   string       `json:"username"`
 	IP         string       `json:"ip"`
-	Status     int          `json:"status"`
-	Duration   int64        `json:"duration"`
-	ErrorMsg   string       `json:"errorMsg"`
-	CreateTime string       `json:"createTime"`
+	Region     string       `json:"region"`
+	Browser    string       `json:"browser"`
+	OS         string       `json:"os"`
+	ExecutionTime int64     `json:"executionTime"`
+	CreateBy   types.BigInt `json:"createBy"`
+	CreateTime types.LocalTime `json:"createTime"`
+	Operator   string       `json:"operator"`
 }
 
 // VisitTrendVO 访问趋势VO

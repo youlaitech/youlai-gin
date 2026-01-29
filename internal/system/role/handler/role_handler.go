@@ -19,13 +19,13 @@ func RegisterRoleRoutes(r *gin.RouterGroup) {
 		roles.GET("/:id/form", GetRoleForm)
 		roles.PUT("/:id", UpdateRole)
 		roles.DELETE("/:id", DeleteRole)
-		roles.GET("/:id/menu-ids", GetRoleMenuIds)
+		roles.GET("/:id/menuIds", GetRoleMenuIds)
 		roles.PUT("/:id/menus", UpdateRoleMenus)
 	}
 }
 
 // @Summary 角色分页列表
-// @Tags 角色管理
+// @Tags 03.角色接口
 // @Param pageNum query int false "页码"
 // @Param pageSize query int false "每页数量"
 // @Param keywords query string false "关键字"
@@ -48,7 +48,7 @@ func GetRolePage(c *gin.Context) {
 }
 
 // @Summary 角色下拉列表
-// @Tags 角色管理
+// @Tags 03.角色接口
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles/options [get]
 func GetRoleOptions(c *gin.Context) {
@@ -62,7 +62,7 @@ func GetRoleOptions(c *gin.Context) {
 }
 
 // @Summary 新增角色
-// @Tags 角色管理
+// @Tags 03.角色接口
 // @Param body body model.RoleForm true "角色信息"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles [post]
@@ -82,7 +82,7 @@ func SaveRole(c *gin.Context) {
 }
 
 // @Summary 获取角色表单数据
-// @Tags 角色管理
+// @Tags 03.角色接口
 // @Param id path int true "角色ID"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles/{id}/form [get]
@@ -104,7 +104,7 @@ func GetRoleForm(c *gin.Context) {
 }
 
 // @Summary 更新角色
-// @Tags 角色管理
+// @Tags 03.角色接口
 // @Param id path int true "角色ID"
 // @Param body body model.RoleForm true "角色信息"
 // @Success 200 {object} map[string]interface{}
@@ -133,7 +133,7 @@ func UpdateRole(c *gin.Context) {
 }
 
 // @Summary 删除角色
-// @Tags 角色管理
+// @Tags 03.角色接口
 // @Param id path int true "角色ID"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles/{id} [delete]
@@ -154,10 +154,10 @@ func DeleteRole(c *gin.Context) {
 }
 
 // @Summary 获取角色菜单ID列表
-// @Tags 角色管理
+// @Tags 03.角色接口
 // @Param id path int true "角色ID"
 // @Success 200 {object} map[string]interface{}
-// @Router /api/v1/roles/{id}/menu-ids [get]
+// @Router /api/v1/roles/{id}/menuIds [get]
 func GetRoleMenuIds(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -176,7 +176,7 @@ func GetRoleMenuIds(c *gin.Context) {
 }
 
 // @Summary 分配菜单权限
-// @Tags 角色管理
+// @Tags 03.角色接口
 // @Param id path int true "角色ID"
 // @Param body body []int64 true "菜单ID列表"
 // @Success 200 {object} map[string]interface{}

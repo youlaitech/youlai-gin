@@ -29,6 +29,9 @@ func RegisterRoutes(r *gin.RouterGroup) {
 }
 
 // GetNoticePage 通知公告分页列表
+// @Summary 通知公告分页
+// @Tags 09.通知公告
+// @Router /api/v1/notices [get]
 func GetNoticePage(c *gin.Context) {
 	var query model.NoticeQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -46,6 +49,9 @@ func GetNoticePage(c *gin.Context) {
 }
 
 // SaveNotice 新增通知公告
+// @Summary 新增通知公告
+// @Tags 09.通知公告
+// @Router /api/v1/notices [post]
 func SaveNotice(c *gin.Context) {
 	var form model.NoticeForm
 	if err := c.ShouldBindJSON(&form); err != nil {
@@ -62,6 +68,10 @@ func SaveNotice(c *gin.Context) {
 }
 
 // GetNoticeForm 获取通知公告表单数据
+// @Summary 通知公告表单
+// @Tags 09.通知公告
+// @Param id path int true "公告ID"
+// @Router /api/v1/notices/{id}/form [get]
 func GetNoticeForm(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -80,6 +90,10 @@ func GetNoticeForm(c *gin.Context) {
 }
 
 // GetNoticeDetail 阅读获取通知公告详情
+// @Summary 通知公告详情
+// @Tags 09.通知公告
+// @Param id path int true "公告ID"
+// @Router /api/v1/notices/{id}/detail [get]
 func GetNoticeDetail(c *gin.Context) {
 	idStr := c.Param("id")
 	noticeID, err := strconv.ParseInt(idStr, 10, 64)
@@ -109,6 +123,10 @@ func GetNoticeDetail(c *gin.Context) {
 }
 
 // UpdateNotice 修改通知公告
+// @Summary 修改通知公告
+// @Tags 09.通知公告
+// @Param id path int true "公告ID"
+// @Router /api/v1/notices/{id} [put]
 func UpdateNotice(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -133,6 +151,10 @@ func UpdateNotice(c *gin.Context) {
 }
 
 // PublishNotice 发布通知公告
+// @Summary 发布通知公告
+// @Tags 09.通知公告
+// @Param id path int true "公告ID"
+// @Router /api/v1/notices/{id}/publish [put]
 func PublishNotice(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -150,6 +172,10 @@ func PublishNotice(c *gin.Context) {
 }
 
 // RevokeNotice 撤回通知公告
+// @Summary 撤回通知公告
+// @Tags 09.通知公告
+// @Param id path int true "公告ID"
+// @Router /api/v1/notices/{id}/revoke [put]
 func RevokeNotice(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -167,6 +193,10 @@ func RevokeNotice(c *gin.Context) {
 }
 
 // DeleteNotices 删除通知公告（支持批量）
+// @Summary 删除通知公告
+// @Tags 09.通知公告
+// @Param ids path string true "公告ID列表"
+// @Router /api/v1/notices/{ids} [delete]
 func DeleteNotices(c *gin.Context) {
 	idsStr := c.Param("ids")
 	if idsStr == "" {
@@ -192,6 +222,9 @@ func DeleteNotices(c *gin.Context) {
 }
 
 // GetMyNoticePage 获取我的通知公告分页列表
+// @Summary 我的通知公告
+// @Tags 09.通知公告
+// @Router /api/v1/notices/my [get]
 func GetMyNoticePage(c *gin.Context) {
 	// 获取当前用户ID
 	userID, err := pkgContext.GetCurrentUserID(c)
@@ -216,6 +249,9 @@ func GetMyNoticePage(c *gin.Context) {
 }
 
 // ReadAllNotices 全部已读
+// @Summary 通知全部已读
+// @Tags 09.通知公告
+// @Router /api/v1/notices/read-all [put]
 func ReadAllNotices(c *gin.Context) {
 	// 获取当前用户ID
 	userID, err := pkgContext.GetCurrentUserID(c)
@@ -231,6 +267,9 @@ func ReadAllNotices(c *gin.Context) {
 }
 
 // GetUnreadCount 获取未读通知数量
+// @Summary 未读通知数量
+// @Tags 09.通知公告
+// @Router /api/v1/notices/unread-count [get]
 func GetUnreadCount(c *gin.Context) {
 	// 获取当前用户ID
 	userID, err := pkgContext.GetCurrentUserID(c)

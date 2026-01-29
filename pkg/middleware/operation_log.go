@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"io"
 	"time"
-	
+
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	
+
 	"youlai-gin/pkg/database"
 	pkgContext "youlai-gin/pkg/context"
 	"youlai-gin/pkg/logger"
@@ -16,21 +16,23 @@ import (
 
 // OperationLog 操作日志实体（对应 sys_log 表）
 type OperationLogEntity struct {
-	ID            int64  `gorm:"primaryKey;autoIncrement" json:"id"`
-	Module        string `gorm:"column:module;size:50" json:"module"`               // 操作模块
-	Operation     string `gorm:"column:operation;size:50" json:"operation"`         // 操作类型
-	Method        string `gorm:"column:method;size:10" json:"method"`               // 请求方法
-	Path          string `gorm:"column:path;size:255" json:"path"`                  // 请求路径
-	UserID        int64  `gorm:"column:user_id" json:"userId"`                      // 操作用户ID
-	Username      string `gorm:"column:username;size:50" json:"username"`           // 操作用户名
-	IP            string `gorm:"column:ip;size:50" json:"ip"`                       // IP地址
-	UserAgent     string `gorm:"column:user_agent;size:500" json:"userAgent"`       // User-Agent
-	RequestBody   string `gorm:"column:request_body;type:text" json:"requestBody"`  // 请求体
-	ResponseBody  string `gorm:"column:response_body;type:text" json:"responseBody"`// 响应体
-	Status        int    `gorm:"column:status" json:"status"`                       // 响应状态码
-	Duration      int64  `gorm:"column:duration" json:"duration"`                   // 执行时长（毫秒）
-	ErrorMsg      string `gorm:"column:error_msg;size:500" json:"errorMsg"`         // 错误信息
-	CreateTime    string `gorm:"column:create_time;autoCreateTime" json:"createTime"`
+	ID              int64  `gorm:"primaryKey;autoIncrement" json:"id"`
+	Module          string `gorm:"column:module;size:50" json:"module"`                // 日志模块
+	RequestMethod   string `gorm:"column:request_method;size:64" json:"requestMethod"` // 请求方式
+	RequestParams   string `gorm:"column:request_params;type:text" json:"requestParams"` // 请求参数
+	ResponseContent string `gorm:"column:response_content;type:mediumtext" json:"responseContent"` // 响应内容
+	Content         string `gorm:"column:content;size:255" json:"content"`            // 日志内容
+	RequestURI      string `gorm:"column:request_uri;size:255" json:"requestUri"`     // 请求路径
+	Method          string `gorm:"column:method;size:255" json:"method"`              // 方法名
+	IP              string `gorm:"column:ip;size:50" json:"ip"`                       // IP地址
+	Province        string `gorm:"column:province;size:100" json:"province"`          // 省份
+	City            string `gorm:"column:city;size:100" json:"city"`                  // 城市
+	ExecutionTime   int64  `gorm:"column:execution_time" json:"executionTime"`         // 执行时间(毫秒)
+	Browser         string `gorm:"column:browser;size:100" json:"browser"`            // 浏览器
+	BrowserVersion  string `gorm:"column:browser_version;size:100" json:"browserVersion"` // 浏览器版本
+	OS              string `gorm:"column:os;size:100" json:"os"`                      // 终端系统
+	CreateBy        int64  `gorm:"column:create_by" json:"createBy"`                  // 创建人ID
+	CreateTime      time.Time `gorm:"column:create_time;autoCreateTime" json:"createTime"`
 }
 
 func (OperationLogEntity) TableName() string {
@@ -69,14 +71,10 @@ func OperationLog(module, operation string) gin.HandlerFunc {
 func OperationLogWithConfig(config OperationLogConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
-		
+
 		// 获取用户信息
 		userID, _ := pkgContext.GetCurrentUserID(c)
-		username := ""
-		if user, err := pkgContext.GetCurrentUser(c); err == nil {
-			username = user.Username
-		}
-		
+
 		// 保存请求体
 		var requestBody string
 		if config.SaveRequestBody && c.Request.Body != nil {
@@ -92,7 +90,7 @@ func OperationLogWithConfig(config OperationLogConfig) gin.HandlerFunc {
 				c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 			}
 		}
-		
+
 		// 保存响应体（如果需要）
 		var responseBody string
 		if config.SaveResponse {
@@ -108,13 +106,13 @@ func OperationLogWithConfig(config OperationLogConfig) gin.HandlerFunc {
 				}
 			}()
 		}
-		
+
 		// 执行请求
 		c.Next()
-		
+
 		// 计算执行时长
 		duration := time.Since(start).Milliseconds()
-		
+
 		// 提取错误信息
 		var errorMsg string
 		if len(c.Errors) > 0 {
@@ -123,24 +121,26 @@ func OperationLogWithConfig(config OperationLogConfig) gin.HandlerFunc {
 				errorMsg = errorMsg[:500]
 			}
 		}
-		
+
 		// 构建日志记录
 		logEntry := OperationLogEntity{
-			Module:       config.Module,
-			Operation:    config.Operation,
-			Method:       c.Request.Method,
-			Path:         c.Request.URL.Path,
-			UserID:       userID,
-			Username:     username,
-			IP:           c.ClientIP(),
-			UserAgent:    c.Request.UserAgent(),
-			RequestBody:  requestBody,
-			ResponseBody: responseBody,
-			Status:       c.Writer.Status(),
-			Duration:     duration,
-			ErrorMsg:     errorMsg,
+			Module:          config.Module,
+			RequestMethod:   c.Request.Method,
+			RequestParams:   requestBody,
+			ResponseContent: responseBody,
+			Content:         config.Operation,
+			RequestURI:      c.Request.URL.Path,
+			Method:          config.Operation,
+			IP:              c.ClientIP(),
+			Province:        "",
+			City:            "",
+			ExecutionTime:   duration,
+			Browser:         c.Request.UserAgent(),
+			BrowserVersion:  "",
+			OS:              "",
+			CreateBy:        userID,
 		}
-		
+
 		// 异步保存日志（避免影响主流程性能）
 		go saveOperationLog(logEntry)
 	}
@@ -173,13 +173,13 @@ func (w *responseWriter) WriteString(s string) (int, error) {
 func OperationLogJSON(module, operation string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
-		
+
 		userID, _ := pkgContext.GetCurrentUserID(c)
-		
+
 		c.Next()
-		
+
 		duration := time.Since(start)
-		
+
 		// 使用结构化日志记录
 		logger.Info(
 			"[操作日志]",

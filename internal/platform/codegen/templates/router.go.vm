@@ -1,0 +1,11 @@
+package ${entityKebab}
+
+import (
+	"github.com/gin-gonic/gin"
+	"youlai-gin/internal/${moduleName}/${entityKebab}/handler"
+)
+
+// RegisterRoutes 注册${businessName}模块路由
+func RegisterRoutes(r *gin.RouterGroup) {
+	handler.Register${entityName}Routes(r)
+}

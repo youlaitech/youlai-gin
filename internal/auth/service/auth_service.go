@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"image/color"
 	"time"
 
 	"github.com/google/uuid"
@@ -31,32 +32,32 @@ func InitTokenManager(tm auth.TokenManager) {
 
 // GetCaptcha 获取验证码
 func GetCaptcha() (*authModel.CaptchaVO, error) {
-	// 现代化清爽风格验证码配置
-	// 使用字符串验证码，简洁美观
+	// 清新亮色验证码配置（浅色背景 + 无干扰线/噪点）
+	bgColor := &color.RGBA{R: 240, G: 248, B: 255, A: 255}
 	driver := base64Captcha.NewDriverString(
-		40,                              // 高度 40px
-		120,                             // 宽度 120px
-		0,                               // 噪点数量 0（完全无干扰，最清爽）
-		base64Captcha.OptionShowSlimeLine, // 只显示细线条（可选）
-		4,                               // 验证码长度 4位
-		"0123456789",                    // 只使用数字，简单易读
-		nil,                             // 使用默认背景色（白色）
-		nil,                             // 使用默认字体
+		44,           // 高度 44px
+		140,          // 宽度 140px
+		0,            // 噪点数量 0（清爽）
+		0,            // 无干扰线
+		4,            // 验证码长度 4位
+		"23456789", // 只使用清晰数字
+		bgColor,      // 浅色背景
+		nil,          // 默认字体
 	)
-	
+
 	// 生成验证码
 	captcha := base64Captcha.NewCaptcha(driver, captchaStore)
 	id, b64s, err := captcha.Generate()
 	if err != nil {
 		return nil, errs.SystemError("生成验证码失败")
 	}
-	
+
 	// 获取验证码答案
 	answer := captchaStore.Get(id, false)
-	
+
 	// 生成验证码 Key
 	captchaKey := uuid.New().String()
-	
+
 	// 将验证码存储到 Redis（5分钟过期）
 	redisKey := fmt.Sprintf("captcha:image:%s", captchaKey)
 	ctx := context.Background()
@@ -65,10 +66,10 @@ func GetCaptcha() (*authModel.CaptchaVO, error) {
 		// Redis 失败回退到内存存储
 		captchaStore.Set(captchaKey, answer)
 	}
-	
+
 	// 清理内存中的验证码ID（我们使用自己的key）
 	captchaStore.Set(id, "")
-	
+
 	return &authModel.CaptchaVO{
 		CaptchaKey:    captchaKey,
 		CaptchaBase64: b64s,
@@ -171,11 +172,11 @@ func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, erro
 	if err != nil {
 		return nil, errs.BadRequest("验证码已过期或不存在")
 	}
-	
+
 	if cachedCode != req.Code {
 		return nil, errs.BadRequest("验证码错误")
 	}
-	
+
 	// 2. 根据手机号查询用户
 	user, err := userRepo.GetUserByMobile(req.Mobile)
 	if err != nil {
@@ -184,12 +185,12 @@ func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, erro
 		}
 		return nil, errs.SystemError("查询用户失败")
 	}
-	
+
 	// 3. 检查用户状态
 	if user.Status != 1 {
 		return nil, errs.BadRequest("用户已被禁用")
 	}
-	
+
 	// 4. 获取用户角色
 	roles, err := userRepo.GetUserRoles(int64(user.ID))
 	if err != nil {
@@ -207,12 +208,12 @@ func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, erro
 		DataScope: 0, // TODO: 从角色权限获取
 		Roles:     roles,
 	}
-	
+
 	token, err := tokenManager.GenerateToken(userDetails)
 	if err != nil {
 		return nil, errs.SystemError("生成令牌失败")
 	}
-	
+
 	return token, nil
 }
 

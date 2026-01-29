@@ -9,8 +9,8 @@ type DictPageVO struct {
 	Name       string       `json:"name"`
 	Status     int          `json:"status"`
 	Remark     string       `json:"remark,omitempty"`
-	CreateTime string       `json:"createTime,omitempty"`
-	UpdateTime string       `json:"updateTime,omitempty"`
+	CreateTime types.LocalTime `json:"createTime,omitempty"`
+	UpdateTime types.LocalTime `json:"updateTime,omitempty"`
 }
 
 // DictItemVO 字典项数据

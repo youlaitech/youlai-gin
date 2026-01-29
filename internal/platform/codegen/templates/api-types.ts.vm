@@ -11,7 +11,7 @@ export interface ${entityName}QueryParams extends BaseQueryParams {
     #if("$!fieldConfig.fieldComment" != "")
   /** ${fieldConfig.fieldComment} */
     #end
-    #if($fieldConfig.formType == "DATE" || $fieldConfig.formType == "DATE_TIME")
+    #if($fieldConfig.formType == "DATE" or $fieldConfig.formType == "DATE_TIME")
       #if($fieldConfig.queryType == "BETWEEN")
   ${fieldConfig.fieldName}?: [string, string];
       #else
