@@ -74,59 +74,132 @@ youlai-gin/
 
 </details>
 
-## 🚀 快速启动
+## 环境准备
 
-### 1. 环境准备
+### 1. 准备基础环境
 
-| 要求 | 说明 | 安装指引 |
-| --- | --- | --- |
-| **Go** | 1.21+ | [官方下载](https://go.dev/dl/) |
-| **MySQL** | 5.7+ 或 8.x | 业务数据存储，必需安装：[Windows](https://youlai.blog.csdn.net/article/details/133272887) / [Linux](https://youlai.blog.csdn.net/article/details/130398179) |
-| **Redis** | 7.x 稳定版 | 会话缓存，必需安装：[Windows](https://youlai.blog.csdn.net/article/details/133410293) / [Linux](https://youlai.blog.csdn.net/article/details/130439335) |
+| 要求      | 说明              |
+| --------- | ----------------- |
+| **Go**    | `1.25` 或更高版本 |
+| **MySQL** | `5.7` 或 `8.x`    |
+| **Redis** | `7.x`             |
 
 > ⚠️ **重要提示**：MySQL 与 Redis 为项目启动必需依赖，请确保服务已启动。
 
-### 2. 数据库初始化
+### 2. 安装开发工具
 
-推荐使用 **Navicat**、**DBeaver** 或 **MySQL Workbench** 执行 `scripts/mysql/youlai_admin.sql` 脚本，完成数据库和基础数据的初始化。
+**GoLand**（推荐）：
 
-### 3. 修改配置
+- 直接使用 JetBrains GoLand 即可，首次打开项目时按提示下载/配置 Go SDK
 
-编辑开发环境配置文件 `configs/dev.yaml`，根据实际情况修改 MySQL 和 Redis 的连接信息。
+**VS Code**：
 
-### 4. 启动项目
+1. **安装 Go**: 建议安装 `1.25` 或更高版本 ([官方下载](https://go.dev/dl/))，安装后请在终端执行 `go version` 验证。
+
+2. 安装 VS Code 扩展插件（VS Code 扩展市场搜索安装）：
+
+   | 插件名称             | 作用                                    |
+   | -------------------- | --------------------------------------- |
+   | **Go**               | Go 语言支持（gopls/调试/格式化/测试）   |
+   | **Go Test Explorer** | 测试用例可视化运行（可选）              |
+   | **REST Client**      | 直接在 VS Code 内调试 HTTP 接口（可选） |
+
+### 3. 初始化数据库
+
+使用数据库客户端（如 Navicat、DBeaver）执行项目根目录下的 `scripts/mysql/youlai_admin.sql` 脚本，完成数据库及基础数据的初始化。
+
+## 项目启动
+
+### 1. 配置应用程序
+
+开发环境配置文件：`configs/dev.yaml`
+
+```yaml
+database:
+  host: localhost
+  port: 3306
+  username: youlai
+  password: 123456
+  dbname: youlai_admin
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  database: 0
+
+security:
+  sessionType: jwt # jwt / redis-token
+  jwt:
+    secretKey: "请改为生产安全密钥" # 生产环境建议使用至少 32 字节的随机字符串
+    accessTokenTTL: 7200
+    refreshTokenTTL: 2592000
+  redisToken:
+    accessTokenTTL: 7200
+    refreshTokenTTL: 2592000
+```
+
+**配置项说明：**
+
+- `database.*`：MySQL 连接信息，启动前请确保库表已初始化。
+- `redis.*`：Redis 连接配置，用于会话与缓存。
+- `security.sessionType`：会话模式，`jwt` 为无状态，`redis-token` 为服务端会话。
+- `security.jwt.secretKey`：JWT 签名密钥，生产务必修改。
+- `security.redisToken.*`：选择 `redis-token` 模式时的会话 TTL。
+
+其他环境可参考 `configs/prod.yaml`、`configs/test.yaml`，所有字段均可用环境变量 `APP_<模块>_<字段>` 形式覆盖（如 `APP_DATABASE_PASSWORD`）。
+
+### 2. 启动后端服务
 
 ```bash
-# 下载依赖
+# 1. 克隆项目
+git clone https://gitee.com/youlaiorg/youlai-gin.git
+cd youlai-gin
+
+# 2. 下载依赖
 go mod tidy
 
-# 启动服务
+# 3. 生成 Swagger 文档
+swag init
+
+# 4. 启动项目
 go run main.go
 ```
 
+> 💡 **开发技巧：热重载**
+>
+> 为了提升开发效率，避免每次修改代码后都手动重启服务，推荐使用 `air` 工具实现热重载。
+>
+> ```bash
+> # 1. 安装 air
+> go install github.com/cosmtrek/air@latest
+>
+> # 2. 在项目根目录启动 (代替 go run)
+> air
+> ```
+>
+> `air` 会自动监听文件变动并重新编译启动项目。首次使用时，它会在项目根目录生成一个 `.air.toml` 配置文件，通常无需修改。
+
 启动成功后，访问 [http://localhost:8000/swagger/index.html](http://localhost:8000/swagger/index.html) 验证项目是否成功。
 
-## 🤝 前端整合
+### 3. 整合并启动前端
 
-`youlai-gin` 与 `vue3-element-admin` 前后端协议完全兼容，可无缝对接。
+`youlai-gin` 与 `vue3-element-admin` 完全兼容。
 
 ```bash
 # 1. 获取前端项目
 git clone https://gitee.com/youlaiorg/vue3-element-admin.git
 cd vue3-element-admin
 
-# 2. 安装依赖
+# 2. 安装依赖 (推荐使用 pnpm)
 pnpm install
 
-# 3. 配置后端地址 (编辑 .env.development)
+# 3. 配置后端接口地址 (编辑 .env.development)
 VITE_APP_API_URL=http://localhost:8000
 
 # 4. 启动前端
 pnpm run dev
 ```
-
-- **访问地址**: [http://localhost:3000](http://localhost:3000)
-- **登录账号**: `admin` / `123456`
 
 ## 🐳 项目部署
 
