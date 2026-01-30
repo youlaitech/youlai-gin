@@ -24,9 +24,9 @@
 
 ## 📢 项目简介
 
-`youlai-gin` 是 `vue3-element-admin` 的 Go/Gin 后端实现，接口路径与返回结构完全对齐，可直接为前端提供后端服务。
+**[youlai-gin](https://gitee.com/youlaiorg/youlai-gin)** 是 **[vue3-element-admin](https://gitee.com/youlaiorg/vue3-element-admin)** 的 Go/Gin 后端实现，接口路径与返回结构完全对齐，可直接为前端提供后端服务。
 
-- **🚀 技术栈**：Go 1.21+ + Gin + GORM，轻量高性能组合
+- **🚀 技术栈**：Go 1.25+ + Gin + GORM，轻量高性能组合
 - **🔐 安全认证**：JWT 无状态认证 + Redis 会话管理，支持会话治理
 - **🔑 权限管理**：RBAC 权限模型，菜单/按钮/接口三级权限统一治理
 - **🛠️ 模块能力**：用户、角色、菜单、部门、字典、日志等核心模块开箱即用
@@ -39,20 +39,17 @@
 | Vue3 管理端 | [vue3-element-admin](https://gitee.com/youlaiorg/vue3-element-admin) | [vue3-element-admin](https://github.com/youlaitech/vue3-element-admin) | [vue3-element-admin](https://gitcode.com/youlai/vue3-element-admin) |
 | uni-app 移动端 | [vue-uniapp-template](https://gitee.com/youlaiorg/vue-uniapp-template) | [vue-uniapp-template](https://github.com/youlaitech/vue-uniapp-template) | [vue-uniapp-template](https://gitcode.com/youlai/vue-uniapp-template) |
 
-## 📚 项目文档
-
-| 文档名称           | 访问地址                                                                 |
-| ------------------ | ------------------------------------------------------------------------ |
-| 项目介绍与使用指南 | [https://www.youlai.tech/youlai-gin](https://www.youlai.tech/youlai-gin) |
-
-## 📁 项目目录
+## 项目目录
 
 <details>
 <summary>目录结构</summary>
 
 ```text
 youlai-gin/
-├─ configs/                   # 配置文件 (dev/prod)
+├─ configs/                   # 配置文件
+│  ├─ dev.yaml                # 开发环境配置
+│  ├─ prod.yaml               # 生产环境配置
+│  └─ test.yaml               # 测试环境配置
 ├─ docs/                      # 项目文档
 ├─ examples/                  # 示例代码
 ├─ internal/                  # 核心业务源码
@@ -62,6 +59,12 @@ youlai-gin/
 │  ├─ router/                 # 路由注册
 │  └─ system/                 # 系统模块(用户/角色/菜单等)
 ├─ pkg/                       # 通用包 (中间件/响应等)
+│  ├─ middleware/             # 中间件(JWT/CORS/RequestID)
+│  ├─ response/               # 统一响应结构
+│  ├─ database/               # 数据库连接
+│  ├─ redis/                  # Redis 连接
+│  ├─ logger/                 # 日志
+│  └─ ...                     # 其他通用工具
 ├─ scripts/                   # 数据库脚本
 ├─ Dockerfile                 # Docker 镜像构建文件
 ├─ go.mod                     # 依赖管理
@@ -81,17 +84,40 @@ youlai-gin/
 | **MySQL** | `5.7` 或 `8.x` | [Windows](https://youlai.blog.csdn.net/article/details/133272887) / [Linux](https://youlai.blog.csdn.net/article/details/130398179) |
 | **Redis** | `7.x` | [Windows](https://youlai.blog.csdn.net/article/details/133410293) / [Linux](https://youlai.blog.csdn.net/article/details/130439335) |
 
-> ⚠️ **重要提示**：MySQL 与 Redis 为项目启动必需依赖，请确保服务已启动。
+> 💡 **贴心小提示**：本地未配置 MySQL、Redis 不影响启动，项目默认会连接 [youlai](https://www.youlai.tech) 线上公共环境运行，方便您快速体验。
 
-### 2. 初始化数据库
+### 2. 开发工具
+
+**GoLand（推荐）**：
+
+- 直接使用 JetBrains GoLand 即可，首次打开项目时按提示下载/配置 Go SDK。
+
+**VS Code**：
+
+1. 安装 VS Code 扩展插件（扩展市场搜索安装）：
+
+   | 插件名称             | 作用                                    |
+   | -------------------- | --------------------------------------- |
+   | **Go**               | Go 语言支持（gopls/调试/格式化/测试）   |
+   | **Go Test Explorer** | 测试用例可视化运行（可选）              |
+   | **REST Client**      | 直接在 VS Code 内调试 HTTP 接口（可选） |
+
+2. 安装 Go 工具链（首次使用 Go 扩展通常会提示安装）：
+
+   在 VS Code 命令面板（`Ctrl+Shift+P`）中执行 `Go: Install/Update Tools`，建议至少安装：
+   - `gopls`（语言服务）
+   - `dlv`（Delve 调试器）
+   - `goimports`（自动整理 imports）
+
+### 3. 初始化数据库
 
 使用数据库客户端（如 Navicat、DBeaver）执行 `scripts/mysql/youlai_admin.sql` 脚本，完成数据库和基础数据的初始化。
 
-### 3. 修改配置
+### 4. 修改配置
 
 编辑 `configs/dev.yaml` 文件，根据实际情况修改 MySQL 和 Redis 的连接字符串。
 
-### 4. 启动项目
+### 5. 启动项目
 
 ```bash
 # 下载依赖
