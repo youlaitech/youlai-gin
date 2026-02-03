@@ -75,7 +75,7 @@ var codegenConfig = struct {
 	frontendAppName:        "vue3-element-admin",
 	defaultAuthor:          "youlaitech",
 	defaultModuleName:      "system",
-	defaultPackageName:     "com.youlai.boot",
+	defaultPackageName:     "internal",
 	defaultRemoveTablePrefix: "sys_",
 }
 
