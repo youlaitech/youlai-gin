@@ -18,7 +18,7 @@ type FileValidator struct {
 	ForbiddenExts  []string // 禁止的文件扩展名
 }
 
-// ImageValidator 图片验证器（预设）
+// ImageValidator 图片验证器
 var ImageValidator = &FileValidator{
 	MaxSize:       5 * 1024 * 1024, // 5MB
 	AllowedExts:   []string{".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"},
@@ -26,7 +26,7 @@ var ImageValidator = &FileValidator{
 	ForbiddenExts: []string{".exe", ".bat", ".sh", ".php", ".jsp", ".asp"},
 }
 
-// DocumentValidator 文档验证器（预设）
+// DocumentValidator 文档验证器
 var DocumentValidator = &FileValidator{
 	MaxSize:       10 * 1024 * 1024, // 10MB
 	AllowedExts:   []string{".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt"},
@@ -34,7 +34,7 @@ var DocumentValidator = &FileValidator{
 	ForbiddenExts: []string{".exe", ".bat", ".sh", ".php", ".jsp", ".asp", ".js", ".html", ".htm"},
 }
 
-// ExcelValidator Excel 文件验证器（预设）
+// ExcelValidator Excel 文件验证器
 var ExcelValidator = &FileValidator{
 	MaxSize:       10 * 1024 * 1024, // 10MB
 	AllowedExts:   []string{".xls", ".xlsx"},
@@ -141,17 +141,17 @@ func formatFileSize(size int64) string {
 	return fmt.Sprintf("%.1f %cB", float64(size)/float64(div), "KMGTPE"[exp])
 }
 
-// ValidateImage 验证图片文件（快捷方式）
+// ValidateImage 验证图片文件
 func ValidateImage(file *multipart.FileHeader) error {
 	return ImageValidator.Validate(file)
 }
 
-// ValidateDocument 验证文档文件（快捷方式）
+// ValidateDocument 验证文档文件
 func ValidateDocument(file *multipart.FileHeader) error {
 	return DocumentValidator.Validate(file)
 }
 
-// ValidateExcel 验证 Excel 文件（快捷方式）
+// ValidateExcel 验证 Excel 文件
 func ValidateExcel(file *multipart.FileHeader) error {
 	return ExcelValidator.Validate(file)
 }

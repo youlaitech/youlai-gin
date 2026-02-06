@@ -10,7 +10,7 @@ import (
 	"youlai-gin/pkg/requestid"
 )
 
-// Middleware 统一 access log，自动注入 requestId
+// Middleware access log 中间件
 func Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		reqID := requestid.Get(c)
@@ -31,7 +31,7 @@ func Middleware() gin.HandlerFunc {
 	}
 }
 
-// Recovery 结构化 panic 日志
+// Recovery panic 日志
 func Recovery() gin.HandlerFunc {
 	return ginzap.RecoveryWithZap(Log, true)
 }

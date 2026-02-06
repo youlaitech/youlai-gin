@@ -75,7 +75,7 @@ func SaveUser(form *api.UserSaveReq) error {
 			return errs.SystemError("更新用户角色失败")
 		}
 	} else {
-		// 创建用户 - 设置默认密码
+		// 创建用户 - 设置初始密码
 		defaultPassword := "123456"
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
 		if err != nil {
@@ -283,8 +283,8 @@ func getRolePermsFromCache(roleCodes []string) ([]string, error) {
 		dbPerms, err := getRolePermsFromDB(missingRoles)
 		if err != nil {
 			// 数据库查询失败，只返回已从缓存获取的权限
-			// 不返回错误，保证服务可用性
-			fmt.Printf("⚠️  降级查询数据库失败，角色: %v, 错误: %v\n", missingRoles, err)
+			// 不返回错误，返回已缓存权限
+			fmt.Printf("降级查询数据库失败，角色: %v, 错误: %v\n", missingRoles, err)
 		} else {
 			// 将数据库查询结果合并到权限集合
 			for _, perm := range dbPerms {
@@ -310,7 +310,7 @@ func getRolePermsFromDB(roleCodes []string) ([]string, error) {
 		return []string{}, nil
 	}
 
-	// 导入role repository（避免循环依赖，使用数据库直接查询）
+	// 使用 role repository，直接查询
 	rolePermsList, err := repository.GetRolePermsByCodes(roleCodes)
 	if err != nil {
 		return nil, err
@@ -422,12 +422,12 @@ func SendMobileCode(mobile string) error {
 		return err
 	}
 
-	// 4. 发送短信（实际生产环境对接短信服务商）
-	// TODO: 对接阿里云、腾讯云等短信服务
-	// 示例：smsService.SendSMS(mobile, code)
+	// 4. 发送短信（生产环境对接短信服务商）
+	// TODO: 接入短信服务商并发送验证码
+	// smsService.SendSMS(mobile, code)
 
 	// 开发环境：打印验证码到日志
-	fmt.Printf("📱 短信验证码已发送到 %s: %s (有效期 %d 分钟)\n", mobile, code, utils.CodeExpiration)
+	fmt.Printf("短信验证码已发送到 %s: %s (有效期 %d 分钟)\n", mobile, code, utils.CodeExpiration)
 
 	return nil
 }
@@ -487,12 +487,12 @@ func SendEmailCode(email string) error {
 		return err
 	}
 
-	// 4. 发送邮件（实际生产环境对接邮件服务）
-	// TODO: 对接 SMTP 服务或第三方邮件服务
-	// 示例：emailService.SendEmail(email, "验证码", fmt.Sprintf("您的验证码是：%s", code))
+	// 4. 发送邮件（生产环境对接邮件服务）
+	// TODO: 接入 SMTP 或第三方邮件服务
+	// emailService.SendEmail(email, "验证码", fmt.Sprintf("您的验证码是：%s", code))
 
 	// 开发环境：打印验证码到日志
-	fmt.Printf("📧 邮箱验证码已发送到 %s: %s (有效期 %d 分钟)\n", email, code, utils.CodeExpiration)
+	fmt.Printf("邮箱验证码已发送到 %s: %s (有效期 %d 分钟)\n", email, code, utils.CodeExpiration)
 
 	return nil
 }
@@ -652,15 +652,15 @@ func GenerateUserTemplate() (*excel.ExcelExporter, error) {
 		return nil, errs.SystemError("设置表头失败")
 	}
 
-	// 添加示例数据行
+	// 添加样例数据
 	examples := [][]interface{}{
-		{"zhangsan", "张三", "13800138000", "男", "zhangsan@example.com", "1", "启用", "示例用户1"},
-		{"lisi", "李四", "13800138001", "女", "lisi@example.com", "2", "启用", "示例用户2"},
+		{"zhangsan", "张三", "13800138000", "男", "zhangsan@example.com", "1", "启用", "样例用户1"},
+		{"lisi", "李四", "13800138001", "女", "lisi@example.com", "2", "启用", "样例用户2"},
 	}
 
 	for _, row := range examples {
 		if err := exporter.AddRow(row); err != nil {
-			return nil, errs.SystemError("添加示例数据失败")
+			return nil, errs.SystemError("添加样例数据失败")
 		}
 	}
 
@@ -755,7 +755,7 @@ func ImportUsersFromExcel(file io.Reader) (map[string]interface{}, error) {
 			Email:    email,
 			DeptID:   types.BigInt(deptID),
 			Status:   status,
-			Password: "$2a$10$xqb1QjFdvVXMHrdLHKHgG.SQWZpfqnLSQEDdE/eUcLfnXW6rMaLTK", // 默认密码: 123456
+			Password: "$2a$10$xqb1QjFdvVXMHrdLHKHgG.SQWZpfqnLSQEDdE/eUcLfnXW6rMaLTK", // 初始密码: 123456
 		}
 
 		if err := repository.CreateUser(user); err != nil {

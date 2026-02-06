@@ -66,7 +66,7 @@ func (rl *RateLimiter) Middleware() gin.HandlerFunc {
 	}
 }
 
-// CleanupOldLimiters 定期清理不活跃的限流器（可选，防止内存泄漏）
+// CleanupOldLimiters 定期清理不活跃的限流器
 func (rl *RateLimiter) CleanupOldLimiters(interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	go func() {
@@ -80,8 +80,8 @@ func (rl *RateLimiter) CleanupOldLimiters(interval time.Duration) {
 	}()
 }
 
-// RateLimitByIP 基于 IP 的限流中间件（快捷方式）
-// 默认：每秒 10 个请求，突发 20 个
+// RateLimitByIP 基于 IP 的限流中间件
+// 每秒 10 个请求，突发 20 个
 func RateLimitByIP() gin.HandlerFunc {
 	limiter := NewRateLimiter(10, 20)
 	// 每小时清理一次
@@ -89,7 +89,7 @@ func RateLimitByIP() gin.HandlerFunc {
 	return limiter.Middleware()
 }
 
-// RateLimitStrict 严格限流（用于敏感接口）
+// RateLimitStrict 严格限流（敏感接口）
 // 每秒 2 个请求，突发 5 个
 func RateLimitStrict() gin.HandlerFunc {
 	limiter := NewRateLimiter(2, 5)

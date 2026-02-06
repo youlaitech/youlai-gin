@@ -16,13 +16,13 @@ import (
 func RegisterDictRoutes(r *gin.RouterGroup) {
 	dicts := r.Group("/dicts")
 	{
-		// 字典分页查询（对齐 youlai-boot：GET /dicts）
+		// 字典分页查询
 		dicts.GET("", GetDictPage)
-		// 字典下拉列表（对齐 youlai-boot：GET /dicts/options）
+		// 字典下拉列表
 		dicts.GET("/options", GetDictList)
 		dicts.POST("", SaveDict)
 
-		// RESTful风格的字典项路由（使用统一的参数名 :id 来避免冲突）
+		// 字典项路由
 		dicts.GET("/:id/items", GetDictItemPageByCode)
 		dicts.GET("/:id/items/options", GetDictItemsByCode)
 		dicts.POST("/:id/items", SaveDictItemByCode)
@@ -30,7 +30,7 @@ func RegisterDictRoutes(r *gin.RouterGroup) {
 		dicts.PUT("/:id/items/:itemId", UpdateDictItemByCode)
 		dicts.DELETE("/:id/items/:itemIds", DeleteDictItemsByCode)
 
-		// 字典CRUD操作
+		// 字典操作
 		dicts.GET("/:id/form", GetDictForm)
 		dicts.PUT("/:id", UpdateDict)
 		dicts.DELETE("/:id", DeleteDict)
@@ -188,16 +188,16 @@ func DeleteDict(c *gin.Context) {
 	response.OkMsg(c, "删除成功")
 }
 
-// ========== RESTful风格的字典项接口（匹配Java版本）==========
+// ========== 字典项接口 ==========
 
-// GetDictItemsByCode 字典项列表（RESTful）
-// @Summary 字典项列表（RESTful）
+// GetDictItemsByCode 字典项列表
+// @Summary 字典项列表
 // @Tags 06.字典接口
 // @Param id path string true "字典编码"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/dicts/{id}/items [get]
 func GetDictItemsByCode(c *gin.Context) {
-	dictCode := c.Param("id") // 从 :id 参数获取字典编码
+	dictCode := c.Param("id")
 
 	items, err := service.GetDictItems(dictCode)
 	if err != nil {
@@ -208,8 +208,8 @@ func GetDictItemsByCode(c *gin.Context) {
 	response.Ok(c, items)
 }
 
-// SaveDictItemByCode 新增字典项（RESTful）
-// @Summary 新增字典项（RESTful）
+// SaveDictItemByCode 新增字典项
+// @Summary 新增字典项
 // @Tags 06.字典接口
 // @Param id path string true "字典编码"
 // @Param body body model.DictItemForm true "字典项信息"
@@ -234,8 +234,8 @@ func SaveDictItemByCode(c *gin.Context) {
 	response.OkMsg(c, "新增成功")
 }
 
-// GetDictItemFormByCode 字典项表单数据（RESTful）
-// @Summary 字典项表单数据（RESTful）
+// GetDictItemFormByCode 字典项表单数据
+// @Summary 字典项表单数据
 // @Tags 06.字典接口
 // @Param id path string true "字典编码"
 // @Param itemId path int true "字典项ID"
@@ -258,8 +258,8 @@ func GetDictItemFormByCode(c *gin.Context) {
 	response.Ok(c, form)
 }
 
-// UpdateDictItemByCode 修改字典项（RESTful）
-// @Summary 修改字典项（RESTful）
+// UpdateDictItemByCode 修改字典项
+// @Summary 修改字典项
 // @Tags 06.字典接口
 // @Param id path string true "字典编码"
 // @Param itemId path int true "字典项ID"
@@ -292,8 +292,8 @@ func UpdateDictItemByCode(c *gin.Context) {
 	response.OkMsg(c, "更新成功")
 }
 
-// DeleteDictItemsByCode 删除字典项（RESTful）
-// @Summary 删除字典项（RESTful）
+// DeleteDictItemsByCode 删除字典项
+// @Summary 删除字典项
 // @Tags 06.字典接口
 // @Param id path string true "字典编码"
 // @Param itemIds path string true "字典项ID（多个用逗号分隔）"

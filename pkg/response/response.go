@@ -11,8 +11,8 @@ import (
 )
 
 // Result 统一响应结构体
-// code 参考阿里错误码规范，例如：00000/A0400/B0001/C0351
-// msg 为提示文案，data 为具体数据载体
+// code 参考阿里错误码规范，如 00000/A0400/B0001/C0351
+// msg 为提示文案，data 为数据载体
 
 type Result struct {
 	Code string      `json:"code"`
@@ -162,7 +162,7 @@ func InternalServerError(c *gin.Context, msg string) {
 	SystemError(c, msg)
 }
 
-// ForbiddenWrite 演示环境禁止写入时使用（示例）
+// ForbiddenWrite 演示环境禁止写入
 func ForbiddenWrite(c *gin.Context) {
 	c.JSON(http.StatusForbidden, Result{
 		Code: constant.CodeDatabaseAccessDenied,

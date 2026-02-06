@@ -216,7 +216,7 @@ func resolveUserDataScope(userID int64, roleCodes []string, deptID int64) (int, 
 	}
 
 	// 2) 取用户角色对应的 data_scope（最宽的数据权限）
-	// 约定：1 全部 > 2 本部门及以下 > 3 本部门 > 4 仅本人；5 自定义（若没有配置表则降级为本部门）
+	// 1 全部 > 2 本部门及以下 > 3 本部门 > 4 仅本人；5 自定义（缺表时降级为本部门）
 	var scopes []int
 	err := database.DB.Table("sys_role r").
 		Select("DISTINCT r.data_scope").
@@ -227,7 +227,7 @@ func resolveUserDataScope(userID int64, roleCodes []string, deptID int64) (int, 
 		return 0, nil, errs.SystemError("查询数据权限范围失败")
 	}
 
-	best := 4 // 默认仅本人
+	best := 4 // 仅本人
 	custom := false
 	for _, s := range scopes {
 		switch s {

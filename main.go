@@ -72,38 +72,38 @@ const swaggerIndexHTML = `<!DOCTYPE html>
 `
 
 func main() {
-	// 1. 加载配置（根据 APP_ENV 环境变量或默认 dev）
+	// 加载配置（APP_ENV 或默认 dev）
 	if err := config.Load(); err != nil {
 		log.Fatalf("配置加载失败: %v", err)
 	}
 
-	// 2. 初始化日志
+	// 初始化日志
 	logger.InitWithConfig(&config.Cfg.Logger)
 	defer logger.Sync()
 
-	// 3. 初始化数据库
+	// 初始化数据库
 	if err := database.InitWithConfig(&config.Cfg.Database); err != nil {
 		log.Fatalf("数据库初始化失败: %v", err)
 	}
 
-	// 4. 初始化 Redis
+	// 初始化 Redis
 	if err := redis.InitWithConfig(&config.Cfg.Redis); err != nil {
 		log.Fatalf("Redis 初始化失败: %v", err)
 	}
 
-	// 5. 初始化角色权限缓存
+	// 初始化角色权限缓存
 	if err := roleService.InitRolePermsCache(); err != nil {
 		log.Printf("警告: 角色权限缓存初始化失败: %v", err)
 		// 不阻断启动，继续运行
 	}
 
-	// 6. 初始化 TokenManager
+	// 初始化 TokenManager
 	tokenManager, err := auth.CreateTokenManager(&config.Cfg.Security)
 	if err != nil {
 		log.Fatalf("TokenManager 初始化失败: %v", err)
 	}
 
-	// 7. 启动 Gin 服务
+	// 启动 Gin 服务
 	youlaDocs.SwaggerInfo.Title = "youlai-gin"
 	youlaDocs.SwaggerInfo.Description = "youlai 全家桶（Go/Gin）权限管理后台接口文档"
 	r := gin.New()
@@ -115,10 +115,10 @@ func main() {
 	// 全局限流中间件（每秒 10 个请求，突发 20 个）
 	r.Use(pkgMiddleware.RateLimitByIP())
 
-	// 健康检查路由（无需认证）
+	// 健康检查路由
 	health.RegisterRoutes(r)
 
-	// 业务路由统一注册
+	// 业务路由
 	router.Register(r, tokenManager)
 
 	// Swagger 文档路由

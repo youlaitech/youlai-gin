@@ -12,7 +12,6 @@ import (
 )
 
 // Get${entityName}Page ${businessName}分页列表
-// 说明：聚合数据并转换为列表 VO
 func Get${entityName}Page(query *model.${entityName}Query) (*common.PagedData, error) {
 	list, total, err := repository.Get${entityName}Page(query)
 	if err != nil {
@@ -31,7 +30,6 @@ func Get${entityName}Page(query *model.${entityName}Query) (*common.PagedData, e
 }
 
 // Save${entityName} 保存${businessName}（新增或更新）
-// 说明：仅映射表单字段到实体，业务校验可在此扩展
 func Save${entityName}(form *model.${entityName}Form) error {
 	item := &model.${entityName}{#foreach($fieldConfig in $fieldConfigsInForm)
 		${fieldConfig.goFieldName}: form.${fieldConfig.goFieldName},
@@ -53,7 +51,6 @@ func Save${entityName}(form *model.${entityName}Form) error {
 }
 
 // Get${entityName}Form 获取${businessName}表单数据
-// 说明：从实体反向填充表单
 func Get${entityName}Form(id int64) (*model.${entityName}Form, error) {
 	item, err := repository.Get${entityName}ByID(id)
 	if err != nil {
@@ -69,7 +66,6 @@ func Get${entityName}Form(id int64) (*model.${entityName}Form, error) {
 }
 
 // Delete${entityName} 删除${businessName}
-// 说明：先校验数据是否存在，再执行删除
 func Delete${entityName}(id int64) error {
 	_, err := repository.Get${entityName}ByID(id)
 	if err != nil {

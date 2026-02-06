@@ -12,7 +12,7 @@ import (
 )
 
 func RegisterDeptRoutes(r *gin.RouterGroup) {
-	// 使用复数形式符合RESTful规范
+	// 使用复数形式
 	depts := r.Group("/depts")
 	{
 		depts.GET("", GetDeptList)

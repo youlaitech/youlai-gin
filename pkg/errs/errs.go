@@ -7,11 +7,11 @@ import (
 	"youlai-gin/pkg/constant"
 )
 
-// AppError 是整个系统通用错误类型
-// Code：业务码（给前端）
-// Msg：提示文案（给前端）
-// HTTPStatus：对应 http 状态码（给后端/HTTP 层）
-// Err：底层错误（给日志/链路追踪）
+// AppError 系统通用错误类型
+// Code：业务码
+// Msg：提示文案
+// HTTPStatus：HTTP 状态码
+// Err：底层错误
 type AppError struct {
 	Code       string `json:"code"`
 	Msg        string `json:"msg"`
@@ -34,7 +34,7 @@ func Wrap(base *AppError, err error) *AppError {
 }
 
 // BadRequest 用户端错误（A0400）
-// msg 为空时使用统一文案
+// msg 为空时使用默认值
 func BadRequest(msg string) *AppError {
 	if msg == "" {
 		msg = constant.MsgBadRequest
@@ -47,7 +47,7 @@ func BadRequest(msg string) *AppError {
 }
 
 // SystemError 系统执行出错（B0001）
-// msg 为空时使用统一文案
+// msg 为空时使用默认值
 func SystemError(msg string) *AppError {
 	if msg == "" {
 		msg = constant.MsgSystemError
@@ -71,7 +71,7 @@ func As(err error) (*AppError, bool) {
 	return ae, ok
 }
 
-// ========== 常用业务错误（典型示例）==========
+// ========== 常用业务错误 ==========
 
 // UserNotFound 用户不存在
 func UserNotFound() *AppError {

@@ -21,7 +21,6 @@ var DefaultPaginateConfig = PaginateConfig{
 }
 
 // Paginate 通用分页函数
-// 用法：db.Scopes(database.Paginate(page, pageSize)).Find(&users)
 func Paginate(page, pageSize int) func(db *gorm.DB) *gorm.DB {
 	return PaginateWithConfig(page, pageSize, DefaultPaginateConfig)
 }
@@ -36,7 +35,7 @@ func PaginateWithConfig(page, pageSize int, config PaginateConfig) func(db *gorm
 				page = 1
 			}
 		}
-		
+
 		// 每页大小校验
 		if pageSize <= 0 {
 			pageSize = config.DefaultSize
@@ -44,12 +43,12 @@ func PaginateWithConfig(page, pageSize int, config PaginateConfig) func(db *gorm
 				pageSize = 10
 			}
 		}
-		
+
 		// 最大每页大小限制
 		if config.MaxPageSize > 0 && pageSize > config.MaxPageSize {
 			pageSize = config.MaxPageSize
 		}
-		
+
 		offset := (page - 1) * pageSize
 		return db.Offset(offset).Limit(pageSize)
 	}

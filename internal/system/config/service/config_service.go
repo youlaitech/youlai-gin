@@ -76,7 +76,7 @@ func GetConfigValue(configKey string) (string, error) {
 	return config.ConfigValue, nil
 }
 
-// GetConfigValueWithDefault 获取配置值，如果不存在返回默认值
+// GetConfigValueWithDefault 获取配置值（不存在时返回缺省值）
 func GetConfigValueWithDefault(configKey, defaultValue string) string {
 	value, err := GetConfigValue(configKey)
 	if err != nil {

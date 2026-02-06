@@ -159,15 +159,6 @@ func TestImageValidator(t *testing.T) {
 	}
 }
 
-// 运行测试：
-// go test -v ./pkg/utils/ -run TestImageValidator
-//
-// 运行所有测试：
-// go test -v ./pkg/utils/
-//
-// 查看覆盖率：
-// go test -cover ./pkg/utils/
-//
-// 生成覆盖率报告：
-// go test -coverprofile=coverage.out ./pkg/utils/
-// go tool cover -html=coverage.out
+// 运行：go test -v ./pkg/utils/ -run TestImageValidator
+// 全量：go test -v ./pkg/utils/
+// 覆盖率：go test -cover ./pkg/utils/

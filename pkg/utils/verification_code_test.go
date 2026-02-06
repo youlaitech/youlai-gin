@@ -4,11 +4,7 @@ import (
 	"testing"
 )
 
-// TestGenerateVerificationCode 测试验证码生成
-// Go 测试规范：
-// 1. 文件名：xxx_test.go
-// 2. 函数名：TestXxx
-// 3. 参数：t *testing.T
+// TestGenerateVerificationCode 验证码生成
 func TestGenerateVerificationCode(t *testing.T) {
 	// 生成验证码
 	code := GenerateVerificationCode()
@@ -38,7 +34,7 @@ func TestGenerateVerificationCode(t *testing.T) {
 	}
 }
 
-// TestGetMobileCodeKey 测试手机验证码 Key 生成
+// TestGetMobileCodeKey 手机验证码 Key
 func TestGetMobileCodeKey(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -67,7 +63,7 @@ func TestGetMobileCodeKey(t *testing.T) {
 	}
 }
 
-// TestGetEmailCodeKey 测试邮箱验证码 Key 生成
+// TestGetEmailCodeKey 邮箱验证码 Key
 func TestGetEmailCodeKey(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -97,21 +93,12 @@ func TestGetEmailCodeKey(t *testing.T) {
 }
 
 // BenchmarkGenerateVerificationCode 性能测试
-// Go 性能测试规范：
-// 1. 函数名：BenchmarkXxx
-// 2. 参数：b *testing.B
-// 3. 循环 b.N 次
 func BenchmarkGenerateVerificationCode(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		GenerateVerificationCode()
 	}
 }
 
-// 运行测试：
-// go test -v ./pkg/utils/
-//
-// 运行性能测试：
-// go test -bench=. ./pkg/utils/
-//
-// 查看测试覆盖率：
-// go test -cover ./pkg/utils/
+// 运行测试：go test -v ./pkg/utils/
+// 性能测试：go test -bench=. ./pkg/utils/
+// 覆盖率：go test -cover ./pkg/utils/

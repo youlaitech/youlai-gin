@@ -88,7 +88,7 @@ func GetUserNoticePage(userID int64, query *model.UserNoticeQuery) ([]model.Noti
 		return db
 	}
 
-	// 统计总数 - 使用 COUNT(DISTINCT n.id) 避免 JOIN 导致的重复
+	// 统计总数（COUNT DISTINCT 去重）
 	countDB := database.DB.Table("sys_notice n")
 	countDB = baseWhere(countDB)
 	if err := countDB.Count(&total).Error; err != nil {

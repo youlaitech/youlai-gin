@@ -14,7 +14,7 @@ import (
 	"youlai-gin/pkg/logger"
 )
 
-// OperationLog 操作日志实体（对应 sys_log 表）
+// OperationLog 操作日志实体
 type OperationLogEntity struct {
 	ID              int64  `gorm:"primaryKey;autoIncrement" json:"id"`
 	Module          string `gorm:"column:module;size:50" json:"module"`                // 日志模块
@@ -48,15 +48,14 @@ type OperationLogConfig struct {
 	MaxBodySize     int    // 最大请求体大小（字节），0 表示不限制
 }
 
-// DefaultOperationLogConfig 默认操作日志配置
+// DefaultOperationLogConfig 默认配置
 var DefaultOperationLogConfig = OperationLogConfig{
 	SaveRequestBody: true,
-	SaveResponse:    false, // 默认不保存响应（数据量大）
-	MaxBodySize:     10240, // 默认最大 10KB
+	SaveResponse:    false, // 不保存响应体
+	MaxBodySize:     10240, // 最大 10KB
 }
 
-// OperationLog 操作日志中间件（装饰器）
-// 用法：router.POST("/users", middleware.OperationLog("用户管理", "新增用户"), handler.CreateUser)
+// OperationLog 操作日志中间件
 func OperationLog(module, operation string) gin.HandlerFunc {
 	return OperationLogWithConfig(OperationLogConfig{
 		Module:          module,
@@ -141,7 +140,7 @@ func OperationLogWithConfig(config OperationLogConfig) gin.HandlerFunc {
 			CreateBy:        userID,
 		}
 
-		// 异步保存日志（避免影响主流程性能）
+		// 异步保存日志
 		go saveOperationLog(logEntry)
 	}
 }
@@ -169,7 +168,7 @@ func (w *responseWriter) WriteString(s string) (int, error) {
 	return w.ResponseWriter.WriteString(s)
 }
 
-// OperationLogJSON 简化的 JSON 日志中间件（仅保存关键信息）
+// OperationLogJSON JSON 日志中间件（仅保存关键信息）
 func OperationLogJSON(module, operation string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
@@ -194,7 +193,7 @@ func OperationLogJSON(module, operation string) gin.HandlerFunc {
 	}
 }
 
-// GetOperationLogList 获取操作日志列表（供业务层使用）
+// GetOperationLogList 获取操作日志列表
 type OperationLogQuery struct {
 	Module    string `form:"module"`
 	Operation string `form:"operation"`

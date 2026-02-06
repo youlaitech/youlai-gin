@@ -188,10 +188,10 @@ func SaveMenu(form *model.MenuForm) error {
 		menuID = int64(menu.ID)
 	}
 
-	// 🔄 刷新受影响角色的权限缓存
+	// 刷新受影响角色的权限缓存
 	if menu.Type == "B" && menu.Perm != "" {
 		if err := refreshAffectedRolesCache([]int64{menuID}); err != nil {
-			log.Printf("⚠️  刷新角色权限缓存失败: %v", err)
+			log.Printf("刷新角色权限缓存失败: %v", err)
 		}
 	}
 
@@ -249,11 +249,11 @@ func DeleteMenu(id int64) error {
 		return errs.SystemError("删除菜单失败")
 	}
 
-	// 🔄 刷新受影响角色的权限缓存（处女座标准：删除也要保证一致性）
+	// 刷新受影响角色的权限缓存
 	// 仅当删除的是按钮且有权限标识时才刷新
 	if menu.Type == "B" && menu.Perm != "" {
 		if err := refreshAffectedRolesCache([]int64{id}); err != nil {
-			log.Printf("⚠️  刷新角色权限缓存失败: %v", err)
+			log.Printf("刷新角色权限缓存失败: %v", err)
 			// 不阻断操作，记录日志即可
 		}
 	}

@@ -13,7 +13,7 @@ import (
 
 // RegisterRoutes 注册配置管理路由
 func RegisterRoutes(r *gin.RouterGroup) {
-	// 使用复数形式符合RESTful规范
+	// 使用复数形式
 	config := r.Group("/configs")
 	{
 		config.GET("", GetConfigPage)

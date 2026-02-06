@@ -11,7 +11,7 @@ const (
     CodeSuccess = "00000"
     MsgSuccess  = "成功"
 
-    // ========== A0*** 用户端错误（典型示例）==========
+    // ========== A0*** 用户端错误 ==========
     CodeBadRequest = "A0400" // 通用参数错误
     MsgBadRequest  = "用户请求参数错误"
 
@@ -47,6 +47,6 @@ const (
     MsgSystemError  = "系统执行出错"
 
     // ========== C0*** 第三方服务出错 ==========
-    CodeDatabaseAccessDenied = "C0351" // 演示环境禁用写入（示例）
+    CodeDatabaseAccessDenied = "C0351" // 演示环境禁用写入
     MsgDatabaseAccessDenied  = "演示环境已禁用数据库写入功能，请本地部署修改数据库链接或开启Mock模式进行体验"
 )

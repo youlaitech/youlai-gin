@@ -17,7 +17,7 @@ func init() {
 	validate = validator.New()
 }
 
-// BindJSON 统一参数绑定 + 校验 + 友好错误提示
+// BindJSON 参数绑定和校验
 func BindJSON(c *gin.Context, dst any) error {
 	// 1. 绑定 JSON
 	if err := c.ShouldBindJSON(dst); err != nil {
@@ -48,7 +48,7 @@ func BindJSON(c *gin.Context, dst any) error {
 	return nil
 }
 
-// BindQuery 统一 Query 参数绑定 + 校验
+// BindQuery Query 参数绑定和校验
 func BindQuery(c *gin.Context, dst any) error {
 	// 1. 绑定 Query 参数
 	if err := c.ShouldBindQuery(dst); err != nil {
@@ -78,7 +78,7 @@ func BindQuery(c *gin.Context, dst any) error {
 	return nil
 }
 
-// BindURI 统一 URI 参数绑定 + 校验
+// BindURI URI 参数绑定和校验
 func BindURI(c *gin.Context, dst any) error {
 	// 1. 绑定 URI 参数
 	if err := c.ShouldBindUri(dst); err != nil {
@@ -128,7 +128,7 @@ func Validate(dst any) error {
 	return nil
 }
 
-// translateFieldError 翻译字段错误为友好提示
+// translateFieldError 转换字段错误
 func translateFieldError(fe validator.FieldError) string {
 	field := fe.Field()
 	tag := fe.Tag()

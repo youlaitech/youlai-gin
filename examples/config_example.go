@@ -9,18 +9,18 @@ import (
 )
 
 func main() {
-	fmt.Println("=== 多环境配置加载示例 ===\n")
+	fmt.Println("=== 多环境配置加载 ===\n")
 
-	// 方式 1: 使用默认环境 (dev)
+	// 默认环境 (dev)
 	if err := config.Load(); err != nil {
 		log.Fatal(err)
 	}
 	printConfig()
 
-	// 方式 3: 使用环境变量 (需提前设置 APP_ENV)
+	// 环境变量 APP_ENV (如 prod)
 	// Windows: set APP_ENV=prod
 	// Linux/Mac: export APP_ENV=prod
-	// 然后运行: go run examples/config_example.go
+	// 运行: go run examples/config_example.go
 }
 
 func printConfig() {

@@ -146,7 +146,7 @@ func RefreshToken(refreshToken string) (*auth.AuthenticationToken, error) {
 func SendSmsLoginCode(mobile string) error {
 	// 生成验证码
 	// code := fmt.Sprintf("%04d", rand.Intn(10000))
-	// TODO: 为了方便测试，验证码固定为 1234，实际开发中在配置了厂商短信服务后，可以使用上面的随机验证码
+	// TODO: 接入短信服务后改为随机验证码
 	code := "1234"
 
 	// 缓存验证码至 Redis（5分钟过期）
@@ -157,8 +157,8 @@ func SendSmsLoginCode(mobile string) error {
 		return errs.SystemError("发送短信验证码失败")
 	}
 
-	// TODO: 实际开发中对接短信服务商（阿里云、腾讯云等）
-	// 示例：smsService.SendSMS(mobile, code)
+	// TODO: 接入短信服务商并发送验证码
+	// smsService.SendSMS(mobile, code)
 
 	return nil
 }
@@ -219,8 +219,8 @@ func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, erro
 
 // LoginByWechat 微信授权登录(Web)
 func LoginByWechat(code string) (*auth.AuthenticationToken, error) {
-	// TODO: 实现微信网页授权登录
-	// 1. 使用 code 调用微信接口获取 access_token 和 openid
+	// TODO: 微信网页授权登录
+	// 1. 使用 code 获取 access_token、openid
 	// 2. 根据 openid 查询或创建用户
 	// 3. 生成 JWT Token
 	return nil, errs.SystemError("微信登录功能待实现")
@@ -228,8 +228,8 @@ func LoginByWechat(code string) (*auth.AuthenticationToken, error) {
 
 // LoginByWxMiniAppCode 微信小程序登录(Code)
 func LoginByWxMiniAppCode(req *authModel.WxMiniAppCodeLoginRequest) (*auth.AuthenticationToken, error) {
-	// TODO: 实现微信小程序 Code 登录
-	// 1. 使用 code 调用微信接口获取 session_key 和 openid
+	// TODO: 微信小程序 Code 登录
+	// 1. 使用 code 获取 session_key、openid
 	// 2. 根据 openid 查询或创建用户
 	// 3. 生成 JWT Token
 	return nil, errs.SystemError("微信小程序Code登录功能待实现")
@@ -237,7 +237,7 @@ func LoginByWxMiniAppCode(req *authModel.WxMiniAppCodeLoginRequest) (*auth.Authe
 
 // LoginByWxMiniAppPhone 微信小程序登录(手机号)
 func LoginByWxMiniAppPhone(req *authModel.WxMiniAppPhoneLoginRequest) (*auth.AuthenticationToken, error) {
-	// TODO: 实现微信小程序手机号登录
+	// TODO: 微信小程序手机号登录
 	// 1. 使用 code 获取 session_key
 	// 2. 解密 encryptedData 获取手机号
 	// 3. 根据手机号查询或创建用户
