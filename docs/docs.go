@@ -15,24 +15,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/ai/assistant/execute": {
-            "post": {
-                "tags": [
-                    "99.AI助手"
-                ],
-                "summary": "执行已解析的命令",
-                "responses": {}
-            }
-        },
-        "/api/v1/ai/assistant/parse": {
-            "post": {
-                "tags": [
-                    "99.AI助手"
-                ],
-                "summary": "解析自然语言命令",
-                "responses": {}
-            }
-        },
         "/api/v1/auth/captcha": {
             "get": {
                 "description": "获取图形验证码",
@@ -110,44 +92,6 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/model.SmsLoginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "code/msg/data，data 为 AuthenticationToken",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/auth/login/wechat": {
-            "post": {
-                "description": "使用微信授权码登录",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "01.认证接口"
-                ],
-                "summary": "微信授权登录",
-                "parameters": [
-                    {
-                        "description": "微信授权信息 {\\",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
                         }
                     }
                 ],
@@ -259,76 +203,6 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "code/msg",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/auth/wx/miniapp/code-login": {
-            "post": {
-                "description": "使用微信小程序Code登录",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "01.认证接口"
-                ],
-                "summary": "微信小程序Code登录",
-                "parameters": [
-                    {
-                        "description": "微信小程序Code登录信息",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.WxMiniAppCodeLoginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "code/msg/data，data 为 AuthenticationToken",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/auth/wx/miniapp/phone-login": {
-            "post": {
-                "description": "使用微信小程序获取手机号登录",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "01.认证接口"
-                ],
-                "summary": "微信小程序手机号登录",
-                "parameters": [
-                    {
-                        "description": "微信小程序手机号登录信息",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.WxMiniAppPhoneLoginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "code/msg/data，data 为 AuthenticationToken",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -2300,38 +2174,6 @@ const docTemplate = `{
                     "description": "手机号",
                     "type": "string",
                     "example": "18812345678"
-                }
-            }
-        },
-        "model.WxMiniAppCodeLoginRequest": {
-            "type": "object",
-            "required": [
-                "code"
-            ],
-            "properties": {
-                "code": {
-                    "description": "微信小程序登录时获取的code",
-                    "type": "string"
-                }
-            }
-        },
-        "model.WxMiniAppPhoneLoginRequest": {
-            "type": "object",
-            "required": [
-                "code"
-            ],
-            "properties": {
-                "code": {
-                    "description": "微信小程序登录时获取的code",
-                    "type": "string"
-                },
-                "encryptedData": {
-                    "description": "包括敏感数据在内的完整用户信息的加密数据",
-                    "type": "string"
-                },
-                "iv": {
-                    "description": "加密算法的初始向量",
-                    "type": "string"
                 }
             }
         },

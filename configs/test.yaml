@@ -76,13 +76,6 @@ security:
     refreshTokenTTL: 2592000 # 刷新令牌有效期（秒）
     allowMultiLogin: true # 是否允许多设备同时登录（开发环境允许）
 
-# ==================== AI 配置 ====================
-ai:
-  baseUrl: "https://dashscope.aliyuncs.com/compatible-mode" # Qwen OpenAI 兼容地址
-  apiKey: "YOUR_AI_API_KEY" # AI Key（可通过环境变量 APP_AI_APIKEY 覆盖）
-  model: "qwen-plus" # 模型名称
-  provider: "qwen" # 供应商标识
-  timeoutMs: 60000 # 请求超时（毫秒）
 
 # ==================== 环境变量覆盖示例 ====================
 # 任何配置项都可以通过环境变量覆盖，格式：APP_<模块>_<字段>

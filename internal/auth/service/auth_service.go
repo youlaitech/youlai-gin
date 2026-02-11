@@ -166,7 +166,7 @@ func SendSmsLoginCode(mobile string) error {
 // LoginBySms 短信验证码登录
 func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, error) {
 	// 1. 验证短信验证码
-	redisKey := fmt.Sprintf("captcha:sms:login:%s", req.Mobile)
+	redisKey := fmt.Sprintf("captcha:sms:%s", req.Mobile)
 	ctx := context.Background()
 	cachedCode, err := redis.Client.Get(ctx, redisKey).Result()
 	if err != nil {
@@ -215,32 +215,4 @@ func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, erro
 	}
 
 	return token, nil
-}
-
-// LoginByWechat 微信授权登录(Web)
-func LoginByWechat(code string) (*auth.AuthenticationToken, error) {
-	// TODO: 微信网页授权登录
-	// 1. 使用 code 获取 access_token、openid
-	// 2. 根据 openid 查询或创建用户
-	// 3. 生成 JWT Token
-	return nil, errs.SystemError("微信登录功能待实现")
-}
-
-// LoginByWxMiniAppCode 微信小程序登录(Code)
-func LoginByWxMiniAppCode(req *authModel.WxMiniAppCodeLoginRequest) (*auth.AuthenticationToken, error) {
-	// TODO: 微信小程序 Code 登录
-	// 1. 使用 code 获取 session_key、openid
-	// 2. 根据 openid 查询或创建用户
-	// 3. 生成 JWT Token
-	return nil, errs.SystemError("微信小程序Code登录功能待实现")
-}
-
-// LoginByWxMiniAppPhone 微信小程序登录(手机号)
-func LoginByWxMiniAppPhone(req *authModel.WxMiniAppPhoneLoginRequest) (*auth.AuthenticationToken, error) {
-	// TODO: 微信小程序手机号登录
-	// 1. 使用 code 获取 session_key
-	// 2. 解密 encryptedData 获取手机号
-	// 3. 根据手机号查询或创建用户
-	// 4. 生成 JWT Token
-	return nil, errs.SystemError("微信小程序手机号登录功能待实现")
 }

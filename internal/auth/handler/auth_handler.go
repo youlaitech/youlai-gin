@@ -9,7 +9,6 @@ import (
 	"youlai-gin/internal/auth/service"
 	pkgAuth "youlai-gin/pkg/auth"
 	"youlai-gin/pkg/response"
-	"youlai-gin/pkg/validator"
 )
 
 // RegisterAuthRoutes 注册认证相关 HTTP 路由
@@ -18,9 +17,6 @@ func RegisterAuthRoutes(r *gin.RouterGroup) {
 	r.POST("/auth/login", Login)
 	r.POST("/auth/login/sms", LoginBySms)
 	r.POST("/auth/sms/code", SendSmsCode)
-	r.POST("/auth/login/wechat", LoginByWechat)
-	r.POST("/auth/wx/miniapp/code-login", LoginByWxMiniAppCode)
-	r.POST("/auth/wx/miniapp/phone-login", LoginByWxMiniAppPhone)
 	r.DELETE("/auth/logout", Logout)
 	r.POST("/auth/refresh-token", RefreshToken)
 }
@@ -186,83 +182,3 @@ func LoginBySms(c *gin.Context) {
 	response.Ok(c, token)
 }
 
-// LoginByWechat 微信授权登录(Web)
-// @Summary 微信授权登录
-// @Description 使用微信授权码登录
-// @Tags 01.认证接口
-// @Accept json
-// @Produce json
-// @Param body body map[string]string true "微信授权信息 {\"code\":\"授权码\"}"
-// @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
-// @Router /api/v1/auth/login/wechat [post]
-func LoginByWechat(c *gin.Context) {
-	var req map[string]string
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "请求参数错误: "+err.Error())
-		return
-	}
-
-	code := req["code"]
-	if code == "" {
-		response.BadRequest(c, "微信授权码不能为空")
-		return
-	}
-
-	token, err := service.LoginByWechat(code)
-	if err != nil {
-		c.Error(err)
-		return
-	}
-
-	response.Ok(c, token)
-}
-
-// LoginByWxMiniAppCode 微信小程序登录(Code)
-// @Summary 微信小程序Code登录
-// @Description 使用微信小程序Code登录
-// @Tags 01.认证接口
-// @Accept json
-// @Produce json
-// @Param body body model.WxMiniAppCodeLoginRequest true "微信小程序Code登录信息"
-// @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
-// @Router /api/v1/auth/wx/miniapp/code-login [post]
-func LoginByWxMiniAppCode(c *gin.Context) {
-	var req model.WxMiniAppCodeLoginRequest
-	if err := validator.BindJSON(c, &req); err != nil {
-		c.Error(err)
-		return
-	}
-
-	token, err := service.LoginByWxMiniAppCode(&req)
-	if err != nil {
-		c.Error(err)
-		return
-	}
-
-	response.Ok(c, token)
-}
-
-// LoginByWxMiniAppPhone 微信小程序登录(手机号)
-// @Summary 微信小程序手机号登录
-// @Description 使用微信小程序获取手机号登录
-// @Tags 01.认证接口
-// @Accept json
-// @Produce json
-// @Param body body model.WxMiniAppPhoneLoginRequest true "微信小程序手机号登录信息"
-// @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
-// @Router /api/v1/auth/wx/miniapp/phone-login [post]
-func LoginByWxMiniAppPhone(c *gin.Context) {
-	var req model.WxMiniAppPhoneLoginRequest
-	if err := validator.BindJSON(c, &req); err != nil {
-		c.Error(err)
-		return
-	}
-
-	token, err := service.LoginByWxMiniAppPhone(&req)
-	if err != nil {
-		c.Error(err)
-		return
-	}
-
-	response.Ok(c, token)
-}
