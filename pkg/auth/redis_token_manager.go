@@ -11,14 +11,32 @@ import (
 	redisClient "youlai-gin/pkg/redis"
 )
 
+// Redis Key 常量
+const (
+	AccessTokenUserPrefix     = "auth:token:access:"
+	RefreshTokenUserPrefix    = "auth:token:refresh:"
+	UserAccessTokenPrefix     = "auth:user:access:"
+	UserRefreshTokenPrefix    = "auth:user:refresh:"
+	BlacklistTokenPrefix      = "auth:token:blacklist:"
+	UserTokenValidAfterPrefix = "auth:user:token_valid_after:"
+)
+
+// tokenValidAfter 默认过期时间（7天），避免Redis内存泄漏
+const TokenValidAfterTTLSeconds = 7 * 24 * 60 * 60
+
 // RedisTokenConfig Redis Token 配置
 type RedisTokenConfig struct {
-	AccessTokenTTL   int  // 访问令牌过期时间（秒）
-	RefreshTokenTTL  int  // 刷新令牌过期时间（秒）
-	AllowMultiLogin  bool // 是否允许多设备登录
+	AccessTokenTTL  int  // 访问令牌过期时间（秒）
+	RefreshTokenTTL int  // 刷新令牌过期时间（秒）
+	AllowMultiLogin bool // 是否允许多设备登录
 }
 
 // RedisTokenManager Redis Token 管理器
+// 实现基于Redis的有状态认证，支持：
+// - Access Token + Refresh Token 双令牌机制
+// - 单设备/多设备登录控制
+// - 用户级会话失效
+// - 在线用户管理
 type RedisTokenManager struct {
 	config *RedisTokenConfig
 }
@@ -33,29 +51,29 @@ func (m *RedisTokenManager) GenerateToken(user *UserDetails) (*AuthenticationTok
 	accessToken := uuid.New().String()
 	refreshToken := uuid.New().String()
 
-	onlineUser := &OnlineUser{
-		UserID:    user.UserID,
-		Username:  user.Username,
-		DeptID:    user.DeptID,
-		DataScope: user.DataScope,
-		Roles:     user.Roles,
+	userSession := &UserSession{
+		UserID:     user.UserID,
+		Username:   user.Username,
+		DeptID:     user.DeptID,
+		DataScopes: user.DataScopes,
+		Roles:      user.Roles,
 	}
 
 	ctx := context.Background()
 
-	// 1. 存储访问令牌 -> 用户信息
-	if err := m.storeOnlineUser(ctx, accessToken, onlineUser, m.config.AccessTokenTTL); err != nil {
+	// 1. 存储访问令牌 -> 用户会话信息
+	if err := m.storeUserSession(ctx, accessToken, userSession, m.config.AccessTokenTTL); err != nil {
 		return nil, err
 	}
 
-	// 2. 存储刷新令牌 -> 用户信息
-	refreshKey := fmt.Sprintf("%s%s", redisClient.RefreshTokenUserPrefix, refreshToken)
-	if err := m.storeOnlineUser(ctx, refreshKey, onlineUser, m.config.RefreshTokenTTL); err != nil {
+	// 2. 存储刷新令牌 -> 用户会话信息
+	refreshKey := RefreshTokenUserPrefix + refreshToken
+	if err := m.storeUserSession(ctx, refreshKey, userSession, m.config.RefreshTokenTTL); err != nil {
 		return nil, err
 	}
 
 	// 3. 存储用户ID -> 刷新令牌
-	userRefreshKey := fmt.Sprintf("%s%d", redisClient.UserRefreshTokenPrefix, user.UserID)
+	userRefreshKey := fmt.Sprintf("%s%d", UserRefreshTokenPrefix, user.UserID)
 	if err := m.setWithTTL(ctx, userRefreshKey, refreshToken, m.config.RefreshTokenTTL); err != nil {
 		return nil, err
 	}
@@ -76,31 +94,25 @@ func (m *RedisTokenManager) GenerateToken(user *UserDetails) (*AuthenticationTok
 // ParseToken 解析 Token 获取用户信息
 func (m *RedisTokenManager) ParseToken(token string) (*UserDetails, error) {
 	ctx := context.Background()
-	key := fmt.Sprintf("%s%s", redisClient.AccessTokenUserPrefix, token)
+	key := AccessTokenUserPrefix + token
 
 	data, err := redisClient.Client.Get(ctx, key).Result()
 	if err != nil {
 		return nil, errors.New("token not found or expired")
 	}
 
-	var onlineUser OnlineUser
-	if err := json.Unmarshal([]byte(data), &onlineUser); err != nil {
+	var userSession UserSession
+	if err := json.Unmarshal([]byte(data), &userSession); err != nil {
 		return nil, err
 	}
 
-	return &UserDetails{
-		UserID:    onlineUser.UserID,
-		Username:  onlineUser.Username,
-		DeptID:    onlineUser.DeptID,
-		DataScope: onlineUser.DataScope,
-		Roles:     onlineUser.Roles,
-	}, nil
+	return userSession.ToUserDetails(), nil
 }
 
 // ValidateToken 校验 Token 是否有效
 func (m *RedisTokenManager) ValidateToken(token string) bool {
 	ctx := context.Background()
-	key := fmt.Sprintf("%s%s", redisClient.AccessTokenUserPrefix, token)
+	key := AccessTokenUserPrefix + token
 	exists, err := redisClient.Client.Exists(ctx, key).Result()
 	return err == nil && exists > 0
 }
@@ -108,7 +120,7 @@ func (m *RedisTokenManager) ValidateToken(token string) bool {
 // ValidateRefreshToken 校验刷新 Token 是否有效
 func (m *RedisTokenManager) ValidateRefreshToken(refreshToken string) bool {
 	ctx := context.Background()
-	key := fmt.Sprintf("%s%s", redisClient.RefreshTokenUserPrefix, refreshToken)
+	key := RefreshTokenUserPrefix + refreshToken
 	exists, err := redisClient.Client.Exists(ctx, key).Result()
 	return err == nil && exists > 0
 }
@@ -120,29 +132,29 @@ func (m *RedisTokenManager) RefreshToken(refreshToken string) (*AuthenticationTo
 	}
 
 	ctx := context.Background()
-	refreshKey := fmt.Sprintf("%s%s", redisClient.RefreshTokenUserPrefix, refreshToken)
+	refreshKey := RefreshTokenUserPrefix + refreshToken
 
 	data, err := redisClient.Client.Get(ctx, refreshKey).Result()
 	if err != nil {
 		return nil, errors.New("refresh token expired")
 	}
 
-	var onlineUser OnlineUser
-	if err := json.Unmarshal([]byte(data), &onlineUser); err != nil {
+	var userSession UserSession
+	if err := json.Unmarshal([]byte(data), &userSession); err != nil {
 		return nil, err
 	}
 
 	// 删除旧的访问令牌
-	userAccessKey := fmt.Sprintf("%s%d", redisClient.UserAccessTokenPrefix, onlineUser.UserID)
+	userAccessKey := fmt.Sprintf("%s%d", UserAccessTokenPrefix, userSession.UserID)
 	oldAccessToken, err := redisClient.Client.Get(ctx, userAccessKey).Result()
 	if err == nil {
-		oldKey := fmt.Sprintf("%s%s", redisClient.AccessTokenUserPrefix, oldAccessToken)
+		oldKey := AccessTokenUserPrefix + oldAccessToken
 		redisClient.Client.Del(ctx, oldKey)
 	}
 
 	// 生成新访问令牌
 	newAccessToken := uuid.New().String()
-	if err := m.storeOnlineUser(ctx, newAccessToken, &onlineUser, m.config.AccessTokenTTL); err != nil {
+	if err := m.storeUserSession(ctx, newAccessToken, &userSession, m.config.AccessTokenTTL); err != nil {
 		return nil, err
 	}
 
@@ -162,39 +174,40 @@ func (m *RedisTokenManager) RefreshToken(refreshToken string) (*AuthenticationTo
 // InvalidateToken 令 Token 失效
 func (m *RedisTokenManager) InvalidateToken(token string) error {
 	ctx := context.Background()
-	key := fmt.Sprintf("%s%s", redisClient.AccessTokenUserPrefix, token)
+	key := AccessTokenUserPrefix + token
 
 	data, err := redisClient.Client.Get(ctx, key).Result()
 	if err != nil {
 		return nil // Token 不存在或已过期
 	}
 
-	var onlineUser OnlineUser
-	if err := json.Unmarshal([]byte(data), &onlineUser); err != nil {
+	var userSession UserSession
+	if err := json.Unmarshal([]byte(data), &userSession); err != nil {
 		return err
 	}
 
-	return m.InvalidateUserSessions(onlineUser.UserID)
+	return m.InvalidateUserSessions(userSession.UserID)
 }
 
 // InvalidateUserSessions 使指定用户的所有会话失效
+// 适用场景：用户修改密码、管理员强制下线、账号封禁等
 func (m *RedisTokenManager) InvalidateUserSessions(userID int64) error {
 	ctx := context.Background()
 
 	// 1. 删除访问令牌
-	userAccessKey := fmt.Sprintf("%s%d", redisClient.UserAccessTokenPrefix, userID)
+	userAccessKey := fmt.Sprintf("%s%d", UserAccessTokenPrefix, userID)
 	accessToken, err := redisClient.Client.Get(ctx, userAccessKey).Result()
 	if err == nil {
-		accessKey := fmt.Sprintf("%s%s", redisClient.AccessTokenUserPrefix, accessToken)
+		accessKey := AccessTokenUserPrefix + accessToken
 		redisClient.Client.Del(ctx, accessKey)
 	}
 	redisClient.Client.Del(ctx, userAccessKey)
 
 	// 2. 删除刷新令牌
-	userRefreshKey := fmt.Sprintf("%s%d", redisClient.UserRefreshTokenPrefix, userID)
+	userRefreshKey := fmt.Sprintf("%s%d", UserRefreshTokenPrefix, userID)
 	refreshToken, err := redisClient.Client.Get(ctx, userRefreshKey).Result()
 	if err == nil {
-		refreshKey := fmt.Sprintf("%s%s", redisClient.RefreshTokenUserPrefix, refreshToken)
+		refreshKey := RefreshTokenUserPrefix + refreshToken
 		redisClient.Client.Del(ctx, refreshKey)
 	}
 	redisClient.Client.Del(ctx, userRefreshKey)
@@ -202,16 +215,38 @@ func (m *RedisTokenManager) InvalidateUserSessions(userID int64) error {
 	return nil
 }
 
-// storeOnlineUser 存储在线用户信息
-func (m *RedisTokenManager) storeOnlineUser(ctx context.Context, keyOrToken string, user *OnlineUser, ttl int) error {
+// SetTokenValidAfter 设置用户 Token 生效时间点
+// 用于JWT模式下的会话失效控制，设置TTL防止Redis内存泄漏
+func (m *RedisTokenManager) SetTokenValidAfter(userID int64) error {
+	ctx := context.Background()
+	key := fmt.Sprintf("%s%d", UserTokenValidAfterPrefix, userID)
+	now := time.Now().Unix()
+	return redisClient.Client.Set(ctx, key, now, time.Duration(TokenValidAfterTTLSeconds)*time.Second).Err()
+}
+
+// GetTokenValidAfter 获取用户 Token 生效时间点
+func (m *RedisTokenManager) GetTokenValidAfter(userID int64) (int64, error) {
+	ctx := context.Background()
+	key := fmt.Sprintf("%s%d", UserTokenValidAfterPrefix, userID)
+	result, err := redisClient.Client.Get(ctx, key).Result()
+	if err != nil {
+		return 0, err
+	}
+	var value int64
+	fmt.Sscanf(result, "%d", &value)
+	return value, nil
+}
+
+// storeUserSession 存储用户会话信息
+func (m *RedisTokenManager) storeUserSession(ctx context.Context, keyOrToken string, session *UserSession, ttl int) error {
 	var key string
 	if len(keyOrToken) == 36 { // UUID 格式
-		key = fmt.Sprintf("%s%s", redisClient.AccessTokenUserPrefix, keyOrToken)
+		key = AccessTokenUserPrefix + keyOrToken
 	} else {
 		key = keyOrToken
 	}
 
-	data, err := json.Marshal(user)
+	data, err := json.Marshal(session)
 	if err != nil {
 		return err
 	}
@@ -221,13 +256,13 @@ func (m *RedisTokenManager) storeOnlineUser(ctx context.Context, keyOrToken stri
 
 // handleSingleDeviceLogin 处理单设备登录控制
 func (m *RedisTokenManager) handleSingleDeviceLogin(ctx context.Context, userID int64, newAccessToken string) error {
-	userAccessKey := fmt.Sprintf("%s%d", redisClient.UserAccessTokenPrefix, userID)
+	userAccessKey := fmt.Sprintf("%s%d", UserAccessTokenPrefix, userID)
 
 	// 单设备登录：删除旧令牌
 	if !m.config.AllowMultiLogin {
 		oldAccessToken, err := redisClient.Client.Get(ctx, userAccessKey).Result()
 		if err == nil {
-			oldKey := fmt.Sprintf("%s%s", redisClient.AccessTokenUserPrefix, oldAccessToken)
+			oldKey := AccessTokenUserPrefix + oldAccessToken
 			redisClient.Client.Del(ctx, oldKey)
 		}
 	}

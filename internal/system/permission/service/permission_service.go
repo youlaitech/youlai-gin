@@ -216,7 +216,7 @@ func resolveUserDataScope(userID int64, roleCodes []string, deptID int64) (int, 
 	}
 
 	// 2) 取用户角色对应的 data_scope（最宽的数据权限）
-	// 1 全部 > 2 本部门及以下 > 3 本部门 > 4 仅本人；5 自定义（缺表时降级为本部门）
+	// 1 全部 > 2 本部门及以下 > 3 本部门 > 4 仅本人；5 自定义
 	var scopes []int
 	err := database.DB.Table("sys_role r").
 		Select("DISTINCT r.data_scope").
@@ -248,8 +248,23 @@ func resolveUserDataScope(userID int64, roleCodes []string, deptID int64) (int, 
 		}
 	}
 
+	// 处理自定义数据权限
 	if custom {
-		// 项目SQL里没发现 sys_role_dept；自定义数据权限无法解析时，降级为本部门
+		// 查询用户角色关联的自定义部门
+		var customDeptIds []int64
+		err := database.DB.Table("sys_role_dept rd").
+			Select("DISTINCT rd.dept_id").
+			Joins("INNER JOIN sys_user_role ur ON ur.role_id = rd.role_id").
+			Joins("INNER JOIN sys_role r ON r.id = rd.role_id").
+			Where("ur.user_id = ? AND r.data_scope = 5 AND r.status = 1 AND r.is_deleted = 0", userID).
+			Pluck("rd.dept_id", &customDeptIds).Error
+		if err != nil {
+			return 4, nil, nil
+		}
+		if len(customDeptIds) > 0 {
+			return 5, customDeptIds, nil
+		}
+		// 没有自定义部门配置，降级为本部门
 		best = 3
 	}
 

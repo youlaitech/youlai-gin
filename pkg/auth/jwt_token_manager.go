@@ -27,13 +27,13 @@ type JwtTokenManager struct {
 
 // CustomClaims 自定义 Claims
 type CustomClaims struct {
-	UserID          int64       `json:"userId"`
-	Username        string      `json:"username"`
-	DeptID          types.BigInt `json:"deptId"`
-	DataScope       int         `json:"dataScope"`
-	Roles           []string    `json:"roles"`
-	IsRefreshToken  bool        `json:"isRefreshToken"`  // 是否为刷新令牌
-	SecurityVersion int         `json:"securityVersion"` // 安全版本号
+	UserID         int64        `json:"userId"`
+	Username       string       `json:"username"`
+	DeptID         types.BigInt `json:"deptId"`
+	DataScope      int          `json:"dataScope"`
+	Roles          []string     `json:"roles"`
+	IsRefreshToken bool         `json:"isRefreshToken"` // 是否为刷新令牌
+	TokenVersion   int          `json:"tokenVersion"`   // Token 版本号
 	jwt.RegisteredClaims
 }
 
@@ -70,25 +70,25 @@ func (m *JwtTokenManager) generateToken(user *UserDetails, ttl int, isRefreshTok
 		exp = now.Add(time.Duration(ttl) * time.Second)
 	}
 
-	// 获取安全版本号
-	securityVersion := 0
+	// 获取 Token 版本号
+	tokenVersion := 0
 	if m.config.EnableSecurityVersion {
 		ctx := context.Background()
-		key := fmt.Sprintf("%s%d", redisClient.UserSecurityVersion, user.UserID)
+		key := fmt.Sprintf("%s%d", redisClient.UserTokenVersion, user.UserID)
 		val, err := redisClient.Client.Get(ctx, key).Int()
 		if err == nil {
-			securityVersion = val
+			tokenVersion = val
 		}
 	}
 
 	claims := CustomClaims{
-		UserID:          user.UserID,
-		Username:        user.Username,
-		DeptID:          user.DeptID,
-		DataScope:       user.DataScope,
-		Roles:           user.Roles,
-		IsRefreshToken:  isRefreshToken,
-		SecurityVersion: securityVersion,
+		UserID:         user.UserID,
+		Username:       user.Username,
+		DeptID:         user.DeptID,
+		DataScope:      user.DataScope,
+		Roles:          user.Roles,
+		IsRefreshToken: isRefreshToken,
+		TokenVersion:   tokenVersion,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   user.Username,
 			ExpiresAt: jwt.NewNumericDate(exp),
@@ -159,11 +159,11 @@ func (m *JwtTokenManager) validateToken(tokenString string, isRefreshToken bool)
 
 	ctx := context.Background()
 
-	// 校验安全版本号
+	// 校验 Token 版本号
 	if m.config.EnableSecurityVersion {
-		key := fmt.Sprintf("%s%d", redisClient.UserSecurityVersion, claims.UserID)
+		key := fmt.Sprintf("%s%d", redisClient.UserTokenVersion, claims.UserID)
 		currentVersion, err := redisClient.Client.Get(ctx, key).Int()
-		if err == nil && claims.SecurityVersion < currentVersion {
+		if err == nil && claims.TokenVersion < currentVersion {
 			return false // 版本号过期
 		}
 	}
@@ -236,6 +236,6 @@ func (m *JwtTokenManager) InvalidateUserSessions(userID int64) error {
 	}
 
 	ctx := context.Background()
-	key := fmt.Sprintf("%s%d", redisClient.UserSecurityVersion, userID)
+	key := fmt.Sprintf("%s%d", redisClient.UserTokenVersion, userID)
 	return redisClient.Client.Incr(ctx, key).Err()
 }
