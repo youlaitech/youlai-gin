@@ -32,8 +32,7 @@ func GetUserPage(query *api.UserQueryReq) (*common.PagedData, error) {
 		return nil, errs.SystemError("查询用户列表失败")
 	}
 
-	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
-	return &common.PagedData{Data: users, Page: pageMeta}, nil
+	return &common.PagedData{List: users, Total: total}, nil
 }
 
 // SaveUser 保存用户（新增或更新）

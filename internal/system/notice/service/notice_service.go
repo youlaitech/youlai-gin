@@ -19,8 +19,7 @@ func GetNoticePage(query *model.NoticeQuery) (*common.PagedData, error) {
 		return nil, errs.SystemError("查询通知列表失败")
 	}
 
-	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
-	return &common.PagedData{Data: list, Page: pageMeta}, nil
+	return &common.PagedData{List: list, Total: total}, nil
 }
 
 // GetNoticeByID 根据ID获取通知
@@ -86,8 +85,7 @@ func GetUserNoticePage(userID int64, query *model.UserNoticeQuery) (*common.Page
 		return nil, errs.SystemError("查询用户通知列表失败")
 	}
 
-	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
-	return &common.PagedData{Data: list, Page: pageMeta}, nil
+	return &common.PagedData{List: list, Total: total}, nil
 }
 
 // MarkNoticeAsRead 标记通知为已读

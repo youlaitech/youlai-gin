@@ -59,7 +59,7 @@ func HealthCheck(c *gin.Context) {
 		Status:    status,
 		Timestamp: time.Now().Unix(),
 		Services:  services,
-		Version:   "1.0.0", // 可以从配置或编译参数中获取
+		Version:   "4.1.0", // 可以从配置或编译参数中获取
 	}
 
 	// 如果不健康，返回 503 状态码

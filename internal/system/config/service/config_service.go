@@ -31,8 +31,7 @@ func GetConfigPage(query *model.ConfigQuery) (*common.PagedData, error) {
 		return nil, errs.SystemError("查询配置列表失败")
 	}
 
-	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
-	return &common.PagedData{Data: configs, Page: pageMeta}, nil
+	return &common.PagedData{List: configs, Total: total}, nil
 }
 
 // GetAllConfigs 获取所有配置

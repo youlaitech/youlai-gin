@@ -19,7 +19,7 @@ func RegisterRoleRoutes(r *gin.RouterGroup) {
 		roles.GET("/:id/form", GetRoleForm)
 		roles.PUT("/:id", UpdateRole)
 		roles.DELETE("/:id", DeleteRole)
-		roles.GET("/:id/menuIds", GetRoleMenuIds)
+		roles.GET("/:id/menu-ids", GetRoleMenuIds)
 		roles.PUT("/:id/menus", UpdateRoleMenus)
 	}
 }
@@ -157,7 +157,7 @@ func DeleteRole(c *gin.Context) {
 // @Tags 03.角色接口
 // @Param id path int true "角色ID"
 // @Success 200 {object} map[string]interface{}
-// @Router /api/v1/roles/{id}/menuIds [get]
+// @Router /api/v1/roles/{id}/menu-ids [get]
 func GetRoleMenuIds(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)

@@ -33,8 +33,7 @@ func GetRolePage(query *model.RoleQuery) (*common.PagedData, error) {
 		}
 	}
 
-	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
-	return &common.PagedData{Data: voList, Page: pageMeta}, nil
+	return &common.PagedData{List: voList, Total: total}, nil
 }
 
 // GetRoleOptions 角色下拉选项

@@ -106,6 +106,7 @@ func main() {
 	// 启动 Gin 服务
 	youlaDocs.SwaggerInfo.Title = "youlai-gin"
 	youlaDocs.SwaggerInfo.Description = "youlai 全家桶（Go/Gin）权限管理后台接口文档"
+	youlaDocs.SwaggerInfo.Version = "4.1.0"
 	r := gin.New()
 	r.Use(requestid.Middleware())
 	r.Use(logger.Middleware())

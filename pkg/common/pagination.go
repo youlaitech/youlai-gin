@@ -32,23 +32,7 @@ func (p *BaseQuery) GetPageSize() int {
 	return p.PageSize
 }
 
-type PageMeta struct {
-	PageNum  int   `json:"pageNum"`
-	PageSize int   `json:"pageSize"`
-	Total    int64 `json:"total"`
-}
-
 type PagedData struct {
-	Data interface{} `json:"data"`
-	Page PageMeta    `json:"page"`
-}
-
-func NewPageMeta(pageNum int, pageSize int, total int64) PageMeta {
-	if pageNum <= 0 {
-		pageNum = 1
-	}
-	if pageSize <= 0 {
-		pageSize = 10
-	}
-	return PageMeta{PageNum: pageNum, PageSize: pageSize, Total: total}
+	List  interface{} `json:"list"`
+	Total int64       `json:"total"`
 }

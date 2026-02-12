@@ -16,8 +16,7 @@ func GetLogPage(query *model.LogQuery) (*common.PagedData, error) {
 		return nil, errs.SystemError("查询日志列表失败")
 	}
 
-	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
-	return &common.PagedData{Data: logs, Page: pageMeta}, nil
+	return &common.PagedData{List: logs, Total: total}, nil
 }
 
 // GetVisitTrend 获取访问趋势

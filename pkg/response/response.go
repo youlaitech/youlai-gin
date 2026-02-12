@@ -18,13 +18,6 @@ type Result struct {
 	Code string      `json:"code"`
 	Msg  string      `json:"msg"`
 	Data interface{} `json:"data"`
-	Page interface{} `json:"page"`
-}
-
-type Page struct {
-	PageNum  int   `json:"pageNum"`
-	PageSize int   `json:"pageSize"`
-	Total    int64 `json:"total"`
 }
 
 // Ok 成功且携带数据
@@ -33,7 +26,6 @@ func Ok(c *gin.Context, data interface{}) {
 		Code: constant.CodeSuccess,
 		Msg:  constant.MsgSuccess,
 		Data: data,
-		Page: nil,
 	})
 }
 
@@ -48,22 +40,26 @@ func OkPage(c *gin.Context, data interface{}, pageNum int, pageSize int, total i
 	c.JSON(http.StatusOK, Result{
 		Code: constant.CodeSuccess,
 		Msg:  constant.MsgSuccess,
-		Data: data,
-		Page: &Page{PageNum: pageNum, PageSize: pageSize, Total: total},
+		Data: gin.H{
+			"list":  data,
+			"total": total,
+		},
 	})
 }
 
 func OkPaged(c *gin.Context, paged *common.PagedData) {
 	if paged == nil {
-		OkPage(c, nil, 1, 10, 0)
+		OkPage(c, []interface{}{}, 1, 10, 0)
 		return
 	}
 
 	c.JSON(http.StatusOK, Result{
 		Code: constant.CodeSuccess,
 		Msg:  constant.MsgSuccess,
-		Data: paged.Data,
-		Page: paged.Page,
+		Data: gin.H{
+			"list":  paged.List,
+			"total": paged.Total,
+		},
 	})
 }
 
@@ -73,7 +69,6 @@ func OkMsg(c *gin.Context, msg string) {
 		Code: constant.CodeSuccess,
 		Msg:  msg,
 		Data: nil,
-		Page: nil,
 	})
 }
 
@@ -86,7 +81,6 @@ func Fail(c *gin.Context, msg string) {
 		Code: constant.CodeBadRequest,
 		Msg:  msg,
 		Data: nil,
-		Page: nil,
 	})
 }
 
@@ -101,7 +95,6 @@ func FromAppError(c *gin.Context, ae *errs.AppError) {
 		Code: ae.Code,
 		Msg:  ae.Msg,
 		Data: nil,
-		Page: nil,
 	})
 }
 
@@ -114,7 +107,6 @@ func BadRequest(c *gin.Context, msg string) {
 		Code: constant.CodeBadRequest,
 		Msg:  msg,
 		Data: nil,
-		Page: nil,
 	})
 }
 
@@ -127,7 +119,6 @@ func Unauthorized(c *gin.Context, msg string) {
 		Code: constant.CodeAccessUnauthorized,
 		Msg:  msg,
 		Data: nil,
-		Page: nil,
 	})
 }
 
@@ -140,7 +131,6 @@ func TokenInvalid(c *gin.Context, msg string) {
 		Code: constant.CodeAccessTokenInvalid,
 		Msg:  msg,
 		Data: nil,
-		Page: nil,
 	})
 }
 
@@ -153,7 +143,6 @@ func SystemError(c *gin.Context, msg string) {
 		Code: constant.CodeSystemError,
 		Msg:  msg,
 		Data: nil,
-		Page: nil,
 	})
 }
 
@@ -168,7 +157,6 @@ func ForbiddenWrite(c *gin.Context) {
 		Code: constant.CodeDatabaseAccessDenied,
 		Msg:  constant.MsgDatabaseAccessDenied,
 		Data: nil,
-		Page: nil,
 	})
 }
 

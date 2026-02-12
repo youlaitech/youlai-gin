@@ -203,8 +203,7 @@ LIMIT ? OFFSET ?`, where)
 		return nil, errs.SystemError("查询数据表失败")
 	}
 
-	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
-	return &common.PagedData{Data: list, Page: pageMeta}, nil
+	return &common.PagedData{List: list, Total: total}, nil
 }
 
 func GetGenConfig(tableName string) (*model.GenConfigFormDto, error) {

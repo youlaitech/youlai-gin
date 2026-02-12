@@ -32,8 +32,7 @@ func GetDictPage(query *model.DictQuery) (*common.PagedData, error) {
 		}
 	}
 
-	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
-	return &common.PagedData{Data: voList, Page: pageMeta}, nil
+	return &common.PagedData{List: voList, Total: total}, nil
 }
 
 // GetDictList 获取字典下拉选项
@@ -169,7 +168,7 @@ func GetDictItems(dictCode string) ([]model.DictItemVO, error) {
 func GetDictItemPage(query *model.DictItemQuery) (*common.PagedData, error) {
 	items, total, err := repository.GetDictItemPage(query)
 	if err != nil {
-		return nil, errs.SystemError("查询字典项分页失败")
+		return nil, errs.SystemError("查询字典项列表失败")
 	}
 
 	voList := make([]model.DictItemVO, len(items))
@@ -185,8 +184,7 @@ func GetDictItemPage(query *model.DictItemQuery) (*common.PagedData, error) {
 		}
 	}
 
-	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
-	return &common.PagedData{Data: voList, Page: pageMeta}, nil
+	return &common.PagedData{List: voList, Total: total}, nil
 }
 
 // SaveDictItem 保存字典项（新增或更新）
