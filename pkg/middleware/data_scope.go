@@ -7,9 +7,10 @@ import (
 
 	"youlai-gin/internal/system/permission/service"
 	"youlai-gin/pkg/auth"
+	"youlai-gin/pkg/database"
 )
 
-// 数据权限范围常量（与 youlai-boot 对齐）
+// 数据权限范围常量
 const (
 	DataScopeAll             = 1 // 全部数据
 	DataScopeDeptAndChildren = 2 // 部门及子部门
@@ -206,18 +207,41 @@ func GetViewableUserIDs(user *auth.UserDetails) (string, []int64) {
 		}
 	}
 
-	// 如果有部门权限，查询这些部门的用户
+	// 如果有部门权限，返回这些部门下的用户ID列表
 	if len(deptIDSet) > 0 {
 		deptIDs := make([]int64, 0, len(deptIDSet))
 		for id := range deptIDSet {
 			deptIDs = append(deptIDs, id)
 		}
-		return "", deptIDs
+
+		var userIDs []int64
+		err = database.DB.Table("sys_user").
+			Select("id").
+			Where("is_deleted = 0 AND status = 1 AND dept_id IN ?", deptIDs).
+			Pluck("id", &userIDs).Error
+		if err != nil {
+			return "", []int64{user.UserID}
+		}
+		if len(userIDs) == 0 {
+			return "", []int64{user.UserID}
+		}
+		return "", userIDs
 	}
 
 	// 只有本人权限
 	if hasSelf {
-		return "", []int64{user.UserID}
+		var userIDs []int64
+		err = database.DB.Table("sys_user").
+			Select("id").
+			Where("is_deleted = 0 AND status = 1 AND (id = ? OR create_by = ?)", user.UserID, user.UserID).
+			Pluck("id", &userIDs).Error
+		if err != nil {
+			return "", []int64{user.UserID}
+		}
+		if len(userIDs) == 0 {
+			return "", []int64{user.UserID}
+		}
+		return "", userIDs
 	}
 
 	return "", []int64{user.UserID}
@@ -250,12 +274,16 @@ func HasPermissionToUser(currentUser *auth.UserDetails, targetUserID int64, db *
 		return true
 	}
 
-	// 获取目标用户的部门
-	var targetDeptID int64
+	// 获取目标用户的部门与创建人
+	type targetUserRow struct {
+		DeptID   int64 `gorm:"column:dept_id"`
+		CreateBy int64 `gorm:"column:create_by"`
+	}
+	var target targetUserRow
 	err = db.Table("sys_user").
-		Select("dept_id").
+		Select("dept_id, create_by").
 		Where("id = ? AND is_deleted = 0", targetUserID).
-		Scan(&targetDeptID).Error
+		Scan(&target).Error
 	if err != nil {
 		return false
 	}
@@ -267,9 +295,13 @@ func HasPermissionToUser(currentUser *auth.UserDetails, targetUserID int64, db *
 			return true
 		case DataScopeDeptAndChildren, DataScopeDept, DataScopeCustom:
 			for _, id := range ds.CustomDeptIDs {
-				if id == targetDeptID {
+				if id == target.DeptID {
 					return true
 				}
+			}
+		case DataScopeSelf:
+			if target.CreateBy == currentUser.UserID {
+				return true
 			}
 		}
 	}

@@ -176,7 +176,7 @@ func getDeptAndChildrenIDs(deptID int64) []int64 {
 	// 查询部门及子部门
 	pattern := treePath + "," + strconv.FormatInt(deptID, 10) + "%"
 	var deptIDs []int64
-	err = database.DB.Table(model.Dept{}.TableName()).
+	err = database.DB.Table(deptModel.Dept{}.TableName()).
 		Select("id").
 		Where("is_deleted = 0 AND (id = ? OR tree_path LIKE ?)", deptID, pattern).
 		Pluck("id", &deptIDs).Error

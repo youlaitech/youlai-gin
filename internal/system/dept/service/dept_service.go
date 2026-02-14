@@ -8,14 +8,15 @@ import (
 
 	"youlai-gin/internal/system/dept/model"
 	"youlai-gin/internal/system/dept/repository"
+	"youlai-gin/pkg/auth"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/utils"
 )
 
 // GetDeptList 部门列表（树形结构）
-func GetDeptList(query *model.DeptQuery) ([]*model.DeptVO, error) {
-	depts, err := repository.GetDeptList(query)
+func GetDeptList(query *model.DeptQuery, currentUser *auth.UserDetails) ([]*model.DeptVO, error) {
+	depts, err := repository.GetDeptList(query, currentUser)
 	if err != nil {
 		return nil, errs.SystemError("查询部门列表失败")
 	}
@@ -48,10 +49,10 @@ func GetDeptList(query *model.DeptQuery) ([]*model.DeptVO, error) {
 }
 
 // GetDeptOptions 部门下拉选项
-func GetDeptOptions() ([]model.DeptOption, error) {
-	depts, err := repository.GetDeptOptions()
+func GetDeptOptions(currentUser *auth.UserDetails) ([]model.DeptOption, error) {
+	depts, err := repository.GetDeptOptions(currentUser)
 	if err != nil {
-		return nil, errs.SystemError("查询部门选项失败")
+		return nil, errs.SystemError("查询部门下拉失败")
 	}
 
 	options := make([]model.DeptOption, len(depts))

@@ -4,8 +4,10 @@ import (
 	roleRepo "youlai-gin/internal/system/role/repository"
 	"youlai-gin/internal/system/user/api"
 	"youlai-gin/internal/system/user/domain"
+	"youlai-gin/pkg/auth"
 	"youlai-gin/pkg/database"
 	pkgDatabase "youlai-gin/pkg/database"
+	"youlai-gin/pkg/middleware"
 	"youlai-gin/pkg/types"
 )
 
@@ -15,7 +17,7 @@ func GetRolePermsByCodes(roleCodes []string) ([]roleRepo.RolePerms, error) {
 }
 
 // GetUserPage 用户分页查询
-func GetUserPage(query *api.UserQueryReq) ([]api.UserPageResp, int64, error) {
+func GetUserPage(query *api.UserQueryReq, currentUser *auth.UserDetails) ([]api.UserPageResp, int64, error) {
 	var users []api.UserPageResp
 	var total int64
 
@@ -37,6 +39,14 @@ func GetUserPage(query *api.UserQueryReq) ([]api.UserPageResp, int64, error) {
 			)`,
 			"ROOT",
 		)
+
+	// 数据权限过滤（多角色并集策略）
+	db = db.Scopes(middleware.DataScopeFilter(currentUser, middleware.DataPermissionConfig{
+		DeptAlias:    "u",
+		DeptIDColumn: "dept_id",
+		UserAlias:    "u",
+		UserIDColumn: "create_by",
+	}))
 
 	if query.Keywords != "" {
 		db = db.Where("u.username LIKE ? OR u.nickname LIKE ? OR u.mobile LIKE ?",
@@ -156,6 +166,17 @@ func GetUserRoleIDs(userId int64) ([]int64, error) {
 		Where("user_id = ?", userId).
 		Pluck("role_id", &roleIds).Error
 	return roleIds, err
+}
+
+// ListUserIDsByRoleID 获取角色绑定的用户ID集合
+func ListUserIDsByRoleID(roleId int64) ([]int64, error) {
+	var userIds []int64
+	err := database.DB.Table("sys_user_role").
+		Select("user_id").
+		Where("role_id = ?", roleId).
+		Distinct().
+		Pluck("user_id", &userIds).Error
+	return userIds, err
 }
 
 // SaveUserRoles 保存用户角色关联（事务：先删除再新增）

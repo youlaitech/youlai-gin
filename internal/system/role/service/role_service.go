@@ -1,14 +1,18 @@
 package service
 
 import (
+	"context"
 	"errors"
+	"fmt"
 
 	"gorm.io/gorm"
 
 	"youlai-gin/internal/system/role/model"
 	"youlai-gin/internal/system/role/repository"
+	userRepo "youlai-gin/internal/system/user/repository"
 	"youlai-gin/pkg/common"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/redis"
 	"youlai-gin/pkg/types"
 )
 
@@ -56,6 +60,14 @@ func GetRoleOptions() ([]common.Option[types.BigInt], error) {
 
 // SaveRole 保存角色（新增或更新）
 func SaveRole(form *model.RoleForm) error {
+	var oldDataScope int
+	if form.ID != 0 {
+		oldRole, err := repository.GetRoleByID(int64(form.ID))
+		if err == nil && oldRole != nil {
+			oldDataScope = oldRole.DataScope
+		}
+	}
+
 	exists, err := repository.CheckRoleNameExists(form.Name, int64(form.ID))
 	if err != nil {
 		return errs.SystemError("检查角色名称失败")
@@ -92,6 +104,16 @@ func SaveRole(form *model.RoleForm) error {
 		}
 	}
 
+	// 数据权限发生变化时，失效该角色关联用户的登录态（JWT tokenVersion）
+	if form.ID != 0 && oldDataScope != 0 && oldDataScope != form.DataScope {
+		userIds, err := userRepo.ListUserIDsByRoleID(int64(form.ID))
+		if err == nil && len(userIds) > 0 {
+			for _, uid := range userIds {
+				_ = invalidateUserSessions(uid)
+			}
+		}
+	}
+
 	if len(form.MenuIds) > 0 {
 		menuIds := make([]int64, len(form.MenuIds))
 		for i, id := range form.MenuIds {
@@ -99,6 +121,66 @@ func SaveRole(form *model.RoleForm) error {
 		}
 		if err := repository.UpdateRoleMenus(int64(form.ID), menuIds); err != nil {
 			return errs.SystemError("更新角色菜单失败")
+		}
+	}
+
+	return nil
+}
+
+func invalidateUserSessions(userId int64) error {
+	if userId <= 0 {
+		return nil
+	}
+	ctx := context.Background()
+	key := fmt.Sprintf("%s%d", redis.UserTokenVersion, userId)
+	return redis.Client.Incr(ctx, key).Err()
+}
+
+// GetRoleDeptIds 获取角色自定义部门ID列表
+func GetRoleDeptIds(roleId int64) ([]int64, error) {
+	if roleId <= 0 {
+		return []int64{}, nil
+	}
+	return repository.GetRoleDeptIds(roleId)
+}
+
+// UpdateRoleDepts 更新角色自定义部门，并失效该角色关联用户会话
+func UpdateRoleDepts(roleId int64, deptIds []int64) error {
+	if roleId <= 0 {
+		return errs.BadRequest("无效的角色ID")
+	}
+
+	oldDeptIds, _ := repository.GetRoleDeptIds(roleId)
+	if err := repository.UpdateRoleDepts(roleId, deptIds); err != nil {
+		return errs.SystemError("更新角色自定义部门失败")
+	}
+
+	oldSet := make(map[int64]struct{}, len(oldDeptIds))
+	for _, id := range oldDeptIds {
+		oldSet[id] = struct{}{}
+	}
+	newSet := make(map[int64]struct{}, len(deptIds))
+	for _, id := range deptIds {
+		if id > 0 {
+			newSet[id] = struct{}{}
+		}
+	}
+	changed := len(oldSet) != len(newSet)
+	if !changed {
+		for id := range oldSet {
+			if _, ok := newSet[id]; !ok {
+				changed = true
+				break
+			}
+		}
+	}
+
+	if changed {
+		userIds, err := userRepo.ListUserIDsByRoleID(roleId)
+		if err == nil && len(userIds) > 0 {
+			for _, uid := range userIds {
+				_ = invalidateUserSessions(uid)
+			}
 		}
 	}
 

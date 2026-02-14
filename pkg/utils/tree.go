@@ -48,5 +48,28 @@ func BuildTreeSimple[T any](
 		}
 	}
 
+	// 如果根节点被过滤掉，使用 parentIds - ids 作为递归起点
+	if len(roots) == 0 {
+		rootIDSet := make(map[int64]struct{})
+		for i := range items {
+			pid := getParentID(items[i])
+			if pid == 0 {
+				continue
+			}
+			if _, ok := itemMap[pid]; !ok {
+				rootIDSet[pid] = struct{}{}
+			}
+		}
+
+		for i := range items {
+			pid := getParentID(items[i])
+			if _, ok := rootIDSet[pid]; ok {
+				item := items[i]
+				setChildrenRecursive(&item)
+				roots = append(roots, item)
+			}
+		}
+	}
+
 	return roots
 }

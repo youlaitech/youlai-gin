@@ -98,6 +98,47 @@ func UpdateRoleMenus(roleId int64, menuIds []int64) error {
 	})
 }
 
+// GetRoleDeptIds 获取角色已分配的自定义部门ID列表
+func GetRoleDeptIds(roleId int64) ([]int64, error) {
+	var deptIds []int64
+	err := database.DB.Table("sys_role_dept").
+		Where("role_id = ?", roleId).
+		Pluck("dept_id", &deptIds).Error
+	return deptIds, err
+}
+
+// UpdateRoleDepts 更新角色自定义部门（先删后增）
+func UpdateRoleDepts(roleId int64, deptIds []int64) error {
+	return database.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec("DELETE FROM sys_role_dept WHERE role_id = ?", roleId).Error; err != nil {
+			return err
+		}
+
+		if len(deptIds) == 0 {
+			return nil
+		}
+
+		rows := make([]map[string]interface{}, 0, len(deptIds))
+		seen := make(map[int64]struct{}, len(deptIds))
+		for _, deptId := range deptIds {
+			if deptId <= 0 {
+				continue
+			}
+			if _, ok := seen[deptId]; ok {
+				continue
+			}
+			seen[deptId] = struct{}{}
+			rows = append(rows, map[string]interface{}{"role_id": roleId, "dept_id": deptId})
+		}
+
+		if len(rows) == 0 {
+			return nil
+		}
+
+		return tx.Table("sys_role_dept").Create(&rows).Error
+	})
+}
+
 // CheckRoleNameExists 检查角色名称是否存在
 func CheckRoleNameExists(name string, excludeId int64) (bool, error) {
 	var count int64

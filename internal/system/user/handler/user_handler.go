@@ -54,7 +54,13 @@ func GetUserList(c *gin.Context) {
 		return
 	}
 
-	result, err := service.GetUserPage(&query)
+	currentUser, err := pkgContext.GetCurrentUser(c)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	result, err := service.GetUserPage(&query, currentUser)
 	if err != nil {
 		c.Error(err)
 		return
@@ -421,8 +427,14 @@ func ExportUsers(c *gin.Context) {
 		return
 	}
 
+	currentUser, err := pkgContext.GetCurrentUser(c)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
 	// 导出用户数据
-	exporter, err := service.ExportUsersToExcel(&query)
+	exporter, err := service.ExportUsersToExcel(&query, currentUser)
 	if err != nil {
 		c.Error(err)
 		return

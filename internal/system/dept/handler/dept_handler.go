@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"youlai-gin/internal/system/dept/model"
 	"youlai-gin/internal/system/dept/service"
+	pkgContext "youlai-gin/pkg/context"
 	"youlai-gin/pkg/response"
 	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/validator"
@@ -35,7 +36,13 @@ func GetDeptList(c *gin.Context) {
 		return
 	}
 
-	list, err := service.GetDeptList(&query)
+	currentUser, err := pkgContext.GetCurrentUser(c)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	list, err := service.GetDeptList(&query, currentUser)
 	if err != nil {
 		c.Error(err)
 		return
@@ -49,7 +56,13 @@ func GetDeptList(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/depts/options [get]
 func GetDeptOptions(c *gin.Context) {
-	options, err := service.GetDeptOptions()
+	currentUser, err := pkgContext.GetCurrentUser(c)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	options, err := service.GetDeptOptions(currentUser)
 	if err != nil {
 		c.Error(err)
 		return

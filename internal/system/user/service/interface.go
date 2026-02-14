@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"youlai-gin/internal/system/user/api"
+	"youlai-gin/pkg/auth"
 	"youlai-gin/pkg/common"
 	"youlai-gin/pkg/excel"
 )
@@ -11,7 +12,7 @@ import (
 // UserService 用户服务接口
 type UserService interface {
 	// 用户查询
-	GetUserPage(query *api.UserQueryReq) (*common.PagedData, error)
+	GetUserPage(query *api.UserQueryReq, currentUser *auth.UserDetails) (*common.PagedData, error)
 	GetUserForm(userId int64) (*api.UserFormResp, error)
 	GetUserProfile(userId int64) (*api.UserProfileResp, error)
 	GetUserOptions() ([]common.Option[string], error)
@@ -37,7 +38,7 @@ type UserService interface {
 	UnbindEmail(userId int64, form *api.PasswordVerifyReq) error
 
 	// Excel 导入导出
-	ExportUsersToExcel(query *api.UserQueryReq) (*excel.ExcelExporter, error)
+	ExportUsersToExcel(query *api.UserQueryReq, currentUser *auth.UserDetails) (*excel.ExcelExporter, error)
 	GenerateUserTemplate() (*excel.ExcelExporter, error)
 	ImportUsersFromExcel(file io.Reader) (map[string]interface{}, error)
 }
@@ -49,8 +50,8 @@ var _ UserService = (*userService)(nil)
 type userService struct {
 }
 
-func (s *userService) GetUserPage(query *api.UserQueryReq) (*common.PagedData, error) {
-	return GetUserPage(query)
+func (s *userService) GetUserPage(query *api.UserQueryReq, currentUser *auth.UserDetails) (*common.PagedData, error) {
+	return GetUserPage(query, currentUser)
 }
 
 func (s *userService) GetUserForm(userId int64) (*api.UserFormResp, error) {
@@ -113,8 +114,8 @@ func (s *userService) UnbindEmail(userId int64, form *api.PasswordVerifyReq) err
 	return UnbindEmail(userId, form)
 }
 
-func (s *userService) ExportUsersToExcel(query *api.UserQueryReq) (*excel.ExcelExporter, error) {
-	return ExportUsersToExcel(query)
+func (s *userService) ExportUsersToExcel(query *api.UserQueryReq, currentUser *auth.UserDetails) (*excel.ExcelExporter, error) {
+	return ExportUsersToExcel(query, currentUser)
 }
 
 func (s *userService) GenerateUserTemplate() (*excel.ExcelExporter, error) {

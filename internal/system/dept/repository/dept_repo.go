@@ -1,14 +1,24 @@
 package repository
 
 import (
-	"youlai-gin/pkg/database"
 	"youlai-gin/internal/system/dept/model"
+	"youlai-gin/pkg/auth"
+	"youlai-gin/pkg/database"
+	"youlai-gin/pkg/middleware"
 )
 
 // GetDeptList 部门列表查询
-func GetDeptList(query *model.DeptQuery) ([]model.Dept, error) {
+func GetDeptList(query *model.DeptQuery, currentUser *auth.UserDetails) ([]model.Dept, error) {
 	var depts []model.Dept
 	db := database.DB.Model(&model.Dept{}).Where("is_deleted = 0")
+
+	// 数据权限过滤（多角色并集策略）
+	db = db.Scopes(middleware.DataScopeFilter(currentUser, middleware.DataPermissionConfig{
+		DeptAlias:    "",
+		DeptIDColumn: "id",
+		UserAlias:    "",
+		UserIDColumn: "create_by",
+	}))
 
 	if query.Keywords != "" {
 		db = db.Where("name LIKE ? OR code LIKE ?", "%"+query.Keywords+"%", "%"+query.Keywords+"%")
@@ -45,12 +55,21 @@ func DeleteDept(id int64) error {
 }
 
 // GetDeptOptions 获取部门下拉选项
-func GetDeptOptions() ([]model.Dept, error) {
+func GetDeptOptions(currentUser *auth.UserDetails) ([]model.Dept, error) {
 	var depts []model.Dept
-	err := database.DB.Model(&model.Dept{}).
+	db := database.DB.Model(&model.Dept{}).
 		Where("status = 1 AND is_deleted = 0").
-		Order("sort ASC").
-		Find(&depts).Error
+		Order("sort ASC")
+
+	// 数据权限过滤（多角色并集策略）
+	db = db.Scopes(middleware.DataScopeFilter(currentUser, middleware.DataPermissionConfig{
+		DeptAlias:    "",
+		DeptIDColumn: "id",
+		UserAlias:    "",
+		UserIDColumn: "create_by",
+	}))
+
+	err := db.Find(&depts).Error
 	return depts, err
 }
 

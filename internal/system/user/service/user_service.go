@@ -1,7 +1,7 @@
 package service
 
 import (
-	"context"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,6 +16,7 @@ import (
 	"youlai-gin/internal/system/user/api"
 	"youlai-gin/internal/system/user/domain"
 	"youlai-gin/internal/system/user/repository"
+	"youlai-gin/pkg/auth"
 	"youlai-gin/pkg/common"
 	"youlai-gin/pkg/constant"
 	"youlai-gin/pkg/errs"
@@ -26,8 +27,8 @@ import (
 )
 
 // GetUserPage 用户分页列表
-func GetUserPage(query *api.UserQueryReq) (*common.PagedData, error) {
-	users, total, err := repository.GetUserPage(query)
+func GetUserPage(query *api.UserQueryReq, currentUser *auth.UserDetails) (*common.PagedData, error) {
+	users, total, err := repository.GetUserPage(query, currentUser)
 	if err != nil {
 		return nil, errs.SystemError("查询用户列表失败")
 	}
@@ -593,12 +594,12 @@ func GetUserOptions() ([]common.Option[string], error) {
 }
 
 // ExportUsersToExcel 导出用户数据到Excel
-func ExportUsersToExcel(query *api.UserQueryReq) (*excel.ExcelExporter, error) {
+func ExportUsersToExcel(query *api.UserQueryReq, currentUser *auth.UserDetails) (*excel.ExcelExporter, error) {
 	// 查询所有符合条件的用户（不分页）
 	query.PageNum = 1
 	query.PageSize = 10000 // 设置一个较大的值
 
-	users, _, err := repository.GetUserPage(query)
+	users, _, err := repository.GetUserPage(query, currentUser)
 	if err != nil {
 		return nil, errs.SystemError("查询用户数据失败")
 	}

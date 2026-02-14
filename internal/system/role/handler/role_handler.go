@@ -21,6 +21,8 @@ func RegisterRoleRoutes(r *gin.RouterGroup) {
 		roles.DELETE("/:id", DeleteRole)
 		roles.GET("/:id/menu-ids", GetRoleMenuIds)
 		roles.PUT("/:id/menus", UpdateRoleMenus)
+		roles.GET("/:id/dept-ids", GetRoleDeptIds)
+		roles.PUT("/:id/depts", UpdateRoleDepts)
 	}
 }
 
@@ -196,6 +198,56 @@ func UpdateRoleMenus(c *gin.Context) {
 	}
 
 	if err := service.UpdateRoleMenus(id, menuIds); err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.OkMsg(c, "分配成功")
+}
+
+// @Summary 获取角色自定义部门ID列表
+// @Tags 03.角色接口
+// @Param id path int true "角色ID"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/roles/{id}/dept-ids [get]
+func GetRoleDeptIds(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		response.BadRequest(c, "无效的角色ID")
+		return
+	}
+
+	deptIds, err := service.GetRoleDeptIds(id)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.Ok(c, deptIds)
+}
+
+// @Summary 分配角色自定义部门
+// @Tags 03.角色接口
+// @Param id path int true "角色ID"
+// @Param body body []int64 true "部门ID列表"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/roles/{id}/depts [put]
+func UpdateRoleDepts(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		response.BadRequest(c, "无效的角色ID")
+		return
+	}
+
+	var deptIds []int64
+	if err := c.ShouldBindJSON(&deptIds); err != nil {
+		response.BadRequest(c, "参数错误")
+		return
+	}
+
+	if err := service.UpdateRoleDepts(id, deptIds); err != nil {
 		c.Error(err)
 		return
 	}
