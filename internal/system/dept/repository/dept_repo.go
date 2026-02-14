@@ -2,9 +2,9 @@ package repository
 
 import (
 	"youlai-gin/internal/system/dept/model"
+	"youlai-gin/internal/system/permission/datascope"
 	"youlai-gin/pkg/auth"
 	"youlai-gin/pkg/database"
-	"youlai-gin/pkg/middleware"
 )
 
 // GetDeptList 部门列表查询
@@ -13,7 +13,7 @@ func GetDeptList(query *model.DeptQuery, currentUser *auth.UserDetails) ([]model
 	db := database.DB.Model(&model.Dept{}).Where("is_deleted = 0")
 
 	// 数据权限过滤（多角色并集策略）
-	db = db.Scopes(middleware.DataScopeFilter(currentUser, middleware.DataPermissionConfig{
+	db = db.Scopes(datascope.DataScopeFilter(currentUser, datascope.DataPermissionConfig{
 		DeptAlias:    "",
 		DeptIDColumn: "id",
 		UserAlias:    "",
@@ -62,7 +62,7 @@ func GetDeptOptions(currentUser *auth.UserDetails) ([]model.Dept, error) {
 		Order("sort ASC")
 
 	// 数据权限过滤（多角色并集策略）
-	db = db.Scopes(middleware.DataScopeFilter(currentUser, middleware.DataPermissionConfig{
+	db = db.Scopes(datascope.DataScopeFilter(currentUser, datascope.DataPermissionConfig{
 		DeptAlias:    "",
 		DeptIDColumn: "id",
 		UserAlias:    "",

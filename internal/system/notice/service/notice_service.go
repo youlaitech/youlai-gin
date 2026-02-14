@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	"youlai-gin/internal/system/notice/model"
@@ -29,6 +30,17 @@ func GetNoticeByID(id int64) (*model.Notice, error) {
 
 // SaveNotice 保存通知（新增或更新）
 func SaveNotice(form *model.NoticeForm) error {
+	parsePublishTime := func(s string) (types.LocalTime, bool, error) {
+		if strings.TrimSpace(s) == "" {
+			return types.LocalTime{}, false, nil
+		}
+		parsed, err := time.ParseInLocation(types.TimeFormat, s, time.Local)
+		if err != nil {
+			return types.LocalTime{}, false, err
+		}
+		return types.LocalTime(parsed), true, nil
+	}
+
 	notice := &model.Notice{
 		ID:          form.ID,
 		Title:       form.Title,
@@ -36,8 +48,13 @@ func SaveNotice(form *model.NoticeForm) error {
 		Type:        form.Type,
 		Level:       form.Level,
 		Status:      form.Status,
-		PublishTime: form.PublishTime,
 		TargetType:  form.TargetType,
+	}
+
+	if pt, ok, err := parsePublishTime(form.PublishTime); err != nil {
+		return errs.BadRequest("发布时间格式错误")
+	} else if ok {
+		notice.PublishTime = pt
 	}
 
 	// 转换目标用户列表为JSON
@@ -47,8 +64,8 @@ func SaveNotice(form *model.NoticeForm) error {
 	}
 
 	// 如果没有设置发布时间，使用当前时间
-	if notice.PublishTime == "" && notice.Status == 1 {
-		notice.PublishTime = time.Now().Format("2006-01-02 15:04:05")
+	if (time.Time(notice.PublishTime)).IsZero() && notice.Status == 1 {
+		notice.PublishTime = types.Now()
 	}
 
 	var err error
@@ -133,18 +150,25 @@ func pushNotice(notice *model.Notice, targetUsers []types.BigInt) {
 }
 
 // PublishNotice 发布通知
-func PublishNotice(id int64) error {
+func PublishNotice(id int64, publisherID int64) error {
 	notice, err := repository.GetNoticeByID(id)
 	if err != nil {
 		return errs.NotFound("通知不存在")
 	}
 
-	notice.Status = 1
-	notice.PublishTime = time.Now().Format("2006-01-02 15:04:05")
-
-	if err := repository.UpdateNotice(notice); err != nil {
+	now := time.Now()
+	if err := repository.UpdateNoticeFields(int64(notice.ID), map[string]interface{}{
+		"publish_status": 1,
+		"publisher_id":   publisherID,
+		"publish_time":   now,
+		"revoke_time":    nil,
+	}); err != nil {
 		return errs.SystemError("发布通知失败")
 	}
+
+	notice.Status = 1
+	notice.PublisherID = types.BigInt(publisherID)
+	notice.PublishTime = types.LocalTime(now)
 
 	// 推送WebSocket消息
 	var targetUsers []types.BigInt
@@ -167,9 +191,11 @@ func RevokeNotice(id int64) error {
 		return errs.BadRequest("通知未发布或已撤回")
 	}
 
-	notice.Status = 0 // 设置为草稿状态
-
-	if err := repository.UpdateNotice(notice); err != nil {
+	now := time.Now()
+	if err := repository.UpdateNoticeFields(int64(notice.ID), map[string]interface{}{
+		"publish_status": -1,
+		"revoke_time":   now,
+	}); err != nil {
 		return errs.SystemError("撤回通知失败")
 	}
 

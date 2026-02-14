@@ -163,7 +163,13 @@ func PublishNotice(c *gin.Context) {
 		return
 	}
 
-	if err := service.PublishNotice(id); err != nil {
+	userID, err := pkgContext.GetCurrentUserID(c)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	if err := service.PublishNotice(id, userID); err != nil {
 		c.Error(err)
 		return
 	}

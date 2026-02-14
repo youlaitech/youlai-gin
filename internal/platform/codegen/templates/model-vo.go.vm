@@ -1,10 +1,17 @@
 package model
 
-#set($useTypes = false)#foreach($fieldConfig in $fieldConfigs)#if($fieldConfig.isShowInList == 1 and $fieldConfig.goType == "types.BigInt")#set($useTypes = true)#end#end
+#set($useTypes = false)
+#foreach($fieldConfig in $fieldConfigs)
+#if($fieldConfig.isShowInList == 1 and $fieldConfig.goType == "types.BigInt")
+#set($useTypes = true)
+#end
+#end
 #if($useTypes)
 import "youlai-gin/pkg/types"
 #end
 
-type ${entityName}PageVO struct {#foreach($fieldConfig in $fieldConfigsInList)
+type ${entityName}PageVO struct {
+#foreach($fieldConfig in $fieldConfigsInList)
 	${fieldConfig.goFieldName} ${fieldConfig.goType} `json:"${fieldConfig.fieldName}"`#if($fieldConfig.fieldComment.trim() != "") // ${fieldConfig.fieldComment}#end
-#end}
+#end
+}

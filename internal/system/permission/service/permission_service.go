@@ -8,13 +8,31 @@ import (
 
 	deptModel "youlai-gin/internal/system/dept/model"
 	permModel "youlai-gin/internal/system/permission/model"
-	userRepo "youlai-gin/internal/system/user/repository"
 	"youlai-gin/pkg/auth"
 	"youlai-gin/pkg/database"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/redis"
 	"youlai-gin/pkg/types"
 )
+
+func getUserRoleCodes(userID int64) ([]string, error) {
+	var roleCodes []string
+	err := database.DB.Table("sys_user_role ur").
+		Select("r.code").
+		Joins("INNER JOIN sys_role r ON ur.role_id = r.id").
+		Where("ur.user_id = ? AND r.is_deleted = 0 AND r.status = 1", userID).
+		Pluck("r.code", &roleCodes).Error
+	return roleCodes, err
+}
+
+func getUserDeptID(userID int64) (int64, error) {
+	var deptID int64
+	err := database.DB.Table("sys_user").
+		Select("COALESCE(dept_id, 0)").
+		Where("id = ? AND is_deleted = 0", userID).
+		Scan(&deptID).Error
+	return deptID, err
+}
 
 const rolePermsKey = "system:role:perms"
 
@@ -33,14 +51,14 @@ func GetUserPermissions(userID int64) (*permModel.UserPermissionsVO, error) {
 		return nil, errs.BadRequest("用户ID不能为空")
 	}
 
-	roles, err := userRepo.GetUserRoles(userID)
+	roles, err := getUserRoleCodes(userID)
 	if err != nil {
 		return nil, errs.SystemError("查询用户角色失败")
 	}
 
-	user, err := userRepo.GetUserByID(userID)
+	deptID, err := getUserDeptID(userID)
 	if err != nil {
-		return nil, errs.SystemError("查询用户信息失败")
+		return nil, errs.SystemError("查询用户部门失败")
 	}
 
 	perms, err := getUserPermsByRoles(roles)
@@ -48,7 +66,7 @@ func GetUserPermissions(userID int64) (*permModel.UserPermissionsVO, error) {
 		return nil, err
 	}
 
-	dataScopes, err := GetUserDataScopes(userID, roles, int64(user.DeptID))
+	dataScopes, err := GetUserDataScopes(userID, roles, deptID)
 	if err != nil {
 		return nil, err
 	}
@@ -58,8 +76,27 @@ func GetUserPermissions(userID int64) (*permModel.UserPermissionsVO, error) {
 		Roles:      roles,
 		Perms:      perms,
 		DataScopes: dataScopes,
-		DeptID:     types.BigInt(user.DeptID),
+		DeptID:     types.BigInt(deptID),
 	}, nil
+}
+
+type rolePermsRow struct {
+	RoleCode string
+	Perm     string
+}
+
+func getRolePermsByCodes(roleCodes []string) ([]rolePermsRow, error) {
+	if len(roleCodes) == 0 {
+		return nil, nil
+	}
+	var rows []rolePermsRow
+	err := database.DB.Table("sys_role r").
+		Select("r.code as role_code, p.perm").
+		Joins("INNER JOIN sys_role_menu rm ON rm.role_id = r.id").
+		Joins("INNER JOIN sys_menu p ON p.id = rm.menu_id").
+		Where("r.code IN ? AND r.status = 1 AND r.is_deleted = 0 AND p.is_deleted = 0 AND p.status = 1", roleCodes).
+		Scan(&rows).Error
+	return rows, err
 }
 
 // GetUserDataScopes 获取用户所有角色的数据权限列表（多角色并集策略）
@@ -329,14 +366,12 @@ func getUserPermsByRoles(roleCodes []string) ([]string, error) {
 
 	// 降级：从DB查询缺失角色的权限
 	if len(missingRoles) > 0 {
-		rolePermsList, err := userRepo.GetRolePermsByCodes(missingRoles)
+		rolePermsList, err := getRolePermsByCodes(missingRoles)
 		if err == nil {
 			for _, rp := range rolePermsList {
-				for _, p := range rp.Perms {
-					p = strings.TrimSpace(p)
-					if p != "" {
-						permsSet[p] = struct{}{}
-					}
+				p := strings.TrimSpace(rp.Perm)
+				if p != "" {
+					permsSet[p] = struct{}{}
 				}
 			}
 		}

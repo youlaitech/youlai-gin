@@ -208,8 +208,11 @@ LIMIT ? OFFSET ?`, where)
 
 func GetGenConfig(tableName string) (*model.GenConfigFormDto, error) {
 	var cfg genTableRow
-	err := database.DB.Table("gen_table").Where("table_name = ? AND is_deleted = 0", tableName).First(&cfg).Error
-	if err == nil {
+	tx := database.DB.Table("gen_table").Where("table_name = ? AND is_deleted = 0", tableName).Limit(1).Find(&cfg)
+	if tx.Error != nil {
+		return nil, errs.SystemError("查询生成配置失败")
+	}
+	if tx.RowsAffected > 0 {
 		fields := make([]genTableColumnRow, 0)
 		if err := database.DB.Table("gen_table_column").Where("table_id = ?", cfg.ID).Order("field_sort ASC").Find(&fields).Error; err != nil {
 			return nil, errs.SystemError("查询字段配置失败")
@@ -341,7 +344,10 @@ func SaveGenConfig(tableName string, body *model.GenConfigFormDto) error {
 	now := time.Now()
 
 	var existing genTableRow
-	err := database.DB.Table("gen_table").Where("table_name = ?", tableName).First(&existing).Error
+	tx := database.DB.Table("gen_table").Where("table_name = ?", tableName).Limit(1).Find(&existing)
+	if tx.Error != nil {
+		return errs.SystemError("保存配置失败")
+	}
 
 	moduleName := defaultStr(body.ModuleName, codegenConfig.defaultModuleName)
 	packageName := defaultStr(body.PackageName, codegenConfig.defaultPackageName)
@@ -351,7 +357,7 @@ func SaveGenConfig(tableName string, body *model.GenConfigFormDto) error {
 	pageType := defaultStr(body.PageType, "classic")
 	removePrefix := defaultStr(body.RemoveTablePrefix, codegenConfig.defaultRemoveTablePrefix)
 
-	if err == nil && existing.ID > 0 {
+	if tx.RowsAffected > 0 && existing.ID > 0 {
 		updates := map[string]interface{}{
 			"module_name":        moduleName,
 			"package_name":       packageName,

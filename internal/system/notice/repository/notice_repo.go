@@ -14,7 +14,10 @@ func GetNoticePage(query *model.NoticeQuery) ([]model.Notice, int64, error) {
 	var notices []model.Notice
 	var total int64
 
-	db := database.DB.Model(&model.Notice{}).Where("is_deleted = 0")
+	db := database.DB.Table("sys_notice n").
+		Select("n.*, u.nickname AS publisher_name").
+		Joins("LEFT JOIN sys_user u ON n.publisher_id = u.id").
+		Where("n.is_deleted = 0")
 
 	if query.Title != "" {
 		db = db.Where("title LIKE ?", "%"+query.Title+"%")
@@ -25,7 +28,7 @@ func GetNoticePage(query *model.NoticeQuery) ([]model.Notice, int64, error) {
 	}
 
 	if query.Status != nil {
-		db = db.Where("status = ?", *query.Status)
+		db = db.Where("n.publish_status = ?", *query.Status)
 	}
 
 	if err := db.Count(&total).Error; err != nil {
@@ -33,7 +36,7 @@ func GetNoticePage(query *model.NoticeQuery) ([]model.Notice, int64, error) {
 	}
 
 	err := db.Scopes(pkgDatabase.PaginateFromQuery(query)).
-		Order("create_time DESC").
+		Order("n.create_time DESC").
 		Find(&notices).Error
 
 	return notices, total, err
@@ -42,7 +45,11 @@ func GetNoticePage(query *model.NoticeQuery) ([]model.Notice, int64, error) {
 // GetNoticeByID 根据ID获取通知
 func GetNoticeByID(id int64) (*model.Notice, error) {
 	var notice model.Notice
-	err := database.DB.Where("id = ? AND is_deleted = 0", id).First(&notice).Error
+	err := database.DB.Table("sys_notice n").
+		Select("n.*, u.nickname AS publisher_name").
+		Joins("LEFT JOIN sys_user u ON n.publisher_id = u.id").
+		Where("n.id = ? AND n.is_deleted = 0", id).
+		First(&notice).Error
 	return &notice, err
 }
 
@@ -54,6 +61,16 @@ func CreateNotice(notice *model.Notice) error {
 // UpdateNotice 更新通知
 func UpdateNotice(notice *model.Notice) error {
 	return database.DB.Model(notice).Updates(notice).Error
+}
+
+func UpdateNoticeFields(id int64, fields map[string]interface{}) error {
+	if id <= 0 {
+		return nil
+	}
+	if len(fields) == 0 {
+		return nil
+	}
+	return database.DB.Model(&model.Notice{}).Where("id = ?", id).Updates(fields).Error
 }
 
 // DeleteNotice 删除通知
@@ -91,12 +108,14 @@ func GetUserNoticePage(userID int64, query *model.UserNoticeQuery) ([]model.Noti
 	// 统计总数（COUNT DISTINCT 去重）
 	countDB := database.DB.Table("sys_notice n")
 	countDB = baseWhere(countDB)
-	if err := countDB.Count(&total).Error; err != nil {
+	if err := countDB.Distinct("n.id").Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	// 查询数据
-	dataDB := database.DB.Table("sys_notice n").Select("n.*")
+	dataDB := database.DB.Table("sys_notice n").
+		Select("DISTINCT n.*, u.nickname AS publisher_name").
+		Joins("LEFT JOIN sys_user u ON n.publisher_id = u.id")
 	dataDB = baseWhere(dataDB)
 	err := dataDB.Scopes(pkgDatabase.PaginateFromQuery(query)).
 		Order("n.create_time DESC").

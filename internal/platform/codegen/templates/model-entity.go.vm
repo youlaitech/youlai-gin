@@ -1,13 +1,20 @@
 package model
 
-#set($useTypes = false)#foreach($fieldConfig in $fieldConfigs)#if($fieldConfig.goType == "types.BigInt")#set($useTypes = true)#end#end
+#set($useTypes = false)
+#foreach($fieldConfig in $fieldConfigs)
+#if($fieldConfig.goType == "types.BigInt")
+#set($useTypes = true)
+#end
+#end
 #if($useTypes)
 import "youlai-gin/pkg/types"
 #end
 
-type ${entityName} struct {#foreach($fieldConfig in $fieldConfigs)
+type ${entityName} struct {
+#foreach($fieldConfig in $fieldConfigs)
 	${fieldConfig.goFieldName} ${fieldConfig.goType} `gorm:"column:${fieldConfig.columnName}" json:"${fieldConfig.fieldName}"`#if($fieldConfig.fieldComment.trim() != "") // ${fieldConfig.fieldComment}#end
-#end}
+#end
+}
 
 func (${entityName}) TableName() string {
 	return "${tableName}"

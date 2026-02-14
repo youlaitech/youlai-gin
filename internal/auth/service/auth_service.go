@@ -13,6 +13,7 @@ import (
 	"gorm.io/gorm"
 
 	authModel "youlai-gin/internal/auth/model"
+	permService "youlai-gin/internal/system/permission/service"
 	userRepo "youlai-gin/internal/system/user/repository"
 	"youlai-gin/pkg/auth"
 	"youlai-gin/pkg/errs"
@@ -103,12 +104,17 @@ func Login(req *authModel.LoginRequest) (*auth.AuthenticationToken, error) {
 		return nil, errs.SystemError("查询用户角色失败")
 	}
 
+	dataScopes, err := permService.GetUserDataScopes(int64(user.ID), roles, int64(user.DeptID))
+	if err != nil {
+		return nil, err
+	}
+
 	// 5. 生成 Token
 	userDetails := &auth.UserDetails{
 		UserID:    int64(user.ID),
 		Username:  user.Username,
 		DeptID:    user.DeptID,
-		DataScope: 0, // TODO: 从角色权限获取
+		DataScopes: dataScopes,
 		Roles:     roles,
 	}
 
@@ -197,6 +203,11 @@ func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, erro
 		return nil, errs.SystemError("查询用户角色失败")
 	}
 
+	dataScopes, err := permService.GetUserDataScopes(int64(user.ID), roles, int64(user.DeptID))
+	if err != nil {
+		return nil, err
+	}
+
 	// 5. 验证成功后删除验证码
 	redis.Client.Del(ctx, redisKey)
 
@@ -205,7 +216,7 @@ func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, erro
 		UserID:    int64(user.ID),
 		Username:  user.Username,
 		DeptID:    user.DeptID,
-		DataScope: 0, // TODO: 从角色权限获取
+		DataScopes: dataScopes,
 		Roles:     roles,
 	}
 

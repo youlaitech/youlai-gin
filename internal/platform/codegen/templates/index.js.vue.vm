@@ -2,92 +2,82 @@
   <div class="app-container">
     <div class="search-container">
       <el-form ref="queryFormRef" :model="queryParams" :inline="true">
-        #foreach($fieldConfig in $fieldConfigs)
-          #if($fieldConfig.isShowInQuery == 1)
-            <el-form-item label="$fieldConfig.fieldComment" prop="$fieldConfig.fieldName">
-                    #if($fieldConfig.formType == "INPUT")
-                      <el-input
-                          v-model="queryParams.$fieldConfig.fieldName"
-                          placeholder="$fieldConfig.fieldComment"
-                          clearable
-                          @keyup.enter="handleQuery()"
-                      />
-                    #elseif($fieldConfig.formType == "SELECT")
-                        #if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
-                          <DictSelect v-model="queryParams.$fieldConfig.fieldName" code="$fieldConfig.dictType" />
-                        #else
-                          <el-select v-model="queryParams.$fieldConfig.fieldName" placeholder="请选择$fieldConfig.fieldComment">
-                            <el-option :key="1" :value="1" label="选项一"/>
-                            <el-option :key="2" :value="2" label="选项二"/>
-                          </el-select>
-                        #end
-                    #elseif($fieldConfig.formType == "RADIO")
-                        #if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
-                          <DictSelect v-model="queryParams.$fieldConfig.fieldName" type="radio" code="$fieldConfig.dictType" />
-                        #else
-                          <el-radio-group v-model="queryParams.$fieldConfig.fieldName">
-                            <el-radio :key="1" :value="1">选项一</el-radio>
-                            <el-radio :key="2" :value="2">选项二</el-radio>
-                          </el-radio-group>
-                        #end
-                    #elseif($fieldConfig.formType == "CHECK_BOX")
-                        #if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
-                          <DictSelect v-model="queryParams.$fieldConfig.fieldName" type="checkbox" code="$fieldConfig.dictType" />
-                        #else
-                          <el-checkbox-group v-model="queryParams.$fieldConfig.fieldName">
-                            <el-checkbox :key="1" :label="1">选项一</el-checkbox>
-                            <el-checkbox :key="2" :label="2">选项二</el-checkbox>
-                          </el-checkbox-group>
-                        #end
-                    #elseif($fieldConfig.formType == "INPUT_NUMBER")
-                      <el-input-number
-                          v-model="queryParams.$fieldConfig.fieldName"
-                          placeholder="$fieldConfig.fieldComment"
-                      />
-                    #elseif($fieldConfig.formType == "SWITCH")
-                      <el-switch
-                          v-model="queryParams.$fieldConfig.fieldName"
-                          :active-value="1"
-                          :inactive-value="0"
-                      />
-                    #elseif($fieldConfig.formType == "TEXT_AREA")
-                      <el-input type="textarea"
-                                v-model="queryParams.$fieldConfig.fieldName"
-                                placeholder="$fieldConfig.fieldComment"
-                      />
-                    #elseif($fieldConfig.formType == "DATE_TIME")
-                      <el-date-picker
-                          v-model="queryParams.$fieldConfig.fieldName"
-                          #if($fieldConfig.queryType == "BETWEEN")
-                          type="daterange"
-                          range-separator="~"
-                          start-placeholder="开始时间"
-                          end-placeholder="结束时间"
-                          #else
-                          type="datetime"
-                          placeholder="$fieldConfig.fieldComment"
-                          #end
-                          value-format="YYYY-MM-DD HH:mm:ss"
-                      />
-                    #elseif($fieldConfig.formType == "DATE")
-                      <el-date-picker
-                          class="!w-[240px]"
-                          v-model="queryParams.$fieldConfig.fieldName"
-                          #if($fieldConfig.queryType == "BETWEEN")
-                          type="daterange"
-                          range-separator="~"
-                          start-placeholder="开始时间"
-                          end-placeholder="结束时间"
-                          #else
-                          type="date"
-                          placeholder="$fieldConfig.fieldComment"
-                          #end
-                          value-format="YYYY-MM-DD"
-                      />
-                    #end
-            </el-form-item>
-          #end
-        #end
+#foreach($fieldConfig in $fieldConfigs)
+#if($fieldConfig.isShowInQuery == 1)
+        <el-form-item label="$fieldConfig.fieldComment" prop="$fieldConfig.fieldName">
+#if($fieldConfig.formType == "INPUT")
+          <el-input
+            v-model="queryParams.$fieldConfig.fieldName"
+            placeholder="$fieldConfig.fieldComment"
+            clearable
+            @keyup.enter="handleQuery()"
+          />
+#elseif($fieldConfig.formType == "SELECT")
+#if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
+          <DictSelect v-model="queryParams.$fieldConfig.fieldName" code="$fieldConfig.dictType" />
+#else
+          <el-select v-model="queryParams.$fieldConfig.fieldName" placeholder="请选择$fieldConfig.fieldComment">
+            <el-option :key="1" :value="1" label="选项一"/>
+            <el-option :key="2" :value="2" label="选项二"/>
+          </el-select>
+#end
+#elseif($fieldConfig.formType == "RADIO")
+#if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
+          <DictSelect v-model="queryParams.$fieldConfig.fieldName" type="radio" code="$fieldConfig.dictType" />
+#else
+          <el-radio-group v-model="queryParams.$fieldConfig.fieldName">
+            <el-radio :key="1" :value="1">选项一</el-radio>
+            <el-radio :key="2" :value="2">选项二</el-radio>
+          </el-radio-group>
+#end
+#elseif($fieldConfig.formType == "CHECK_BOX")
+#if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
+          <DictSelect v-model="queryParams.$fieldConfig.fieldName" type="checkbox" code="$fieldConfig.dictType" />
+#else
+          <el-checkbox-group v-model="queryParams.$fieldConfig.fieldName">
+            <el-checkbox :key="1" :label="1">选项一</el-checkbox>
+            <el-checkbox :key="2" :label="2">选项二</el-checkbox>
+          </el-checkbox-group>
+#end
+#elseif($fieldConfig.formType == "INPUT_NUMBER")
+          <el-input-number v-model="queryParams.$fieldConfig.fieldName" placeholder="$fieldConfig.fieldComment" />
+#elseif($fieldConfig.formType == "SWITCH")
+          <el-switch v-model="queryParams.$fieldConfig.fieldName" :active-value="1" :inactive-value="0" />
+#elseif($fieldConfig.formType == "TEXT_AREA")
+          <el-input type="textarea" v-model="queryParams.$fieldConfig.fieldName" placeholder="$fieldConfig.fieldComment" />
+#elseif($fieldConfig.formType == "DATE_TIME")
+          <el-date-picker
+            v-model="queryParams.$fieldConfig.fieldName"
+#if($fieldConfig.queryType == "BETWEEN")
+            type="daterange"
+            range-separator="~"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+#else
+            type="datetime"
+            placeholder="$fieldConfig.fieldComment"
+#end
+            value-format="YYYY-MM-DD HH:mm:ss"
+          />
+#elseif($fieldConfig.formType == "DATE")
+          <el-date-picker
+            class="!w-[240px]"
+            v-model="queryParams.$fieldConfig.fieldName"
+#if($fieldConfig.queryType == "BETWEEN")
+            type="daterange"
+            range-separator="~"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+#else
+            type="date"
+            placeholder="$fieldConfig.fieldComment"
+#end
+            value-format="YYYY-MM-DD"
+          />
+#end
+        </el-form-item>
+#end
+#end
         <el-form-item class="search-buttons">
           <el-button type="primary" icon="search" @click="handleQuery">搜索</el-button>
           <el-button icon="refresh" @click="handleResetQuery">重置</el-button>
@@ -301,13 +291,13 @@
 
   // $!{businessName}表单校验规则
   const rules = reactive({
-      #if($fieldConfigs)
-          #foreach($fieldConfig in ${fieldConfigs})
-              #if($fieldConfig.isShowInForm and $fieldConfig.isRequired)
-                      ${fieldConfig.fieldName}: [{ required: true, message: "请输入${fieldConfig.fieldComment}", trigger: "blur" }],
-              #end
-          #end
+    #if($fieldConfigs)
+      #foreach($fieldConfig in $fieldConfigs)
+        #if($fieldConfig.isShowInForm == 1 and $fieldConfig.isRequired == 1 and $fieldConfig.formType != "HIDDEN")
+    ${fieldConfig.fieldName}: [{ required: true, message: "请输入${fieldConfig.fieldComment}", trigger: "blur" }],
+        #end
       #end
+    #end
   });
 
   /** 查询$!{businessName} */

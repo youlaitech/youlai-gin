@@ -7,6 +7,7 @@ import (
 
 	"gorm.io/gorm"
 
+	permService "youlai-gin/internal/system/permission/service"
 	"youlai-gin/internal/system/role/model"
 	"youlai-gin/internal/system/role/repository"
 	userRepo "youlai-gin/internal/system/user/repository"
@@ -124,6 +125,25 @@ func SaveRole(form *model.RoleForm) error {
 		}
 	}
 
+	// 自定义数据权限：同步维护 sys_role_dept（并在变更时失效会话）
+	roleId := int64(form.ID)
+	if form.DataScope == permService.DataScopeCustom {
+		deptIds := make([]int64, 0, len(form.DeptIds))
+		for _, id := range form.DeptIds {
+			if int64(id) > 0 {
+				deptIds = append(deptIds, int64(id))
+			}
+		}
+		if err := UpdateRoleDepts(roleId, deptIds); err != nil {
+			return err
+		}
+	} else {
+		// 非自定义：清理历史自定义部门
+		if err := repository.UpdateRoleDepts(roleId, nil); err != nil {
+			return errs.SystemError("清理角色自定义部门失败")
+		}
+	}
+
 	return nil
 }
 
@@ -207,6 +227,18 @@ func GetRoleForm(id int64) (*model.RoleForm, error) {
 		menuIdsBigInt[i] = types.BigInt(id)
 	}
 
+	var deptIdsBigInt []types.BigInt
+	if role.DataScope == permService.DataScopeCustom {
+		deptIds, err := repository.GetRoleDeptIds(id)
+		if err != nil {
+			return nil, errs.SystemError("查询角色自定义部门失败")
+		}
+		deptIdsBigInt = make([]types.BigInt, len(deptIds))
+		for i, did := range deptIds {
+			deptIdsBigInt[i] = types.BigInt(did)
+		}
+	}
+
 	return &model.RoleForm{
 		ID:        role.ID,
 		Name:      role.Name,
@@ -214,6 +246,7 @@ func GetRoleForm(id int64) (*model.RoleForm, error) {
 		Sort:      role.Sort,
 		Status:    role.Status,
 		DataScope: role.DataScope,
+		DeptIds:   deptIdsBigInt,
 		MenuIds:   menuIdsBigInt,
 	}, nil
 }

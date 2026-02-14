@@ -10,21 +10,35 @@ func Get${entityName}Page(query *model.${entityName}Query) ([]model.${entityName
 	var list []model.${entityName}
 	var total int64
 
-	db := database.DB.Model(&model.${entityName}{}).Where("is_deleted = 0")#foreach($fieldConfig in $fieldConfigsInQuery)
-#if($fieldConfig.queryType == "BETWEEN")	if len(query.${fieldConfig.goFieldName}) == 2 {
+	db := database.DB.Model(&model.${entityName}{}).Where("is_deleted = 0")
+#foreach($fieldConfig in $fieldConfigsInQuery)
+#if($fieldConfig.queryType == "BETWEEN")
+	if len(query.${fieldConfig.goFieldName}) == 2 {
 		db = db.Where("${fieldConfig.columnName} BETWEEN ? AND ?", query.${fieldConfig.goFieldName}[0], query.${fieldConfig.goFieldName}[1])
-	}#elseif($fieldConfig.queryType == "LIKE")	if query.${fieldConfig.goFieldName} != "" {
+	}
+#elseif($fieldConfig.queryType == "LIKE")
+	if query.${fieldConfig.goFieldName} != "" {
 		db = db.Where("${fieldConfig.columnName} LIKE ?", "%"+query.${fieldConfig.goFieldName}+"%")
-	}#elseif($fieldConfig.queryType == "LIKE_LEFT")	if query.${fieldConfig.goFieldName} != "" {
+	}
+#elseif($fieldConfig.queryType == "LIKE_LEFT")
+	if query.${fieldConfig.goFieldName} != "" {
 		db = db.Where("${fieldConfig.columnName} LIKE ?", "%"+query.${fieldConfig.goFieldName})
-	}#elseif($fieldConfig.queryType == "LIKE_RIGHT")	if query.${fieldConfig.goFieldName} != "" {
+	}
+#elseif($fieldConfig.queryType == "LIKE_RIGHT")
+	if query.${fieldConfig.goFieldName} != "" {
 		db = db.Where("${fieldConfig.columnName} LIKE ?", query.${fieldConfig.goFieldName}+"%")
-	}#elseif($fieldConfig.goType == "string")	if query.${fieldConfig.goFieldName} != "" {
+	}
+#elseif($fieldConfig.goType == "string")
+	if query.${fieldConfig.goFieldName} != "" {
 		db = db.Where("${fieldConfig.columnName} = ?", query.${fieldConfig.goFieldName})
-	}#else	if query.${fieldConfig.goFieldName} != 0 {
+	}
+#else
+	if query.${fieldConfig.goFieldName} != 0 {
 		db = db.Where("${fieldConfig.columnName} = ?", query.${fieldConfig.goFieldName})
-	}#end
-#end	if err := db.Count(&total).Error; err != nil {
+	}
+#end
+#end
+	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 

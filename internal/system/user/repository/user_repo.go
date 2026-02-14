@@ -2,12 +2,12 @@ package repository
 
 import (
 	roleRepo "youlai-gin/internal/system/role/repository"
+	"youlai-gin/internal/system/permission/datascope"
 	"youlai-gin/internal/system/user/api"
 	"youlai-gin/internal/system/user/domain"
 	"youlai-gin/pkg/auth"
 	"youlai-gin/pkg/database"
 	pkgDatabase "youlai-gin/pkg/database"
-	"youlai-gin/pkg/middleware"
 	"youlai-gin/pkg/types"
 )
 
@@ -41,7 +41,7 @@ func GetUserPage(query *api.UserQueryReq, currentUser *auth.UserDetails) ([]api.
 		)
 
 	// 数据权限过滤（多角色并集策略）
-	db = db.Scopes(middleware.DataScopeFilter(currentUser, middleware.DataPermissionConfig{
+	db = db.Scopes(datascope.DataScopeFilter(currentUser, datascope.DataPermissionConfig{
 		DeptAlias:    "u",
 		DeptIDColumn: "dept_id",
 		UserAlias:    "u",
