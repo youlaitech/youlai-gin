@@ -101,3 +101,13 @@ func GetChildrenCount(parentId int64) (int64, error) {
 	err := database.DB.Model(&model.Dept{}).Where("parent_id = ? AND is_deleted = 0", parentId).Count(&count).Error
 	return count, err
 }
+
+// GetAllDeptsForImport 获取所有部门（用于导入时匹配编码或名称）
+func GetAllDeptsForImport() ([]model.Dept, error) {
+	var depts []model.Dept
+	err := database.DB.Model(&model.Dept{}).
+		Where("is_deleted = 0").
+		Select("id, code, name").
+		Find(&depts).Error
+	return depts, err
+}

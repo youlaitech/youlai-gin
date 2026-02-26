@@ -160,3 +160,13 @@ func CheckRoleCodeExists(code string, excludeId int64) (bool, error) {
 	err := db.Count(&count).Error
 	return count > 0, err
 }
+
+// GetAllRolesForImport 获取所有角色（用于导入时匹配编码或名称）
+func GetAllRolesForImport() ([]model.Role, error) {
+	var roles []model.Role
+	err := database.DB.Model(&model.Role{}).
+		Where("status = 1 AND is_deleted = 0").
+		Select("id, code, name").
+		Find(&roles).Error
+	return roles, err
+}

@@ -228,11 +228,10 @@ INSERT INTO `sys_menu` VALUES (708, 6, '0,6', '滚动文本', 'M', 'TextScroll',
 INSERT INTO `sys_menu` VALUES (709, 6, '0,6', '自适应表格操作列', 'M', 'AutoOperationColumn', 'operation-column', 'demo/auto-operation-column', NULL, NULL, 1, 1, 1, '', '', now(), now(), NULL);
 
 -- 功能演示
-INSERT INTO `sys_menu` VALUES (801, 7, '0,7', 'Websocket', 'M', 'WebSocket', '/function/websocket', 'demo/websocket', NULL, NULL, 1, 1, 1, '', '', now(), now(), NULL);
-INSERT INTO `sys_menu` VALUES (802, 7, '0,7', 'Icons', 'M', 'IconDemo', 'icon-demo', 'demo/icons', NULL, NULL, 1, 1, 2, 'el-icon-Notification', '', now(), now(), NULL);
-INSERT INTO `sys_menu` VALUES (803, 7, '0,7', '字典实时同步', 'M', 'DictSync', 'dict-sync', 'demo/dict-sync', NULL, NULL, NULL, 1, 3, '', '', now(), now(), NULL);
-INSERT INTO `sys_menu` VALUES (804, 7, '0,7', 'VxeTable', 'M', 'VxeTable', 'vxe-table', 'demo/vxe-table/index', NULL, NULL, 1, 1, 4, 'el-icon-MagicStick', '', now(), now(), NULL);
-INSERT INTO `sys_menu` VALUES (805, 7, '0,7', 'CURD单文件', 'M', 'CurdSingle', 'curd-single', 'demo/curd-single', NULL, NULL, 1, 1, 5, 'el-icon-Reading', '', now(), now(), NULL);
+INSERT INTO `sys_menu` VALUES (801, 7, '0,7', 'Icons', 'M', 'IconDemo', 'icon-demo', 'demo/icons', NULL, NULL, 1, 1, 2, 'el-icon-Notification', '', now(), now(), NULL);
+INSERT INTO `sys_menu` VALUES (802, 7, '0,7', '字典实时同步', 'M', 'DictSync', 'dict-sync', 'demo/dict-sync', NULL, NULL, NULL, 1, 3, '', '', now(), now(), NULL);
+INSERT INTO `sys_menu` VALUES (803, 7, '0,7', 'VxeTable', 'M', 'VxeTable', 'vxe-table', 'demo/vxe-table/index', NULL, NULL, 1, 1, 4, 'el-icon-MagicStick', '', now(), now(), NULL);
+INSERT INTO `sys_menu` VALUES (804, 7, '0,7', 'CURD单文件', 'M', 'CurdSingle', 'curd-single', 'demo/curd-single', NULL, NULL, 1, 1, 5, 'el-icon-Reading', '', now(), now(), NULL);
 
 -- 多级菜单示例
 INSERT INTO `sys_menu` VALUES (910, 8, '0,8', '菜单一级', 'C', NULL, 'multi-level1', 'Layout', NULL, 1, NULL, 1, 1, '', '', now(), now(), NULL);
@@ -341,7 +340,7 @@ INSERT INTO `sys_role_menu` VALUES (2, 601);
 -- 组件封装
 INSERT INTO `sys_role_menu` VALUES (2, 701), (2, 702), (2, 703), (2, 704), (2, 705), (2, 706), (2, 707), (2, 708), (2, 709);
 -- 功能演示 / 多级菜单
-INSERT INTO `sys_role_menu` VALUES (2, 801), (2, 802), (2, 803), (2, 804), (2, 805), (2, 910), (2, 911), (2, 912), (2, 913);
+INSERT INTO `sys_role_menu` VALUES (2, 801), (2, 802), (2, 803), (2, 804), (2, 910), (2, 911), (2, 912), (2, 913);
 -- 路由参数
 INSERT INTO `sys_role_menu` VALUES (2, 1001), (2, 1002);
 
@@ -541,7 +540,7 @@ CREATE TABLE `sys_user_notice` (
                                    `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'id',
                                    `notice_id` bigint NOT NULL COMMENT '公共通知id',
                                    `user_id` bigint NOT NULL COMMENT '用户id',
-                                   `is_read` bigint DEFAULT '0' COMMENT '读取状态（0: 未读, 1: 已读）',
+                                   `is_read` tinyint DEFAULT '0' COMMENT '读取状态（0: 未读, 1: 已读）',
                                    `read_time` datetime COMMENT '阅读时间',
                                    `create_time` datetime NOT NULL COMMENT '创建时间',
                                    `update_time` datetime COMMENT '更新时间',

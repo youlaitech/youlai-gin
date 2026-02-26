@@ -13,6 +13,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
+	roleRepo "youlai-gin/internal/system/role/repository"
+	deptRepo "youlai-gin/internal/system/dept/repository"
 	"youlai-gin/internal/system/user/api"
 	"youlai-gin/internal/system/user/domain"
 	"youlai-gin/internal/system/user/repository"
@@ -684,6 +686,35 @@ func ImportUsersFromExcel(file io.Reader) (map[string]interface{}, error) {
 		return nil, errs.BadRequest("Excel文件没有数据")
 	}
 
+	// 预加载角色和部门数据（支持编码或名称匹配）
+	roles, err := roleRepo.GetAllRolesForImport()
+	if err != nil {
+		return nil, errs.SystemError("查询角色数据失败")
+	}
+	roleMap := make(map[string]int64)
+	for _, r := range roles {
+		if r.Code != "" {
+			roleMap[r.Code] = int64(r.ID)
+		}
+		if r.Name != "" {
+			roleMap[r.Name] = int64(r.ID)
+		}
+	}
+
+	depts, err := deptRepo.GetAllDeptsForImport()
+	if err != nil {
+		return nil, errs.SystemError("查询部门数据失败")
+	}
+	deptMap := make(map[string]int64)
+	for _, d := range depts {
+		if d.Code != "" {
+			deptMap[d.Code] = int64(d.ID)
+		}
+		if d.Name != "" {
+			deptMap[d.Name] = int64(d.ID)
+		}
+	}
+
 	// 跳过表头
 	dataRows := rows[1:]
 
@@ -717,15 +748,34 @@ func ImportUsersFromExcel(file io.Reader) (map[string]interface{}, error) {
 			email = strings.TrimSpace(row[4])
 		}
 
-		deptID := int64(0)
+		// 角色列（编码或名称，逗号分隔）
+		var roleIds []int64
 		if len(row) > 5 && row[5] != "" {
-			deptIDVal, _ := strconv.ParseInt(strings.TrimSpace(row[5]), 10, 64)
-			deptID = deptIDVal
+			roleStr := strings.TrimSpace(row[5])
+			roleParts := strings.Split(roleStr, ",")
+			for _, part := range roleParts {
+				trimmed := strings.TrimSpace(part)
+				if trimmed == "" {
+					continue
+				}
+				if roleId, ok := roleMap[trimmed]; ok {
+					roleIds = append(roleIds, roleId)
+				}
+			}
+		}
+
+		// 部门列（编码或名称）
+		var deptID int64
+		if len(row) > 6 && row[6] != "" {
+			deptStr := strings.TrimSpace(row[6])
+			if id, ok := deptMap[deptStr]; ok {
+				deptID = id
+			}
 		}
 
 		status := 1
-		if len(row) > 6 {
-			statusStr := strings.TrimSpace(row[6])
+		if len(row) > 7 {
+			statusStr := strings.TrimSpace(row[7])
 			if statusStr == "禁用" {
 				status = 0
 			}
@@ -746,6 +796,13 @@ func ImportUsersFromExcel(file io.Reader) (map[string]interface{}, error) {
 			continue
 		}
 
+		// 角色必填
+		if len(roleIds) == 0 {
+			failCount++
+			failDetails = append(failDetails, fmt.Sprintf("第%d行: 角色不存在或为空", i+2))
+			continue
+		}
+
 		// 创建用户
 		user := &domain.User{
 			Username: username,
@@ -761,6 +818,13 @@ func ImportUsersFromExcel(file io.Reader) (map[string]interface{}, error) {
 		if err := repository.CreateUser(user); err != nil {
 			failCount++
 			failDetails = append(failDetails, fmt.Sprintf("第%d行: 创建失败 - %v", i+2, err))
+			continue
+		}
+
+		// 保存用户角色关联
+		if err := repository.SaveUserRoles(int64(user.ID), roleIds); err != nil {
+			failCount++
+			failDetails = append(failDetails, fmt.Sprintf("第%d行: 分配角色失败 - %v", i+2, err))
 			continue
 		}
 
