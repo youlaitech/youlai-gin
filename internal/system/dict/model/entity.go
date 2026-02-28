@@ -30,7 +30,10 @@ type DictItem struct {
 	Sort     int          `gorm:"column:sort;default:0" json:"sort"`
 	Status   int          `gorm:"column:status;default:1" json:"status"`
 	Remark   string       `gorm:"column:remark" json:"remark"`
-	common.BaseEntity
+	CreateBy   *types.BigInt    `gorm:"column:create_by" json:"createBy,omitempty"`
+	CreateTime types.LocalTime  `gorm:"column:create_time;autoCreateTime" json:"createTime,omitempty"`
+	UpdateBy   *types.BigInt    `gorm:"column:update_by" json:"updateBy,omitempty"`
+	UpdateTime types.LocalTime  `gorm:"column:update_time;autoUpdateTime" json:"updateTime,omitempty"`
 }
 
 // TableName 返回字典项表名
