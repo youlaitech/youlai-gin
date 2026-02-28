@@ -364,8 +364,7 @@ CREATE TABLE `sys_user`  (
                              `update_time` datetime COMMENT '更新时间',
                              `update_by` bigint COMMENT '修改人ID',
                              `is_deleted` tinyint(1) DEFAULT 0 COMMENT '逻辑删除标识(0-未删除 1-已删除)',
-                             PRIMARY KEY (`id`) USING BTREE,
-                             UNIQUE KEY `uk_username` (`username`)
+                            PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COMMENT = '系统用户表';
 
 -- ----------------------------
