@@ -58,3 +58,6 @@ profile.out
 # GoLand / delve 等调试配置
 *.pprof
 .idea_modules/
+
+# Docker 数据目录
+docker/*/data
