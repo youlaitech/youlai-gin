@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"youlai-gin/internal/platform/codegen/model"
-	"youlai-gin/internal/platform/codegen/service"
+	"youlai-gin/internal/codegen/model"
+	"youlai-gin/internal/codegen/service"
 	"youlai-gin/pkg/response"
 )
 

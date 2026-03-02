@@ -142,7 +142,7 @@ func RefreshToken(refreshToken string) (*auth.AuthenticationToken, error) {
 
 	token, err := tokenManager.RefreshToken(refreshToken)
 	if err != nil {
-		return nil, errs.TokenInvalid()
+		return nil, errs.RefreshTokenInvalid()
 	}
 
 	return token, nil

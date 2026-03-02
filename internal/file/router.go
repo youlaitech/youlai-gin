@@ -2,8 +2,8 @@ package file
 
 import (
 	"github.com/gin-gonic/gin"
-	
-	"youlai-gin/internal/platform/file/handler"
+
+	"youlai-gin/internal/file/handler"
 )
 
 // RegisterRoutes 注册文件管理路由

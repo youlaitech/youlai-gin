@@ -91,6 +91,15 @@ func TokenInvalid() *AppError {
 	}
 }
 
+// RefreshTokenInvalid 刷新令牌无效
+func RefreshTokenInvalid() *AppError {
+	return &AppError{
+		Code:       constant.CodeRefreshTokenInvalid,
+		Msg:        constant.MsgRefreshTokenInvalid,
+		HTTPStatus: http.StatusUnauthorized,
+	}
+}
+
 // NotFound 资源不存在
 func NotFound(msg string) *AppError {
 	if msg == "" {

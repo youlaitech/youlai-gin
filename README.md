@@ -51,11 +51,11 @@ youlai-gin/
 │  ├─ prod.yaml               # 生产环境配置
 │  └─ test.yaml               # 测试环境配置
 ├─ docs/                      # 项目文档
-├─ examples/                  # 示例代码
 ├─ internal/                  # 核心业务源码
 │  ├─ auth/                   # 认证模块(登录/Token/会话)
+│  ├─ codegen/                # 代码生成模块
+│  ├─ file/                   # 文件管理模块
 │  ├─ health/                 # 健康检查
-│  ├─ platform/               # 平台模块(文件/扩展能力)
 │  ├─ router/                 # 路由注册
 │  └─ system/                 # 系统模块(用户/角色/菜单等)
 ├─ pkg/                       # 通用包 (中间件/响应等)

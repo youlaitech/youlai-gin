@@ -13,7 +13,7 @@ import (
 	"github.com/viant/velty"
 
 	"youlai-gin/pkg/database"
-	"youlai-gin/internal/platform/codegen/model"
+	"youlai-gin/internal/codegen/model"
 	"youlai-gin/pkg/common"
 	"youlai-gin/pkg/errs"
 )
@@ -222,7 +222,7 @@ func GetGenConfig(tableName string) (*model.GenConfigFormDto, error) {
 			ID:               cfg.ID,
 			TableName:        cfg.TableName,
 			ModuleName:       cfg.ModuleName,
-			PackageName:      cfg.PackageName,
+			PackageName:      codegenConfig.defaultPackageName,
 			BusinessName:     cfg.BusinessName,
 			EntityName:       cfg.EntityName,
 			Author:           cfg.Author,
@@ -350,7 +350,7 @@ func SaveGenConfig(tableName string, body *model.GenConfigFormDto) error {
 	}
 
 	moduleName := defaultStr(body.ModuleName, codegenConfig.defaultModuleName)
-	packageName := defaultStr(body.PackageName, codegenConfig.defaultPackageName)
+	packageName := codegenConfig.defaultPackageName
 	businessName := defaultStr(body.BusinessName, tableName)
 	entityName := defaultStr(body.EntityName, toPascalCase(tableName))
 	author := defaultStr(body.Author, codegenConfig.defaultAuthor)
@@ -675,7 +675,7 @@ func renderTemplate(
 }
 
 func resolveBootTemplatePath(templatePath string) string {
-	return filepath.Join("internal", "platform", "codegen", "templates", filepath.FromSlash(templatePath))
+	return filepath.Join("internal", "codegen", "templates", filepath.FromSlash(templatePath))
 }
 
 func getFileName(entityName string, name templateName, extension string) string {

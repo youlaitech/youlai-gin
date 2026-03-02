@@ -445,7 +445,7 @@ func ExportUsers(c *gin.Context) {
 	filename := fmt.Sprintf("用户列表_%s.xlsx", time.Now().Format("20060102150405"))
 	encodedFilename := url.QueryEscape(filename)
 	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"; filename*=UTF-8''%s", filename, encodedFilename))
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", encodedFilename))
 	c.Header("Content-Transfer-Encoding", "binary")
 
 	// 输出文件
@@ -471,7 +471,7 @@ func DownloadUserTemplate(c *gin.Context) {
 	filename := "用户导入模板.xlsx"
 	encodedFilename := url.QueryEscape(filename)
 	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"; filename*=UTF-8''%s", filename, encodedFilename))
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", encodedFilename))
 	c.Header("Content-Transfer-Encoding", "binary")
 
 	// 输出文件

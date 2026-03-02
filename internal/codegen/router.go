@@ -3,7 +3,7 @@ package codegen
 import (
 	"github.com/gin-gonic/gin"
 
-	"youlai-gin/internal/platform/codegen/handler"
+	"youlai-gin/internal/codegen/handler"
 )
 
 // RegisterRoutes 注册代码生成路由
