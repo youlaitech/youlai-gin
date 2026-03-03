@@ -134,6 +134,18 @@ func TokenInvalid(c *gin.Context, msg string) {
 	})
 }
 
+// RefreshTokenInvalid 刷新令牌无效
+func RefreshTokenInvalid(c *gin.Context, msg string) {
+	if msg == "" {
+		msg = constant.MsgRefreshTokenInvalid
+	}
+	c.JSON(http.StatusUnauthorized, Result{
+		Code: constant.CodeRefreshTokenInvalid,
+		Msg:  msg,
+		Data: nil,
+	})
+}
+
 // SystemError 系统异常
 func SystemError(c *gin.Context, msg string) {
 	if msg == "" {
