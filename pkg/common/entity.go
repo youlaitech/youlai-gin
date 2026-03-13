@@ -2,6 +2,12 @@ package common
 
 import "youlai-gin/pkg/types"
 
+// KeyValue 键值对
+type KeyValue struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 // BaseEntity 基础实体（所有表的公共字段）
 type BaseEntity struct {
 	CreateBy   *types.BigInt `gorm:"column:create_by" json:"createBy,omitempty"`

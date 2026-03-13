@@ -4,85 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"log"
-	"time"
 
 	"youlai-gin/internal/system/role/repository"
 	pkgRedis "youlai-gin/pkg/redis"
 )
 
-const (
-	rolePermsKey     = "system:role:perms"
-	rolePermsCacheTTL = 24 * time.Hour // 缓存24小时过期
-)
+// Redis Hash key: system:role:perms
+// field: roleCode, value: 权限标识JSON数组
+// 角色/菜单变更时调用刷新方法更新缓存
+const rolePermsKey = "system:role:perms"
 
-// InitRolePermsCache 初始化角色权限缓存
-func InitRolePermsCache() error {
-	log.Println("初始化角色权限缓存...")
-	return RefreshRolePermsCache()
-}
-
-// RefreshRolePermsCache 刷新所有角色权限缓存
-func RefreshRolePermsCache() error {
-	ctx := context.Background()
-
-	// 1. 从数据库查询所有角色权限
-	rolePermsList, err := repository.GetAllRolePerms()
-	if err != nil {
-		log.Printf("查询角色权限失败: %v", err)
-		return err
-	}
-
-	if len(rolePermsList) == 0 {
-		log.Println("没有找到角色权限数据")
-		return nil
-	}
-
-	// 2. 清理旧缓存（查询成功后再删除）
-	if err := pkgRedis.Client.Del(ctx, rolePermsKey).Err(); err != nil {
-		log.Printf("清理角色权限缓存失败: %v", err)
-		// 继续执行，不返回错误
-	}
-
-	// 3. 批量写入Redis缓存
-	successCount := 0
-	for _, rolePerms := range rolePermsList {
-		if len(rolePerms.Perms) == 0 {
-			// 空权限也缓存
-			if err := pkgRedis.Client.HSet(ctx, rolePermsKey, rolePerms.RoleCode, "[]").Err(); err != nil {
-				log.Printf("缓存角色[%s]空权限失败: %v", rolePerms.RoleCode, err)
-				continue
-			}
-			successCount++
-			continue
-		}
-
-		// 将权限列表序列化为JSON
-		permsJSON, err := json.Marshal(rolePerms.Perms)
-		if err != nil {
-			log.Printf("序列化角色[%s]权限失败: %v", rolePerms.RoleCode, err)
-			continue
-		}
-
-		// 存储到Redis Hash
-		if err := pkgRedis.Client.HSet(ctx, rolePermsKey, rolePerms.RoleCode, string(permsJSON)).Err(); err != nil {
-			log.Printf("缓存角色[%s]权限失败: %v", rolePerms.RoleCode, err)
-			continue
-		}
-
-		log.Printf("缓存角色[%s]权限: %v", rolePerms.RoleCode, rolePerms.Perms)
-		successCount++
-	}
-
-	// 4. 设置缓存过期时间（防止永久缓存导致一致性问题）
-	if err := pkgRedis.Client.Expire(ctx, rolePermsKey, rolePermsCacheTTL).Err(); err != nil {
-		log.Printf("设置角色权限缓存过期时间失败: %v", err)
-	}
-
-	log.Printf("角色权限缓存刷新完成，共缓存 %d/%d 个角色", successCount, len(rolePermsList))
-	return nil
-}
-
-// RefreshRolePermsCacheByCode 刷新指定角色的权限缓存
+// RefreshRolePermsCacheByCode 刷新单个角色的权限缓存（角色菜单变更后调用）
 func RefreshRolePermsCacheByCode(roleCode string) error {
 	ctx := context.Background()
 

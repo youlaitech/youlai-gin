@@ -129,7 +129,7 @@ CREATE TABLE `sys_menu`  (
                              `redirect` varchar(128) COMMENT '跳转路径',
                              `create_time` datetime NULL COMMENT '创建时间',
                              `update_time` datetime NULL COMMENT '更新时间',
-                             `params` varchar(255) NULL COMMENT '路由参数',
+                             `params` json NULL COMMENT '路由参数',
                              PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COMMENT = '系统菜单表';
 
@@ -188,6 +188,7 @@ INSERT INTO `sys_menu` VALUES (2513, 251, '0,1,251', '字典项编辑', 'B', NUL
 INSERT INTO `sys_menu` VALUES (2514, 251, '0,1,251', '字典项删除', 'B', NULL, '', NULL, 'sys:dict-item:delete', NULL, NULL, 1, 4, '', NULL, now(), now(), NULL);
 
 INSERT INTO `sys_menu` VALUES (260, 1, '0,1', '系统日志', 'M', 'Log', 'log', 'system/log/index', NULL, 0, 1, 1, 7, 'document', NULL, now(), now(), NULL);
+INSERT INTO `sys_menu` VALUES (2601, 260, '0,1,260', '日志查询', 'B', NULL, '', NULL, 'sys:log:list', NULL, NULL, 1, 1, '', NULL, now(), now(), NULL);
 
 INSERT INTO `sys_menu` VALUES (270, 1, '0,1', '系统配置', 'M', 'Config', 'config', 'system/config/index', NULL, 0, 1, 1, 8, 'setting', NULL, now(), now(), NULL);
 INSERT INTO `sys_menu` VALUES (2701, 270, '0,1,270', '系统配置查询', 'B', NULL, '', NULL, 'sys:config:list', 0, 1, 1, 1, '', NULL, now(), now(), NULL);
@@ -312,7 +313,7 @@ INSERT INTO `sys_role_menu` VALUES (2, 230), (2, 2301), (2, 2302), (2, 2303), (2
 INSERT INTO `sys_role_menu` VALUES (2, 240), (2, 2401), (2, 2402), (2, 2403), (2, 2404);
 INSERT INTO `sys_role_menu` VALUES (2, 250), (2, 2501), (2, 2502), (2, 2503), (2, 2504);
 INSERT INTO `sys_role_menu` VALUES (2, 251), (2, 2511), (2, 2512), (2, 2513), (2, 2514);
-INSERT INTO `sys_role_menu` VALUES (2, 260);
+INSERT INTO `sys_role_menu` VALUES (2, 260), (2, 2601);
 INSERT INTO `sys_role_menu` VALUES (2, 270), (2, 2701), (2, 2702), (2, 2703), (2, 2704), (2, 2705);
 INSERT INTO `sys_role_menu` VALUES (2, 280), (2, 2801), (2, 2802), (2, 2803), (2, 2804), (2, 2805), (2, 2806);
 
@@ -557,3 +558,25 @@ INSERT INTO `sys_user_notice` VALUES (7, 7, 2, 0, NULL, now(), now(), 0);
 INSERT INTO `sys_user_notice` VALUES (8, 8, 2, 0, NULL, now(), now(), 0);
 INSERT INTO `sys_user_notice` VALUES (9, 9, 2, 0, NULL, now(), now(), 0);
 INSERT INTO `sys_user_notice` VALUES (10, 10, 2, 0, NULL, now(), now(), 0);
+
+-- ----------------------------
+-- Table structure for sys_user_social
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_user_social`;
+CREATE TABLE `sys_user_social` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `platform` varchar(20) NOT NULL COMMENT '平台类型(WECHAT_MINI/WECHAT_MP/ALIPAY/QQ/APPLE)',
+  `openid` varchar(64) NOT NULL COMMENT '平台openid',
+  `unionid` varchar(64) DEFAULT NULL COMMENT '微信unionid',
+  `nickname` varchar(64) DEFAULT NULL COMMENT '第三方昵称',
+  `avatar` varchar(255) DEFAULT NULL COMMENT '第三方头像URL',
+  `session_key` varchar(128) DEFAULT NULL COMMENT '微信session_key',
+  `verified` tinyint(1) DEFAULT 1 COMMENT '是否已验证(1-已验证 0-未验证)',
+  `create_time` datetime DEFAULT NULL COMMENT '绑定时间',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_platform_openid` (`platform`, `openid`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_unionid` (`unionid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户第三方账号绑定表';

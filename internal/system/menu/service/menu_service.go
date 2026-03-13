@@ -159,7 +159,7 @@ func SaveMenu(form *model.MenuForm) error {
 		Sort:       form.Sort,
 		Icon:       form.Icon,
 		Redirect:   form.Redirect,
-		Params:     form.Params,
+		Params:     keyValueToMap(form.Params),
 	}
 
 	if form.ParentID == 0 {
@@ -223,8 +223,32 @@ func GetMenuForm(id int64) (*model.MenuForm, error) {
 		Sort:       menu.Sort,
 		Icon:       menu.Icon,
 		Redirect:   menu.Redirect,
-		Params:     menu.Params,
+		Params:     mapToKeyValue(menu.Params),
 	}, nil
+}
+
+// keyValueToMap [{key, value}] -> {key: value}
+func keyValueToMap(kvs []common.KeyValue) map[string]any {
+	if len(kvs) == 0 {
+		return nil
+	}
+	m := make(map[string]any)
+	for _, kv := range kvs {
+		m[kv.Key] = kv.Value
+	}
+	return m
+}
+
+// mapToKeyValue {key: value} -> [{key, value}]
+func mapToKeyValue(m map[string]any) []common.KeyValue {
+	if len(m) == 0 {
+		return nil
+	}
+	var kvs []common.KeyValue
+	for k, v := range m {
+		kvs = append(kvs, common.KeyValue{Key: k, Value: fmt.Sprintf("%v", v)})
+	}
+	return kvs
 }
 
 // DeleteMenu 删除菜单

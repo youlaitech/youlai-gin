@@ -62,7 +62,13 @@ func GetUserPage(query *api.UserQueryReq, currentUser *auth.UserDetails) ([]api.
 	}
 
 	if len(query.CreateTime) == 2 {
-		db = db.Where("u.create_time BETWEEN ? AND ?", query.CreateTime[0], query.CreateTime[1])
+		startTime := query.CreateTime[0]
+		endTime := query.CreateTime[1]
+		// 结束日期拼接 23:59:59，包含当天所有数据
+		if len(endTime) == 10 {
+			endTime = endTime + " 23:59:59"
+		}
+		db = db.Where("u.create_time >= ? AND u.create_time <= ?", startTime, endTime)
 	}
 
 	db = db.Group("u.id")

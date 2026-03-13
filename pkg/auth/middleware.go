@@ -16,6 +16,12 @@ const (
 // Middleware 认证中间件
 func Middleware(tokenManager TokenManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// 白名单路径跳过认证
+		if c.Request.URL.Path == "/api/v1/statistics/visits/trend" || c.Request.URL.Path == "/api/v1/statistics/visits/overview" {
+			c.Next()
+			return
+		}
+
 		// 从 Header 中获取 Token
 		authHeader := c.GetHeader(AuthorizationHeader)
 		if authHeader == "" {

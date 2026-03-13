@@ -15,7 +15,7 @@ func RegisterRoutes(r *gin.RouterGroup) {
 
 // GetLogPage 日志分页列表
 // @Summary 日志分页
-// @Tags 10.日志接口
+// @Tags 09.日志接口
 // @Router /api/v1/logs [get]
 func GetLogPage(c *gin.Context) {
 	var query model.LogQuery

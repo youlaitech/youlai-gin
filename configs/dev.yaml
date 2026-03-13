@@ -76,7 +76,6 @@ security:
     refreshTokenTTL: 2592000 # 刷新令牌有效期（秒）
     allowMultiLogin: true # 是否允许多设备同时登录（开发环境允许）
 
-
 # ==================== 环境变量覆盖示例 ====================
 # 任何配置项都可以通过环境变量覆盖，格式：APP_<模块>_<字段>
 #
@@ -85,3 +84,9 @@ security:
 #   export APP_LOGGER_LEVEL="info"                   # 覆盖日志级别
 #   export APP_REDIS_HOST="remote-redis.com"         # 覆盖 Redis 地址
 #   export APP_SECURITY_JWT_SECRETKEY="new-secret"   # 覆盖 JWT 密钥
+
+# ==================== 微信小程序配置 ====================
+wechat:
+  miniapp:
+    appId: Your_AppId
+    appSecret: Your_AppSecret

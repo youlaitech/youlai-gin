@@ -13,6 +13,12 @@ func RegisterRoutes(api *gin.RouterGroup, tokenManager pkgAuth.TokenManager) {
 	// 初始化 TokenManager
 	service.InitTokenManager(tokenManager)
 
-	// 注册路由
+	// 初始化微信配置
+	service.InitWechatConfig()
+
+	// 注册认证路由
 	handler.RegisterAuthRoutes(api)
+
+	// 注册微信小程序认证路由
+	handler.RegisterWechatRoutes(api)
 }

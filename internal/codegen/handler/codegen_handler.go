@@ -13,7 +13,7 @@ import (
 
 // GetTablePage 数据表分页
 // @Summary 数据表分页
-// @Tags 13.代码生成
+// @Tags 11.代码生成
 // @Router /api/v1/codegen/table [get]
 func GetTablePage(c *gin.Context) {
 	var query model.TableQuery
@@ -33,7 +33,7 @@ func GetTablePage(c *gin.Context) {
 
 // GetGenConfig 获取生成配置
 // @Summary 获取生成配置
-// @Tags 13.代码生成
+// @Tags 11.代码生成
 // @Param tableName path string true "表名"
 // @Router /api/v1/codegen/{tableName}/config [get]
 func GetGenConfig(c *gin.Context) {
@@ -48,7 +48,7 @@ func GetGenConfig(c *gin.Context) {
 
 // SaveGenConfig 保存生成配置
 // @Summary 保存生成配置
-// @Tags 13.代码生成
+// @Tags 11.代码生成
 // @Param tableName path string true "表名"
 // @Router /api/v1/codegen/{tableName}/config [post]
 func SaveGenConfig(c *gin.Context) {
@@ -69,7 +69,7 @@ func SaveGenConfig(c *gin.Context) {
 
 // DeleteGenConfig 删除生成配置
 // @Summary 删除生成配置
-// @Tags 13.代码生成
+// @Tags 11.代码生成
 // @Param tableName path string true "表名"
 // @Router /api/v1/codegen/{tableName}/config [delete]
 func DeleteGenConfig(c *gin.Context) {
@@ -83,7 +83,7 @@ func DeleteGenConfig(c *gin.Context) {
 
 // GetPreview 预览代码
 // @Summary 预览代码
-// @Tags 13.代码生成
+// @Tags 11.代码生成
 // @Param tableName path string true "表名"
 // @Router /api/v1/codegen/{tableName}/preview [get]
 func GetPreview(c *gin.Context) {
@@ -101,7 +101,7 @@ func GetPreview(c *gin.Context) {
 
 // Download 下载代码
 // @Summary 下载代码
-// @Tags 13.代码生成
+// @Tags 11.代码生成
 // @Param tableName path string true "表名（可逗号分隔）"
 // @Router /api/v1/codegen/{tableName}/download [get]
 func Download(c *gin.Context) {

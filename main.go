@@ -10,7 +10,6 @@ import (
 	"youlai-gin/pkg/database"
 	"youlai-gin/internal/health"
 	"youlai-gin/internal/router"
-	roleService "youlai-gin/internal/system/role/service"
 	"youlai-gin/pkg/middleware"
 	"youlai-gin/pkg/auth"
 	"youlai-gin/pkg/config"
@@ -90,13 +89,6 @@ func main() {
 	if err := redis.InitWithConfig(&config.Cfg.Redis); err != nil {
 		log.Fatalf("Redis 初始化失败: %v", err)
 	}
-
-	// 初始化角色权限缓存
-	if err := roleService.InitRolePermsCache(); err != nil {
-		log.Printf("警告: 角色权限缓存初始化失败: %v", err)
-		// 不阻断启动，继续运行
-	}
-
 	// 初始化 TokenManager
 	tokenManager, err := auth.CreateTokenManager(&config.Cfg.Security)
 	if err != nil {

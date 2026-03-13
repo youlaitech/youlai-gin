@@ -332,6 +332,8 @@ func CheckAnyRole(userID int64, roleCodes []string) (bool, error) {
 	return false, nil
 }
 
+// getUserPermsByRoles 获取角色权限集合（Read-Through 缓存策略）
+// 缓存结构: Redis Hash, key=system:role:perms, field=roleCode, value=权限JSON数组
 func getUserPermsByRoles(roleCodes []string) ([]string, error) {
 	if len(roleCodes) == 0 {
 		return []string{}, nil
@@ -341,6 +343,7 @@ func getUserPermsByRoles(roleCodes []string) ([]string, error) {
 	permsSet := make(map[string]struct{})
 	missingRoles := make([]string, 0)
 
+	// 从缓存获取，未命中的角色记录下来
 	for _, roleCode := range roleCodes {
 		val, err := redis.Client.HGet(ctx, rolePermsKey, roleCode).Result()
 		if err != nil {
@@ -364,15 +367,27 @@ func getUserPermsByRoles(roleCodes []string) ([]string, error) {
 		}
 	}
 
-	// 降级：从DB查询缺失角色的权限
+	// 回源 DB 查询缺失角色的权限，并回写缓存
 	if len(missingRoles) > 0 {
 		rolePermsList, err := getRolePermsByCodes(missingRoles)
 		if err == nil {
+			// 按角色分组
+			rolePermsMap := make(map[string][]string)
 			for _, rp := range rolePermsList {
 				p := strings.TrimSpace(rp.Perm)
 				if p != "" {
+					rolePermsMap[rp.RoleCode] = append(rolePermsMap[rp.RoleCode], p)
 					permsSet[p] = struct{}{}
 				}
+			}
+			// 回写缓存，空权限也要写，防止缓存穿透
+			for _, roleCode := range missingRoles {
+				perms := rolePermsMap[roleCode]
+				if perms == nil {
+					perms = []string{}
+				}
+				permsJSON, _ := json.Marshal(perms)
+				redis.Client.HSet(ctx, rolePermsKey, roleCode, string(permsJSON))
 			}
 		}
 	}

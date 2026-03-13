@@ -40,5 +40,5 @@ type RouteMeta struct {
 	Hidden     bool   `json:"hidden,omitempty"`
 	AlwaysShow bool   `json:"alwaysShow,omitempty"`
 	KeepAlive  bool   `json:"keepAlive,omitempty"`
-	Params     string `json:"params,omitempty"`
+	Params     map[string]any `json:"params,omitempty"`
 }
