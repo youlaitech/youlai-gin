@@ -27,14 +27,15 @@ func GetRolePage(query *model.RoleQuery) (*common.PagedData, error) {
 	voList := make([]model.RolePageVO, len(roles))
 	for i, role := range roles {
 		voList[i] = model.RolePageVO{
-			ID:         types.BigInt(role.ID),
-			Name:       role.Name,
-			Code:       role.Code,
-			Sort:       role.Sort,
-			Status:     role.Status,
-			DataScope:  role.DataScope,
-			CreateTime: types.LocalTime(role.CreateTime),
-			UpdateTime: types.LocalTime(role.UpdateTime),
+			ID:             types.BigInt(role.ID),
+			Name:           role.Name,
+			Code:           role.Code,
+			Sort:           role.Sort,
+			Status:         role.Status,
+			DataScope:       role.DataScope,
+			DataScopeLabel: getDataScopeLabel(role.DataScope),
+			CreateTime:     types.LocalTime(role.CreateTime),
+			UpdateTime:     types.LocalTime(role.UpdateTime),
 		}
 	}
 
@@ -298,4 +299,19 @@ func UpdateRoleMenus(roleId int64, menuIds []int64) error {
 	}
 
 	return nil
+}
+
+// getDataScopeLabel 获取数据权限显示名称
+func getDataScopeLabel(dataScope int) string {
+	labels := map[int]string{
+		1: "所有数据",
+		2: "部门及子部门数据",
+		3: "本部门数据",
+		4: "本人数据",
+		5: "自定义部门数据",
+	}
+	if label, ok := labels[dataScope]; ok {
+		return label
+	}
+	return ""
 }
