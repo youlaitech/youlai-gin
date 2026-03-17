@@ -16,6 +16,7 @@ import (
 	userRepo "youlai-gin/internal/system/user/repository"
 	"youlai-gin/pkg/auth"
 	"youlai-gin/pkg/config"
+	"youlai-gin/pkg/database"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/redis"
 )
@@ -30,10 +31,17 @@ var wechatCfg wechatConfig
 
 // InitWechatConfig 初始化微信配置
 func InitWechatConfig() {
-	wechatCfg = wechatConfig{
-		AppID:     config.GetString("WX_MINIAPP_APP_ID"),
-		AppSecret: config.GetString("WX_MINIAPP_APP_SECRET"),
+	if config.Cfg == nil {
+		slog.Error("配置未初始化，无法获取微信配置")
+		return
 	}
+	
+	wechatCfg = wechatConfig{
+		AppID:     config.Cfg.Wechat.Miniapp.AppID,
+		AppSecret: config.Cfg.Wechat.Miniapp.AppSecret,
+	}
+	
+	slog.Info("微信配置初始化完成", "appId", wechatCfg.AppID)
 }
 
 // WechatSessionResponse 微信会话响应
@@ -76,7 +84,7 @@ func SilentLogin(code string) (*authModel.WechatMiniappLoginResult, error) {
 
 	// 查找是否已绑定用户
 	var social domain.UserSocial
-	err = redis.DB().Where("platform = ? AND openid = ?", domain.PlatformWechatMini, openID).First(&social).Error
+	err = database.DB.Where("platform = ? AND openid = ?", domain.PlatformWechatMini, openID).First(&social).Error
 
 	if err == nil {
 		// 已绑定用户，直接登录
@@ -266,7 +274,7 @@ func findOrCreateUser(mobile string) (*domain.User, error) {
 		Status:   1,
 	}
 
-	tx := redis.DB().Begin()
+	tx := database.DB.Begin()
 	if err := tx.Create(user).Error; err != nil {
 		tx.Rollback()
 		return nil, errs.BusinessError("创建用户失败：" + err.Error())
@@ -286,11 +294,11 @@ func findOrCreateUser(mobile string) (*domain.User, error) {
 // bindWechatOpenID 绑定微信 openid
 func bindWechatOpenID(userID int64, openID, unionID, sessionKey string) {
 	var social domain.UserSocial
-	err := redis.DB().Where("platform = ? AND openid = ?", domain.PlatformWechatMini, openID).First(&social).Error
+	err := database.DB.Where("platform = ? AND openid = ?", domain.PlatformWechatMini, openID).First(&social).Error
 
 	if err == nil {
 		// 更新绑定
-		redis.DB().Model(&social).Updates(map[string]interface{}{
+		database.DB.Model(&social).Updates(map[string]interface{}{
 			"user_id":     userID,
 			"unionid":     unionID,
 			"session_key": sessionKey,
@@ -308,7 +316,7 @@ func bindWechatOpenID(userID int64, openID, unionID, sessionKey string) {
 			SessionKey: sessionKey,
 			Verified:   1,
 		}
-		redis.DB().Create(&social)
+		database.DB.Create(&social)
 	}
 }
 
