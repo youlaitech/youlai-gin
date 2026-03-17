@@ -8,7 +8,9 @@ import (
 	"youlai-gin/internal/auth/model"
 	"youlai-gin/internal/auth/service"
 	pkgAuth "youlai-gin/pkg/auth"
+	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/response"
+	"youlai-gin/pkg/validator"
 )
 
 // RegisterAuthRoutes 注册认证相关 HTTP 路由
@@ -49,13 +51,13 @@ func GetCaptcha(c *gin.Context) {
 // @Router /api/v1/auth/login [post]
 func Login(c *gin.Context) {
 	var req model.LoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "请求参数错误: "+err.Error())
+	if err := validator.BindJSON(c, &req); err != nil {
+		c.Error(err)
 		return
 	}
 
 	if req.Username == "" || req.Password == "" {
-		response.BadRequest(c, "用户名和密码不能为空")
+		c.Error(errs.BadRequest("用户名和密码不能为空"))
 		return
 	}
 
@@ -101,14 +103,14 @@ func Logout(c *gin.Context) {
 // @Router /api/v1/auth/refresh-token [post]
 func RefreshToken(c *gin.Context) {
 	var req map[string]string
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "请求参数错误: "+err.Error())
+	if err := validator.BindJSON(c, &req); err != nil {
+		c.Error(err)
 		return
 	}
 
 	refreshToken := req["refreshToken"]
 	if refreshToken == "" {
-		response.BadRequest(c, "刷新令牌不能为空")
+		c.Error(errs.BadRequest("刷新令牌不能为空"))
 		return
 	}
 
@@ -132,14 +134,14 @@ func RefreshToken(c *gin.Context) {
 // @Router /api/v1/auth/sms/code [post]
 func SendSmsCode(c *gin.Context) {
 	var req map[string]string
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "请求参数错误: "+err.Error())
+	if err := validator.BindJSON(c, &req); err != nil {
+		c.Error(err)
 		return
 	}
 
 	mobile := req["mobile"]
 	if mobile == "" {
-		response.BadRequest(c, "手机号不能为空")
+		c.Error(errs.BadRequest("手机号不能为空"))
 		return
 	}
 
@@ -163,13 +165,13 @@ func SendSmsCode(c *gin.Context) {
 // @Router /api/v1/auth/login/sms [post]
 func LoginBySms(c *gin.Context) {
 	var req model.SmsLoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "请求参数错误: "+err.Error())
+	if err := validator.BindJSON(c, &req); err != nil {
+		c.Error(err)
 		return
 	}
 
 	if req.Mobile == "" || req.Code == "" {
-		response.BadRequest(c, "手机号和验证码不能为空")
+		c.Error(errs.BadRequest("手机号和验证码不能为空"))
 		return
 	}
 

@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 
+	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/response"
 	"youlai-gin/pkg/storage"
 	"youlai-gin/pkg/utils"
@@ -28,13 +29,12 @@ type UploadResult struct {
 func UploadFile(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
-		response.BadRequest(c, "未选择文件")
+		c.Error(errs.BadRequest("未选择文件"))
 		return
 	}
 
-	// 严格验证文件（使用文档验证器）
 	if err := utils.ValidateDocument(file); err != nil {
-		response.BadRequest(c, err.Error())
+		c.Error(errs.BadRequest(err.Error()))
 		return
 	}
 
@@ -48,7 +48,7 @@ func UploadFile(c *gin.Context) {
 	// 打开文件
 	src, err := file.Open()
 	if err != nil {
-		response.InternalServerError(c, "打开文件失败")
+		c.Error(errs.SystemError("打开文件失败"))
 		return
 	}
 	defer src.Close()
@@ -57,7 +57,7 @@ func UploadFile(c *gin.Context) {
 	contentType := utils.GetContentType(file.Filename)
 	url, err := storage.DefaultStorage.Upload(path, src, contentType)
 	if err != nil {
-		response.InternalServerError(c, "上传失败: "+err.Error())
+		c.Error(errs.SystemError("上传失败"))
 		return
 	}
 
@@ -83,13 +83,13 @@ func UploadFile(c *gin.Context) {
 func UploadFiles(c *gin.Context) {
 	form, err := c.MultipartForm()
 	if err != nil {
-		response.BadRequest(c, "未选择文件")
+		c.Error(errs.BadRequest("未选择文件"))
 		return
 	}
 
 	files := form.File["files"]
 	if len(files) == 0 {
-		response.BadRequest(c, "未选择文件")
+		c.Error(errs.BadRequest("未选择文件"))
 		return
 	}
 
@@ -143,13 +143,12 @@ func UploadFiles(c *gin.Context) {
 func UploadImage(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
-		response.BadRequest(c, "未选择文件")
+		c.Error(errs.BadRequest("未选择文件"))
 		return
 	}
 
-	// 严格验证图片文件
 	if err := utils.ValidateImage(file); err != nil {
-		response.BadRequest(c, err.Error())
+		c.Error(errs.BadRequest(err.Error()))
 		return
 	}
 
@@ -160,7 +159,7 @@ func UploadImage(c *gin.Context) {
 	// 打开文件
 	src, err := file.Open()
 	if err != nil {
-		response.InternalServerError(c, "打开文件失败")
+		c.Error(errs.SystemError("打开文件失败"))
 		return
 	}
 	defer src.Close()
@@ -169,7 +168,7 @@ func UploadImage(c *gin.Context) {
 	contentType := utils.GetContentType(file.Filename)
 	url, err := storage.DefaultStorage.Upload(path, src, contentType)
 	if err != nil {
-		response.InternalServerError(c, "上传失败: "+err.Error())
+		c.Error(errs.SystemError("上传失败"))
 		return
 	}
 
@@ -193,13 +192,13 @@ func UploadImage(c *gin.Context) {
 func DeleteFile(c *gin.Context) {
 	path := c.Query("path")
 	if path == "" {
-		response.BadRequest(c, "文件路径不能为空")
+		c.Error(errs.BadRequest("文件路径不能为空"))
 		return
 	}
 
 	err := storage.DefaultStorage.Delete(path)
 	if err != nil {
-		response.InternalServerError(c, "删除失败: "+err.Error())
+		c.Error(errs.SystemError("删除失败"))
 		return
 	}
 

@@ -6,6 +6,7 @@ import (
 	"youlai-gin/internal/system/log/model"
 	"youlai-gin/internal/system/log/service"
 	"youlai-gin/pkg/response"
+	"youlai-gin/pkg/validator"
 )
 
 // RegisterRoutes 注册日志路由
@@ -19,8 +20,8 @@ func RegisterRoutes(r *gin.RouterGroup) {
 // @Router /api/v1/logs [get]
 func GetLogPage(c *gin.Context) {
 	var query model.LogQuery
-	if err := c.ShouldBindQuery(&query); err != nil {
-		response.Fail(c, "参数错误")
+	if err := validator.BindQuery(c, &query); err != nil {
+		c.Error(err)
 		return
 	}
 

@@ -1,7 +1,7 @@
 <div align="center">
   <img alt="logo" width="100" height="100" src="https://foruda.gitee.com/images/1733417239320800627/3c5290fe_716974.png">
   <h2>youlai-gin</h2>
-  <img alt="Go" src="https://img.shields.io/badge/Go-1.21+-blue.svg"/>
+  <img alt="Go" src="https://img.shields.io/badge/Go-1.25+-blue.svg"/>
   <img alt="Gin" src="https://img.shields.io/badge/Gin-1.11.0-green.svg"/>
   <a href="https://gitcode.com/youlai/youlai-gin" target="_blank">
     <img alt="GitCode star" src="https://gitcode.com/youlai/youlai-gin/star/badge.svg"/>
@@ -41,38 +41,40 @@
 
 ## 项目目录
 
-<details>
-<summary>目录结构</summary>
+> 参考 [golang-standards/project-layout](https://github.com/golang-standards/project-layout) 规范
 
 ```text
 youlai-gin/
+├─ api/                       # API 定义 (Swagger/OpenAPI)
+├─ build/                     # 构建和部署相关
+│  └─ docker/                 # Docker 配置
+├─ cmd/                       # 应用入口
+│  └─ server/                 # 主服务入口
 ├─ configs/                   # 配置文件
 │  ├─ dev.yaml                # 开发环境配置
 │  ├─ prod.yaml               # 生产环境配置
 │  └─ test.yaml               # 测试环境配置
-├─ docs/                      # 项目文档
-├─ internal/                  # 核心业务源码
+├─ docs/                      # Swagger 文档 (swag 自动生成)
+├─ internal/                  # 私有应用代码
 │  ├─ auth/                   # 认证模块(登录/Token/会话)
 │  ├─ codegen/                # 代码生成模块
 │  ├─ file/                   # 文件管理模块
 │  ├─ health/                 # 健康检查
 │  ├─ router/                 # 路由注册
 │  └─ system/                 # 系统模块(用户/角色/菜单等)
-├─ pkg/                       # 通用包 (中间件/响应等)
+├─ pkg/                       # 可被外部使用的公共库
 │  ├─ middleware/             # 中间件(JWT/CORS/RequestID)
 │  ├─ response/               # 统一响应结构
 │  ├─ database/               # 数据库连接
 │  ├─ redis/                  # Redis 连接
 │  ├─ logger/                 # 日志
 │  └─ ...                     # 其他通用工具
-├─ scripts/                   # 数据库脚本
-├─ Dockerfile                 # Docker 镜像构建文件
+├─ sql/                       # 数据库脚本
+│  └─ mysql/                  # MySQL 脚本
 ├─ go.mod                     # 依赖管理
 ├─ go.sum                     # 依赖版本锁定
-└─ main.go                    # 应用入口
+└─ Dockerfile                 # Docker 镜像构建文件
 ```
-
-</details>
 
 ## 🚀 快速启动
 
@@ -111,7 +113,7 @@ youlai-gin/
 
 ### 3. 初始化数据库
 
-使用数据库客户端（如 Navicat、DBeaver）执行 `scripts/mysql/youlai_admin.sql` 脚本，完成数据库和基础数据的初始化。
+使用数据库客户端（如 Navicat、DBeaver）执行 `sql/mysql/youlai_admin.sql` 脚本，完成数据库和基础数据的初始化。
 
 ### 4. 修改配置
 

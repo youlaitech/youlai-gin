@@ -5,6 +5,7 @@ import (
 	"youlai-gin/internal/system/dept/model"
 	"youlai-gin/internal/system/dept/service"
 	pkgContext "youlai-gin/pkg/context"
+	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/response"
 	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/validator"
@@ -31,8 +32,8 @@ func RegisterDeptRoutes(r *gin.RouterGroup) {
 // @Router /api/v1/depts [get]
 func GetDeptList(c *gin.Context) {
 	var query model.DeptQuery
-	if err := c.ShouldBindQuery(&query); err != nil {
-		response.BadRequest(c, "参数错误")
+	if err := validator.BindQuery(c, &query); err != nil {
+		c.Error(err)
 		return
 	}
 
@@ -100,7 +101,7 @@ func GetDeptForm(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的部门ID")
+		c.Error(errs.BadRequest("无效的部门ID"))
 		return
 	}
 
@@ -123,7 +124,7 @@ func UpdateDept(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的部门ID")
+		c.Error(errs.BadRequest("无效的部门ID"))
 		return
 	}
 
@@ -151,7 +152,7 @@ func DeleteDept(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的部门ID")
+		c.Error(errs.BadRequest("无效的部门ID"))
 		return
 	}
 

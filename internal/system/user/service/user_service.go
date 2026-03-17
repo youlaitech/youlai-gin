@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -284,11 +285,8 @@ func getRolePermsFromCache(roleCodes []string) ([]string, error) {
 	if len(missingRoles) > 0 {
 		dbPerms, err := getRolePermsFromDB(missingRoles)
 		if err != nil {
-			// 数据库查询失败，只返回已从缓存获取的权限
-			// 不返回错误，返回已缓存权限
-			fmt.Printf("降级查询数据库失败，角色: %v, 错误: %v\n", missingRoles, err)
+			slog.Error("降级查询数据库失败", "roles", missingRoles, "error", err)
 		} else {
-			// 将数据库查询结果合并到权限集合
 			for _, perm := range dbPerms {
 				if perm != "" {
 					permsSet[perm] = true
@@ -428,8 +426,7 @@ func SendMobileCode(mobile string) error {
 	// TODO: 接入短信服务商并发送验证码
 	// smsService.SendSMS(mobile, code)
 
-	// 开发环境：打印验证码到日志
-	fmt.Printf("短信验证码已发送到 %s: %s (有效期 %d 分钟)\n", mobile, code, utils.CodeExpiration)
+	slog.Info("短信验证码已发送", "mobile", mobile, "code", code, "expiration_minutes", utils.CodeExpiration)
 
 	return nil
 }
@@ -493,8 +490,7 @@ func SendEmailCode(email string) error {
 	// TODO: 接入 SMTP 或第三方邮件服务
 	// emailService.SendEmail(email, "验证码", fmt.Sprintf("您的验证码是：%s", code))
 
-	// 开发环境：打印验证码到日志
-	fmt.Printf("邮箱验证码已发送到 %s: %s (有效期 %d 分钟)\n", email, code, utils.CodeExpiration)
+	slog.Info("邮箱验证码已发送", "email", email, "code", code, "expiration_minutes", utils.CodeExpiration)
 
 	return nil
 }

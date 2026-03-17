@@ -72,7 +72,7 @@ func WechatPhoneLogin(c *gin.Context) {
 		return
 	}
 
-	response.Ok(c, result, "登录成功")
+	response.Ok(c, result)
 }
 
 // WechatBindMobile 绑定手机号
@@ -102,5 +102,5 @@ func WechatBindMobile(c *gin.Context) {
 		return
 	}
 
-	response.Ok(c, result, "绑定成功")
+	response.Ok(c, result)
 }

@@ -8,9 +8,11 @@ import (
 
 	"youlai-gin/internal/system/notice/model"
 	"youlai-gin/internal/system/notice/service"
+	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/types"
 	pkgContext "youlai-gin/pkg/context"
 	"youlai-gin/pkg/response"
+	"youlai-gin/pkg/validator"
 )
 
 // RegisterRoutes 注册通知公告路由
@@ -34,8 +36,8 @@ func RegisterRoutes(r *gin.RouterGroup) {
 // @Router /api/v1/notices [get]
 func GetNoticePage(c *gin.Context) {
 	var query model.NoticeQuery
-	if err := c.ShouldBindQuery(&query); err != nil {
-		response.Fail(c, "参数错误")
+	if err := validator.BindQuery(c, &query); err != nil {
+		c.Error(err)
 		return
 	}
 
@@ -54,8 +56,8 @@ func GetNoticePage(c *gin.Context) {
 // @Router /api/v1/notices [post]
 func SaveNotice(c *gin.Context) {
 	var form model.NoticeForm
-	if err := c.ShouldBindJSON(&form); err != nil {
-		response.Fail(c, "参数错误")
+	if err := validator.BindJSON(c, &form); err != nil {
+		c.Error(err)
 		return
 	}
 
@@ -76,7 +78,7 @@ func GetNoticeForm(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.Fail(c, "ID格式错误")
+		c.Error(errs.BadRequest("无效的通知ID"))
 		return
 	}
 
@@ -98,7 +100,7 @@ func GetNoticeDetail(c *gin.Context) {
 	idStr := c.Param("id")
 	noticeID, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.Fail(c, "ID格式错误")
+		c.Error(errs.BadRequest("无效的通知ID"))
 		return
 	}
 
@@ -131,13 +133,13 @@ func UpdateNotice(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.Fail(c, "ID格式错误")
+		c.Error(errs.BadRequest("无效的通知ID"))
 		return
 	}
 
 	var form model.NoticeForm
-	if err := c.ShouldBindJSON(&form); err != nil {
-		response.Fail(c, "参数错误")
+	if err := validator.BindJSON(c, &form); err != nil {
+		c.Error(err)
 		return
 	}
 
@@ -159,7 +161,7 @@ func PublishNotice(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.Fail(c, "ID格式错误")
+		c.Error(errs.BadRequest("无效的通知ID"))
 		return
 	}
 
@@ -186,7 +188,7 @@ func RevokeNotice(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.Fail(c, "ID格式错误")
+		c.Error(errs.BadRequest("无效的通知ID"))
 		return
 	}
 
@@ -206,16 +208,15 @@ func RevokeNotice(c *gin.Context) {
 func DeleteNotices(c *gin.Context) {
 	idsStr := c.Param("ids")
 	if idsStr == "" {
-		response.Fail(c, "ID不能为空")
+		c.Error(errs.BadRequest("ID不能为空"))
 		return
 	}
 
-	// 支持批量删除，ids格式：1,2,3
 	idStrArr := strings.Split(idsStr, ",")
 	for _, idStr := range idStrArr {
 		id, err := strconv.ParseInt(strings.TrimSpace(idStr), 10, 64)
 		if err != nil {
-			response.Fail(c, "ID格式错误")
+			c.Error(errs.BadRequest("无效的通知ID"))
 			return
 		}
 		if err := service.DeleteNotice(id); err != nil {
@@ -232,7 +233,6 @@ func DeleteNotices(c *gin.Context) {
 // @Tags 08.通知公告
 // @Router /api/v1/notices/my [get]
 func GetMyNoticePage(c *gin.Context) {
-	// 获取当前用户ID
 	userID, err := pkgContext.GetCurrentUserID(c)
 	if err != nil {
 		c.Error(err)
@@ -240,8 +240,8 @@ func GetMyNoticePage(c *gin.Context) {
 	}
 
 	var query model.UserNoticeQuery
-	if err := c.ShouldBindQuery(&query); err != nil {
-		response.Fail(c, "参数错误")
+	if err := validator.BindQuery(c, &query); err != nil {
+		c.Error(err)
 		return
 	}
 

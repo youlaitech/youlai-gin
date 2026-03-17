@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm"
 
 	authModel "youlai-gin/internal/auth/model"
+	permService "youlai-gin/internal/system/permission/service"
 	"youlai-gin/internal/system/user/domain"
 	userRepo "youlai-gin/internal/system/user/repository"
 	"youlai-gin/pkg/auth"
@@ -19,6 +20,7 @@ import (
 	"youlai-gin/pkg/database"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/redis"
+	"youlai-gin/pkg/types"
 )
 
 // wechatConfig 微信小程序配置
@@ -35,12 +37,12 @@ func InitWechatConfig() {
 		slog.Error("配置未初始化，无法获取微信配置")
 		return
 	}
-	
+
 	wechatCfg = wechatConfig{
 		AppID:     config.Cfg.Wechat.Miniapp.AppID,
 		AppSecret: config.Cfg.Wechat.Miniapp.AppSecret,
 	}
-	
+
 	slog.Info("微信配置初始化完成", "appId", wechatCfg.AppID)
 }
 
@@ -79,7 +81,7 @@ func SilentLogin(code string) (*authModel.WechatMiniappLoginResult, error) {
 
 	openID := session.OpenID
 	if openID == "" {
-		return nil, errs.BusinessError("微信登录失败：无法获取用户标识")
+		return nil, errs.BadRequest("微信登录失败：无法获取用户标识")
 	}
 
 	// 查找是否已绑定用户
@@ -88,7 +90,7 @@ func SilentLogin(code string) (*authModel.WechatMiniappLoginResult, error) {
 
 	if err == nil {
 		// 已绑定用户，直接登录
-		token, err := generateTokenByUserID(social.UserID)
+		token, err := generateTokenByUserID(int64(social.UserID))
 		if err != nil {
 			return nil, err
 		}
@@ -96,7 +98,7 @@ func SilentLogin(code string) (*authModel.WechatMiniappLoginResult, error) {
 			NeedBindMobile: false,
 			AccessToken:    token.AccessToken,
 			RefreshToken:   token.RefreshToken,
-			ExpiresIn:      token.ExpiresIn,
+			ExpiresIn:      int64(token.ExpiresIn),
 			TokenType:      token.TokenType,
 		}, nil
 	}
@@ -115,7 +117,7 @@ func SilentLogin(code string) (*authModel.WechatMiniappLoginResult, error) {
 }
 
 // PhoneLogin 手机号快捷登录
-func PhoneLogin(loginCode, phoneCode string) (*authModel.AuthenticationToken, error) {
+func PhoneLogin(loginCode, phoneCode string) (*auth.AuthenticationToken, error) {
 	// 获取微信会话信息
 	session, err := getJsCodeSession(loginCode)
 	if err != nil {
@@ -137,14 +139,14 @@ func PhoneLogin(loginCode, phoneCode string) (*authModel.AuthenticationToken, er
 	}
 
 	// 绑定微信 openid
-	bindWechatOpenID(user.ID, session.OpenID, session.UnionID, session.SessionKey)
+	bindWechatOpenID(int64(user.ID), session.OpenID, session.UnionID, session.SessionKey)
 
 	// 生成认证令牌
 	return generateTokenByUser(user)
 }
 
 // BindMobile 绑定手机号
-func BindMobile(openID, mobile, smsCode string) (*authModel.AuthenticationToken, error) {
+func BindMobile(openID, mobile, smsCode string) (*auth.AuthenticationToken, error) {
 	// 验证短信验证码
 	if err := validateSmsCode(mobile, smsCode); err != nil {
 		return nil, err
@@ -157,7 +159,7 @@ func BindMobile(openID, mobile, smsCode string) (*authModel.AuthenticationToken,
 	}
 
 	// 绑定微信 openid
-	bindWechatOpenID(user.ID, openID, "", "")
+	bindWechatOpenID(int64(user.ID), openID, "", "")
 
 	slog.Info("微信小程序绑定手机号成功", "mobile", mobile, "openId", openID)
 
@@ -173,18 +175,18 @@ func getJsCodeSession(code string) (*WechatSessionResponse, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		slog.Error("获取微信会话信息失败", "code", code, "error", err)
-		return nil, errs.BusinessError("微信登录失败：" + err.Error())
+		return nil, errs.BadRequest("微信登录失败，请稍后重试")
 	}
 	defer resp.Body.Close()
 
 	var result WechatSessionResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, errs.BusinessError("解析微信响应失败")
+		return nil, errs.BadRequest("解析微信响应失败")
 	}
 
 	if result.ErrCode != 0 {
 		slog.Error("获取微信会话信息失败", "code", code, "errcode", result.ErrCode, "errmsg", result.ErrMsg)
-		return nil, errs.BusinessError("微信登录失败：" + result.ErrMsg)
+		return nil, errs.BadRequest("微信登录失败，请稍后重试")
 	}
 
 	return &result, nil
@@ -202,18 +204,18 @@ func getPhoneNumber(phoneCode string) (string, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		slog.Error("获取微信手机号失败", "phoneCode", phoneCode, "error", err)
-		return "", errs.BusinessError("获取手机号失败：" + err.Error())
+		return "", errs.BadRequest("获取手机号失败，请稍后重试")
 	}
 	defer resp.Body.Close()
 
 	var result WechatPhoneResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", errs.BusinessError("解析微信响应失败")
+		return "", errs.BadRequest("解析微信响应失败")
 	}
 
 	if result.ErrCode != 0 {
 		slog.Error("获取微信手机号失败", "phoneCode", phoneCode, "errcode", result.ErrCode, "errmsg", result.ErrMsg)
-		return "", errs.BusinessError("获取手机号失败：" + result.ErrMsg)
+		return "", errs.BadRequest("获取手机号失败，请稍后重试")
 	}
 
 	return result.PhoneInfo.PhoneNumber, nil
@@ -224,7 +226,7 @@ func getAccessToken() (string, error) {
 	cacheKey := fmt.Sprintf("wechat:access_token:%s", wechatCfg.AppID)
 
 	// 先从缓存获取
-	cached, err := redis.Client().Get(context.Background(), cacheKey).Result()
+	cached, err := redis.Client.Get(context.Background(), cacheKey).Result()
 	if err == nil {
 		return cached, nil
 	}
@@ -235,29 +237,29 @@ func getAccessToken() (string, error) {
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return "", errs.BusinessError("获取微信AccessToken失败：" + err.Error())
+		return "", errs.BadRequest("获取微信AccessToken失败：" + err.Error())
 	}
 	defer resp.Body.Close()
 
 	var result WechatTokenResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", errs.BusinessError("解析微信响应失败")
+		return "", errs.BadRequest("解析微信响应失败")
 	}
 
 	if result.ErrCode != 0 {
-		return "", errs.BusinessError("获取微信AccessToken失败：" + result.ErrMsg)
+		return "", errs.BadRequest("获取微信AccessToken失败：" + result.ErrMsg)
 	}
 
 	// 缓存 token（提前5分钟过期）
 	expiresIn := max(result.ExpiresIn-300, 60)
-	redis.Client().Set(context.Background(), cacheKey, result.AccessToken, time.Duration(expiresIn)*time.Second)
+	redis.Client.Set(context.Background(), cacheKey, result.AccessToken, time.Duration(expiresIn)*time.Second)
 
 	return result.AccessToken, nil
 }
 
 // findOrCreateUser 查询或创建用户
 func findOrCreateUser(mobile string) (*domain.User, error) {
-	user, err := userRepo.FindByMobile(mobile)
+	user, err := userRepo.GetUserByMobile(mobile)
 	if err == nil {
 		return user, nil
 	}
@@ -277,13 +279,13 @@ func findOrCreateUser(mobile string) (*domain.User, error) {
 	tx := database.DB.Begin()
 	if err := tx.Create(user).Error; err != nil {
 		tx.Rollback()
-		return nil, errs.BusinessError("创建用户失败：" + err.Error())
+		return nil, errs.BadRequest("创建用户失败：" + err.Error())
 	}
 
 	// 分配 GUEST 角色（角色ID=3）
 	if err := tx.Exec("INSERT INTO sys_user_role (user_id, role_id) VALUES (?, ?)", user.ID, 3).Error; err != nil {
 		tx.Rollback()
-		return nil, errs.BusinessError("分配角色失败：" + err.Error())
+		return nil, errs.BadRequest("分配角色失败：" + err.Error())
 	}
 
 	tx.Commit()
@@ -309,7 +311,7 @@ func bindWechatOpenID(userID int64, openID, unionID, sessionKey string) {
 	if err == gorm.ErrRecordNotFound {
 		// 新增绑定
 		social = domain.UserSocial{
-			UserID:     userID,
+			UserID:     types.BigInt(userID),
 			Platform:   domain.PlatformWechatMini,
 			OpenID:     openID,
 			UnionID:    unionID,
@@ -323,39 +325,53 @@ func bindWechatOpenID(userID int64, openID, unionID, sessionKey string) {
 // validateSmsCode 验证短信验证码
 func validateSmsCode(mobile, smsCode string) error {
 	cacheKey := fmt.Sprintf("sms:login:%s", mobile)
-	cached, err := redis.Client().Get(context.Background(), cacheKey).Result()
+	cached, err := redis.Client.Get(context.Background(), cacheKey).Result()
 	if err != nil {
-		return errs.BusinessError("验证码已过期")
+		return errs.BadRequest("验证码已过期")
 	}
 
 	if cached != smsCode {
-		return errs.BusinessError("验证码错误")
+		return errs.BadRequest("验证码错误")
 	}
 
 	// 验证成功后删除验证码
-	redis.Client().Del(context.Background(), cacheKey)
+	redis.Client.Del(context.Background(), cacheKey)
 	return nil
 }
 
 // generateTokenByUserID 根据用户ID生成Token
-func generateTokenByUserID(userID int64) (*authModel.AuthenticationToken, error) {
-	user, err := userRepo.FindByID(userID)
+func generateTokenByUserID(userID int64) (*auth.AuthenticationToken, error) {
+	user, err := userRepo.GetUserByID(userID)
 	if err != nil {
-		return nil, errs.BusinessError("用户不存在")
+		return nil, errs.BadRequest("用户不存在")
 	}
 	return generateTokenByUser(user)
 }
 
 // generateTokenByUser 根据用户生成Token
-func generateTokenByUser(user *domain.User) (*authModel.AuthenticationToken, error) {
-	token, err := tokenManager.GenerateToken(&auth.UserAuthInfo{
-		UserID: user.ID,
+func generateTokenByUser(user *domain.User) (*auth.AuthenticationToken, error) {
+	roles, err := userRepo.GetUserRoles(int64(user.ID))
+	if err != nil {
+		return nil, errs.SystemError("查询用户角色失败")
+	}
+
+	dataScopes, err := permService.GetUserDataScopes(int64(user.ID), roles, int64(user.DeptID))
+	if err != nil {
+		return nil, err
+	}
+
+	token, err := tokenManager.GenerateToken(&auth.UserDetails{
+		UserID:     int64(user.ID),
+		Username:  user.Username,
+		DeptID:    user.DeptID,
+		DataScopes: dataScopes,
+		Roles:     roles,
 	})
 	if err != nil {
 		return nil, errs.SystemError("生成令牌失败")
 	}
 
-	return &authModel.AuthenticationToken{
+	return &auth.AuthenticationToken{
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
 		ExpiresIn:    token.ExpiresIn,

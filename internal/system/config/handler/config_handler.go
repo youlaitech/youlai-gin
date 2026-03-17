@@ -8,7 +8,9 @@ import (
 
 	"youlai-gin/internal/system/config/model"
 	"youlai-gin/internal/system/config/service"
+	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/response"
+	"youlai-gin/pkg/validator"
 )
 
 // RegisterRoutes 注册配置管理路由
@@ -34,8 +36,8 @@ func RegisterRoutes(r *gin.RouterGroup) {
 // @Router /api/v1/configs [get]
 func GetConfigPage(c *gin.Context) {
 	var query model.ConfigQuery
-	if err := c.ShouldBindQuery(&query); err != nil {
-		response.Fail(c, "参数错误")
+	if err := validator.BindQuery(c, &query); err != nil {
+		c.Error(err)
 		return
 	}
 
@@ -57,7 +59,7 @@ func GetConfigForm(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.Fail(c, "ID格式错误")
+		c.Error(errs.BadRequest("无效的配置ID"))
 		return
 	}
 
@@ -79,7 +81,7 @@ func GetConfigByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.Fail(c, "ID格式错误")
+		c.Error(errs.BadRequest("无效的配置ID"))
 		return
 	}
 
@@ -100,7 +102,7 @@ func GetConfigByID(c *gin.Context) {
 func GetConfigByKey(c *gin.Context) {
 	key := c.Param("key")
 	if key == "" {
-		response.Fail(c, "配置Key不能为空")
+		c.Error(errs.BadRequest("配置Key不能为空"))
 		return
 	}
 
@@ -119,8 +121,8 @@ func GetConfigByKey(c *gin.Context) {
 // @Router /api/v1/configs [post]
 func SaveConfig(c *gin.Context) {
 	var form model.ConfigForm
-	if err := c.ShouldBindJSON(&form); err != nil {
-		response.Fail(c, "参数错误")
+	if err := validator.BindJSON(c, &form); err != nil {
+		c.Error(err)
 		return
 	}
 
@@ -141,13 +143,13 @@ func UpdateConfig(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.Fail(c, "ID格式错误")
+		c.Error(errs.BadRequest("无效的配置ID"))
 		return
 	}
 
 	var form model.ConfigForm
-	if err := c.ShouldBindJSON(&form); err != nil {
-		response.Fail(c, "参数错误")
+	if err := validator.BindJSON(c, &form); err != nil {
+		c.Error(err)
 		return
 	}
 
@@ -168,17 +170,15 @@ func UpdateConfig(c *gin.Context) {
 func DeleteConfigs(c *gin.Context) {
 	idsStr := c.Param("ids")
 	if idsStr == "" {
-		response.Fail(c, "ID不能为空")
+		c.Error(errs.BadRequest("ID不能为空"))
 		return
 	}
 
-	// 支持批量删除，ids格式：1,2,3
 	idStrArr := strings.Split(idsStr, ",")
 	if len(idStrArr) == 1 {
-		// 单个删除
 		id, err := strconv.ParseInt(idsStr, 10, 64)
 		if err != nil {
-			response.Fail(c, "ID格式错误")
+			c.Error(errs.BadRequest("无效的配置ID"))
 			return
 		}
 		if err := service.DeleteConfig(id); err != nil {
@@ -186,12 +186,11 @@ func DeleteConfigs(c *gin.Context) {
 			return
 		}
 	} else {
-		// 批量删除
 		ids := make([]int64, 0, len(idStrArr))
 		for _, idStr := range idStrArr {
 			id, err := strconv.ParseInt(strings.TrimSpace(idStr), 10, 64)
 			if err != nil {
-				response.Fail(c, "ID格式错误")
+				c.Error(errs.BadRequest("无效的配置ID"))
 				return
 			}
 			ids = append(ids, id)
@@ -213,7 +212,7 @@ func DeleteConfigs(c *gin.Context) {
 func RefreshConfigCache(c *gin.Context) {
 	key := c.Param("key")
 	if key == "" {
-		response.Fail(c, "配置Key不能为空")
+		c.Error(errs.BadRequest("配置Key不能为空"))
 		return
 	}
 

@@ -5,6 +5,7 @@ import (
 	"youlai-gin/internal/system/menu/model"
 	"youlai-gin/internal/system/menu/service"
 	pkgContext "youlai-gin/pkg/context"
+	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/response"
 	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/validator"
@@ -34,8 +35,8 @@ func RegisterMenuRoutes(r *gin.RouterGroup) {
 // @Router /api/v1/menus [get]
 func GetMenuList(c *gin.Context) {
 	var query model.MenuQuery
-	if err := c.ShouldBindQuery(&query); err != nil {
-		response.BadRequest(c, "参数错误")
+	if err := validator.BindQuery(c, &query); err != nil {
+		c.Error(err)
 		return
 	}
 
@@ -109,7 +110,7 @@ func GetMenuForm(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的菜单ID")
+		c.Error(errs.BadRequest("无效的菜单ID"))
 		return
 	}
 
@@ -132,7 +133,7 @@ func UpdateMenu(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的菜单ID")
+		c.Error(errs.BadRequest("无效的菜单ID"))
 		return
 	}
 
@@ -160,7 +161,7 @@ func DeleteMenu(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的菜单ID")
+		c.Error(errs.BadRequest("无效的菜单ID"))
 		return
 	}
 
@@ -179,7 +180,7 @@ func DeleteMenu(c *gin.Context) {
 func GetCurrentUserPermissions(c *gin.Context) {
 	userId, err := pkgContext.GetUserIDMust(c)
 	if err != nil {
-		response.Unauthorized(c, "未登录")
+		c.Error(errs.Unauthorized("未登录"))
 		return
 	}
 

@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"youlai-gin/pkg/response"
+	"youlai-gin/pkg/errs"
 )
 
 const (
@@ -25,14 +25,14 @@ func Middleware(tokenManager TokenManager) gin.HandlerFunc {
 		// 从 Header 中获取 Token
 		authHeader := c.GetHeader(AuthorizationHeader)
 		if authHeader == "" {
-			response.TokenInvalid(c, "未提供认证令牌")
+			c.Error(errs.TokenInvalid())
 			c.Abort()
 			return
 		}
 
 		// 验证 Bearer 前缀
 		if !strings.HasPrefix(authHeader, BearerPrefix) {
-			response.TokenInvalid(c, "认证令牌格式错误")
+			c.Error(errs.TokenInvalid())
 			c.Abort()
 			return
 		}
@@ -42,7 +42,7 @@ func Middleware(tokenManager TokenManager) gin.HandlerFunc {
 
 		// 校验 Token
 		if !tokenManager.ValidateToken(token) {
-			response.TokenInvalid(c, "认证令牌无效或已过期")
+			c.Error(errs.TokenInvalid())
 			c.Abort()
 			return
 		}
@@ -50,7 +50,7 @@ func Middleware(tokenManager TokenManager) gin.HandlerFunc {
 		// 解析用户信息
 		user, err := tokenManager.ParseToken(token)
 		if err != nil {
-			response.TokenInvalid(c, "解析认证令牌失败")
+			c.Error(errs.TokenInvalid())
 			c.Abort()
 			return
 		}

@@ -8,7 +8,9 @@ import (
 
 	"youlai-gin/internal/codegen/model"
 	"youlai-gin/internal/codegen/service"
+	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/response"
+	"youlai-gin/pkg/validator"
 )
 
 // GetTablePage 数据表分页
@@ -17,8 +19,8 @@ import (
 // @Router /api/v1/codegen/table [get]
 func GetTablePage(c *gin.Context) {
 	var query model.TableQuery
-	if err := c.ShouldBindQuery(&query); err != nil {
-		response.Fail(c, "参数错误")
+	if err := validator.BindQuery(c, &query); err != nil {
+		c.Error(err)
 		return
 	}
 
@@ -54,8 +56,8 @@ func GetGenConfig(c *gin.Context) {
 func SaveGenConfig(c *gin.Context) {
 	tableName := c.Param("tableName")
 	var body model.GenConfigFormDto
-	if err := c.ShouldBindJSON(&body); err != nil {
-		response.Fail(c, "参数错误")
+	if err := validator.BindJSON(c, &body); err != nil {
+		c.Error(err)
 		return
 	}
 
@@ -117,7 +119,7 @@ func Download(c *gin.Context) {
 		}
 	}
 	if len(tableNames) == 0 {
-		response.Fail(c, "参数错误")
+		c.Error(errs.BadRequest("请选择要生成的表"))
 		return
 	}
 

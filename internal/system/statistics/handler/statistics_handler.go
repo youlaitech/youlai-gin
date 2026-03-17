@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"youlai-gin/internal/system/log/service"
+	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/response"
 )
 
@@ -22,7 +23,7 @@ func GetVisitTrend(c *gin.Context) {
 	endDate := c.Query("endDate")
 
 	if startDate == "" || endDate == "" {
-		response.Fail(c, "开始时间和结束时间不能为空")
+		c.Error(errs.BadRequest("开始时间和结束时间不能为空"))
 		return
 	}
 

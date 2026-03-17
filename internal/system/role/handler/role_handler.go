@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"youlai-gin/internal/system/role/model"
 	"youlai-gin/internal/system/role/service"
+	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/response"
 	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/validator"
@@ -35,8 +36,8 @@ func RegisterRoleRoutes(r *gin.RouterGroup) {
 // @Router /api/v1/roles [get]
 func GetRolePage(c *gin.Context) {
 	var query model.RoleQuery
-	if err := c.ShouldBindQuery(&query); err != nil {
-		response.BadRequest(c, "参数错误")
+	if err := validator.BindQuery(c, &query); err != nil {
+		c.Error(err)
 		return
 	}
 
@@ -92,7 +93,7 @@ func GetRoleForm(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的角色ID")
+		c.Error(errs.BadRequest("无效的角色ID"))
 		return
 	}
 
@@ -115,7 +116,7 @@ func UpdateRole(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的角色ID")
+		c.Error(errs.BadRequest("无效的角色ID"))
 		return
 	}
 
@@ -143,7 +144,7 @@ func DeleteRole(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的角色ID")
+		c.Error(errs.BadRequest("无效的角色ID"))
 		return
 	}
 
@@ -164,7 +165,7 @@ func GetRoleMenuIds(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的角色ID")
+		c.Error(errs.BadRequest("无效的角色ID"))
 		return
 	}
 
@@ -187,13 +188,13 @@ func UpdateRoleMenus(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的角色ID")
+		c.Error(errs.BadRequest("无效的角色ID"))
 		return
 	}
 
 	var menuIds []int64
-	if err := c.ShouldBindJSON(&menuIds); err != nil {
-		response.BadRequest(c, "参数错误")
+	if err := validator.BindJSON(c, &menuIds); err != nil {
+		c.Error(err)
 		return
 	}
 
@@ -214,7 +215,7 @@ func GetRoleDeptIds(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的角色ID")
+		c.Error(errs.BadRequest("无效的角色ID"))
 		return
 	}
 
@@ -237,13 +238,13 @@ func UpdateRoleDepts(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的角色ID")
+		c.Error(errs.BadRequest("无效的角色ID"))
 		return
 	}
 
 	var deptIds []int64
-	if err := c.ShouldBindJSON(&deptIds); err != nil {
-		response.BadRequest(c, "参数错误")
+	if err := validator.BindJSON(c, &deptIds); err != nil {
+		c.Error(err)
 		return
 	}
 

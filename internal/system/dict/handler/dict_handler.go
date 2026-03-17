@@ -5,6 +5,7 @@ import (
 	"strings"
 	"youlai-gin/internal/system/dict/model"
 	"youlai-gin/internal/system/dict/service"
+	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/response"
 	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/validator"
@@ -44,8 +45,8 @@ func RegisterDictRoutes(r *gin.RouterGroup) {
 // @Router /api/v1/dicts [get]
 func GetDictPage(c *gin.Context) {
 	var query model.DictQuery
-	if err := c.ShouldBindQuery(&query); err != nil {
-		response.BadRequest(c, "参数错误")
+	if err := validator.BindQuery(c, &query); err != nil {
+		c.Error(err)
 		return
 	}
 
@@ -62,8 +63,8 @@ func GetDictItemPageByCode(c *gin.Context) {
 	dictCode := c.Param("id")
 
 	var query model.DictItemQuery
-	if err := c.ShouldBindQuery(&query); err != nil {
-		response.BadRequest(c, "参数错误")
+	if err := validator.BindQuery(c, &query); err != nil {
+		c.Error(err)
 		return
 	}
 	query.DictCode = dictCode
@@ -123,7 +124,7 @@ func GetDictForm(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的字典ID")
+		c.Error(errs.BadRequest("无效的字典ID"))
 		return
 	}
 
@@ -147,7 +148,7 @@ func UpdateDict(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的字典ID")
+		c.Error(errs.BadRequest("无效的字典ID"))
 		return
 	}
 
@@ -176,7 +177,7 @@ func DeleteDict(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的字典ID")
+		c.Error(errs.BadRequest("无效的字典ID"))
 		return
 	}
 
@@ -187,8 +188,6 @@ func DeleteDict(c *gin.Context) {
 
 	response.OkMsg(c, "删除成功")
 }
-
-// ========== 字典项接口 ==========
 
 // GetDictItemsByCode 字典项列表
 // @Summary 字典项列表
@@ -245,7 +244,7 @@ func GetDictItemFormByCode(c *gin.Context) {
 	itemIdStr := c.Param("itemId")
 	itemId, err := strconv.ParseInt(itemIdStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的字典项ID")
+		c.Error(errs.BadRequest("无效的字典项ID"))
 		return
 	}
 
@@ -271,7 +270,7 @@ func UpdateDictItemByCode(c *gin.Context) {
 	itemIdStr := c.Param("itemId")
 	itemId, err := strconv.ParseInt(itemIdStr, 10, 64)
 	if err != nil {
-		response.BadRequest(c, "无效的字典项ID")
+		c.Error(errs.BadRequest("无效的字典项ID"))
 		return
 	}
 
@@ -302,7 +301,7 @@ func UpdateDictItemByCode(c *gin.Context) {
 func DeleteDictItemsByCode(c *gin.Context) {
 	itemIdsStr := c.Param("itemIds")
 	if itemIdsStr == "" {
-		response.BadRequest(c, "无效的字典项ID")
+		c.Error(errs.BadRequest("无效的字典项ID"))
 		return
 	}
 
@@ -315,13 +314,13 @@ func DeleteDictItemsByCode(c *gin.Context) {
 		}
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
-			response.BadRequest(c, "无效的字典项ID")
+			c.Error(errs.BadRequest("无效的字典项ID"))
 			return
 		}
 		ids = append(ids, id)
 	}
 	if len(ids) == 0 {
-		response.BadRequest(c, "无效的字典项ID")
+		c.Error(errs.BadRequest("无效的字典项ID"))
 		return
 	}
 

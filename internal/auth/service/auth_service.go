@@ -150,9 +150,7 @@ func RefreshToken(refreshToken string) (*auth.AuthenticationToken, error) {
 
 // SendSmsLoginCode 发送登录短信验证码
 func SendSmsLoginCode(mobile string) error {
-	// 生成验证码
-	// code := fmt.Sprintf("%04d", rand.Intn(10000))
-	// TODO: 接入短信服务后改为随机验证码
+	// 生成验证码（开发环境固定值，生产环境接入短信服务后改为随机码）
 	code := "1234"
 
 	// 缓存验证码至 Redis（5分钟过期）
