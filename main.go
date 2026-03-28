@@ -6,8 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	youlaDocs "youlai-gin/docs"
-	"youlai-gin/internal/health"
+	youlaDocs "youlai-gin/api"
 	"youlai-gin/internal/router"
 	"youlai-gin/pkg/auth"
 	"youlai-gin/pkg/config"
@@ -16,6 +15,7 @@ import (
 	"youlai-gin/pkg/middleware"
 	"youlai-gin/pkg/redis"
 	"youlai-gin/pkg/requestid"
+	"youlai-gin/pkg/sse"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -88,6 +88,10 @@ func main() {
 	if err := redis.InitWithConfig(&config.Cfg.Redis); err != nil {
 		log.Fatalf("Redis 初始化失败: %v", err)
 	}
+
+	// 初始化 SSE 服务
+	sse.InitSseService()
+
 	// 初始化 TokenManager
 	tokenManager, err := auth.CreateTokenManager(&config.Cfg.Security)
 	if err != nil {
@@ -106,9 +110,6 @@ func main() {
 
 	// 全局限流中间件（每秒 10 个请求，突发 20 个）
 	r.Use(middleware.RateLimitByIP())
-
-	// 健康检查路由
-	health.RegisterRoutes(r)
 
 	// 业务路由
 	router.Register(r, tokenManager)

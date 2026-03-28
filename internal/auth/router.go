@@ -20,5 +20,5 @@ func RegisterRoutes(api *gin.RouterGroup, tokenManager pkgAuth.TokenManager) {
 	handler.RegisterAuthRoutes(api)
 
 	// 注册微信小程序认证路由
-	handler.RegisterWechatRoutes(api)
+	handler.RegisterWxMaRoutes(api)
 }

@@ -35,7 +35,6 @@ func GetVisitTrend(startDate, endDate string) (*model.VisitTrendVO, error) {
 		return nil, errs.BadRequest("开始日期不能晚于结束日期")
 	}
 
-	// 限制查询范围不超过90天
 	if end.Sub(start).Hours() > 90*24 {
 		return nil, errs.BadRequest("查询范围不能超过90天")
 	}

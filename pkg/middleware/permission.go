@@ -53,7 +53,7 @@ func RequirePermission(perm string) gin.HandlerFunc {
 		}
 
 		if !hasPermission {
-			response.Unauthorized(c, "无权限访问")
+			response.Forbidden(c, "无权限访问")
 			c.Abort()
 			return
 		}
@@ -81,7 +81,7 @@ func RequireAnyPermission(perms ...string) gin.HandlerFunc {
 		}
 
 		if !hasPermission {
-			response.Unauthorized(c, "无权限访问")
+			response.Forbidden(c, "无权限访问")
 			c.Abort()
 			return
 		}

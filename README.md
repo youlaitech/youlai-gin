@@ -37,9 +37,9 @@
 | --- | --- | --- | --- |
 | ✅ Go 后端 | [youlai-gin](https://gitee.com/youlaiorg/youlai-gin) | [youlai-gin](https://github.com/youlaitech/youlai-gin) | [youlai-gin](https://gitcode.com/youlai/youlai-gin) |
 | Vue3 管理端 | [vue3-element-admin](https://gitee.com/youlaiorg/vue3-element-admin) | [vue3-element-admin](https://github.com/youlaitech/vue3-element-admin) | [vue3-element-admin](https://gitcode.com/youlai/vue3-element-admin) |
-| uni-app 移动端 | [vue-uniapp-template](https://gitee.com/youlaiorg/vue-uniapp-template) | [vue-uniapp-template](https://github.com/youlaitech/vue-uniapp-template) | [vue-uniapp-template](https://gitcode.com/youlai/vue-uniapp-template) |
+| uni-app 移动端 | [youlai-app](https://gitee.com/youlaiorg/youlai-app) | [youlai-app](https://github.com/youlaitech/youlai-app) | [youlai-app](https://gitcode.com/youlai/youlai-app) |
 
-## 项目目录
+## 📁 目录结构
 
 > 参考 [golang-standards/project-layout](https://github.com/golang-standards/project-layout) 规范
 
@@ -143,28 +143,6 @@ go run main.go
 > ```
 
 启动成功后，访问 [http://localhost:8000/swagger/index.html](http://localhost:8000/swagger/index.html) 验证项目是否成功。
-
-## 🤝 前端整合
-
-`youlai-gin` 与 `vue3-element-admin` 前后端协议完全兼容，可无缝对接。
-
-```bash
-# 1. 获取前端项目
-git clone https://gitee.com/youlaiorg/vue3-element-admin.git
-cd vue3-element-admin
-
-# 2. 安装依赖
-pnpm install
-
-# 3. 配置后端地址 (编辑 .env.development)
-VITE_APP_API_URL=http://localhost:8000
-
-# 4. 启动前端
-pnpm run dev
-```
-
-- **访问地址**: [http://localhost:3000](http://localhost:3000)
-- **登录账号**: `admin` / `123456`
 
 ## 🐳 项目部署
 

@@ -77,7 +77,7 @@ func Fail(c *gin.Context, msg string) {
 	if msg == "" {
 		msg = constant.MsgBadRequest
 	}
-	c.JSON(http.StatusBadRequest, Result{
+	c.JSON(http.StatusOK, Result{
 		Code: constant.CodeBadRequest,
 		Msg:  msg,
 		Data: nil,
@@ -88,7 +88,7 @@ func Fail(c *gin.Context, msg string) {
 func FromAppError(c *gin.Context, ae *errs.AppError) {
 	status := ae.HTTPStatus
 	if status == 0 {
-		status = http.StatusBadRequest
+		status = http.StatusOK
 	}
 
 	c.JSON(status, Result{
@@ -103,20 +103,32 @@ func BadRequest(c *gin.Context, msg string) {
 	if msg == "" {
 		msg = constant.MsgBadRequest
 	}
-	c.JSON(http.StatusBadRequest, Result{
+	c.JSON(http.StatusOK, Result{
 		Code: constant.CodeBadRequest,
 		Msg:  msg,
 		Data: nil,
 	})
 }
 
-// Unauthorized 访问未授权（已登录但无权限）
+// Unauthorized 访问未授权（token无效/过期）
 func Unauthorized(c *gin.Context, msg string) {
 	if msg == "" {
 		msg = constant.MsgAccessUnauthorized
 	}
 	c.JSON(http.StatusUnauthorized, Result{
 		Code: constant.CodeAccessUnauthorized,
+		Msg:  msg,
+		Data: nil,
+	})
+}
+
+// Forbidden 权限不足（已认证但无权限）
+func Forbidden(c *gin.Context, msg string) {
+	if msg == "" {
+		msg = constant.MsgAccessPermissionException
+	}
+	c.JSON(http.StatusForbidden, Result{
+		Code: constant.CodeAccessPermissionException,
 		Msg:  msg,
 		Data: nil,
 	})
@@ -151,7 +163,7 @@ func SystemError(c *gin.Context, msg string) {
 	if msg == "" {
 		msg = constant.MsgSystemError
 	}
-	c.JSON(http.StatusBadRequest, Result{
+	c.JSON(http.StatusInternalServerError, Result{
 		Code: constant.CodeSystemError,
 		Msg:  msg,
 		Data: nil,

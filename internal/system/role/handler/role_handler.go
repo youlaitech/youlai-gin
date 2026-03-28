@@ -2,10 +2,14 @@ package handler
 
 import (
 	"strconv"
+
 	"github.com/gin-gonic/gin"
+
 	"youlai-gin/internal/system/role/model"
 	"youlai-gin/internal/system/role/service"
+	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/middleware"
 	"youlai-gin/pkg/response"
 	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/validator"
@@ -14,16 +18,16 @@ import (
 func RegisterRoleRoutes(r *gin.RouterGroup) {
 	roles := r.Group("/roles")
 	{
-		roles.GET("", GetRolePage)
+		roles.GET("", middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeList), GetRolePage)
 		roles.GET("/options", GetRoleOptions)
-		roles.POST("", SaveRole)
+		roles.POST("", middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeInsert), SaveRole)
 		roles.GET("/:id/form", GetRoleForm)
-		roles.PUT("/:id", UpdateRole)
-		roles.DELETE("/:id", DeleteRole)
+		roles.PUT("/:id", middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeUpdate), UpdateRole)
+		roles.DELETE("/:id", middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeDelete), DeleteRole)
 		roles.GET("/:id/menu-ids", GetRoleMenuIds)
-		roles.PUT("/:id/menus", UpdateRoleMenus)
+		roles.PUT("/:id/menus", middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeGrant), UpdateRoleMenus)
 		roles.GET("/:id/dept-ids", GetRoleDeptIds)
-		roles.PUT("/:id/depts", UpdateRoleDepts)
+		roles.PUT("/:id/depts", middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeGrant), UpdateRoleDepts)
 	}
 }
 

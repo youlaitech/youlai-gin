@@ -8,6 +8,7 @@ import (
 	"youlai-gin/internal/file"
 	"youlai-gin/internal/system"
 	pkgAuth "youlai-gin/pkg/auth"
+	"youlai-gin/pkg/sse"
 )
 
 // Register 注册所有业务路由
@@ -29,5 +30,8 @@ func Register(r *gin.Engine, tokenManager pkgAuth.TokenManager) {
 
 		// 文件管理模块
 		file.RegisterRoutes(authorized)
+
+		// SSE连接模块
+		sse.RegisterRoutes(authorized, tokenManager)
 	}
 }

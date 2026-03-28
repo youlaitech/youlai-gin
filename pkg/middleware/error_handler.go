@@ -45,7 +45,7 @@ func ErrorHandler() gin.HandlerFunc {
 			zap.Error(rawErr),
 			zap.String("path", c.Request.URL.Path),
 		)
-		c.Status(http.StatusBadRequest)
+		c.Status(http.StatusInternalServerError)
 		response.FromAppError(c, errs.SystemError(""))
 	}
 }

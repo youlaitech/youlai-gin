@@ -4,28 +4,42 @@ import (
 	"strings"
 	"time"
 
-	"youlai-gin/pkg/database"
 	"youlai-gin/internal/system/log/model"
 	pkgDatabase "youlai-gin/pkg/database"
+	"youlai-gin/pkg/database"
+	"youlai-gin/pkg/enums"
+	"youlai-gin/pkg/types"
 )
 
 // GetLogPage 获取日志分页列表
 func GetLogPage(query *model.LogQuery) ([]model.LogPageVO, int64, error) {
-	var logs []model.LogPageVO
+	var logs []struct {
+		ID            int64     `gorm:"column:id"`
+		Module        int       `gorm:"column:module"`
+		ActionType    int       `gorm:"column:action_type"`
+		Title         string    `gorm:"column:title"`
+		Content       string    `gorm:"column:content"`
+		OperatorID    int64     `gorm:"column:operator_id"`
+		OperatorName  string    `gorm:"column:operator_name"`
+		Status        int       `gorm:"column:status"`
+		RequestURI    string    `gorm:"column:request_uri"`
+		RequestMethod string    `gorm:"column:request_method"`
+		IP            string    `gorm:"column:ip"`
+		Region        string    `gorm:"column:region"`
+		Device        string    `gorm:"column:device"`
+		Browser       string    `gorm:"column:browser"`
+		OS            string    `gorm:"column:os"`
+		ExecutionTime int       `gorm:"column:execution_time"`
+		ErrorMsg      string    `gorm:"column:error_msg"`
+		CreateTime    time.Time `gorm:"column:create_time"`
+	}
 	var total int64
 
 	db := database.DB.Table("sys_log t1").
-		Select("t1.id, t1.module, t1.content, t1.request_uri, t1.request_method as method, t1.ip, " +
-			"CONCAT(t1.province,' ', t1.city) as region, t1.execution_time, " +
-			"CONCAT(t1.browser,' ', t1.browser_version) as browser, t1.os, t1.create_by, t1.create_time, " +
-			"t2.nickname as operator").
-		Joins("LEFT JOIN sys_user t2 ON t1.create_by = t2.id")
-
-	// 查询条件
-	if query.Keywords != "" {
-		keyword := "%" + query.Keywords + "%"
-		db = db.Where("(t1.content LIKE ? OR t1.ip LIKE ? OR t2.nickname LIKE ?)", keyword, keyword, keyword)
-	}
+		Select("t1.id, t1.module, t1.action_type, t1.title, t1.content, " +
+			"t1.operator_id, t1.operator_name, t1.status, t1.request_uri, t1.request_method, t1.ip, " +
+			"CONCAT(t1.province,' ', t1.city) as region, t1.device, t1.browser, t1.os, " +
+			"t1.execution_time, t1.error_msg, t1.create_time")
 
 	if len(query.CreateTime) == 2 {
 		startTime := strings.TrimSpace(query.CreateTime[0])
@@ -44,17 +58,48 @@ func GetLogPage(query *model.LogQuery) ([]model.LogPageVO, int64, error) {
 		}
 	}
 
-	// 统计总数
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// 分页查询
 	err := db.Scopes(pkgDatabase.PaginateFromQuery(query)).
 		Order("t1.create_time DESC").
 		Find(&logs).Error
 
-	return logs, total, err
+	// 转换为 VO 并处理枚举标签
+	result := make([]model.LogPageVO, len(logs))
+	for i, log := range logs {
+		moduleLabel := enums.LogModuleDesc[enums.LogModule(log.Module)]
+		if moduleLabel == "" {
+			moduleLabel = "其他"
+		}
+		actionTypeLabel := enums.ActionTypeDesc[enums.ActionType(log.ActionType)]
+		if actionTypeLabel == "" {
+			actionTypeLabel = "其他"
+		}
+		result[i] = model.LogPageVO{
+			ID:            types.BigInt(log.ID),
+			Module:        moduleLabel,
+			ActionType:    actionTypeLabel,
+			Title:         log.Title,
+			Content:       log.Content,
+			OperatorID:    types.BigInt(log.OperatorID),
+			OperatorName:  log.OperatorName,
+			Status:        log.Status,
+			RequestURI:    log.RequestURI,
+			RequestMethod: log.RequestMethod,
+			IP:            log.IP,
+			Region:        log.Region,
+			Device:        log.Device,
+			Browser:       log.Browser,
+			OS:            log.OS,
+			ExecutionTime: log.ExecutionTime,
+			ErrorMsg:      log.ErrorMsg,
+			CreateTime:    types.LocalTime(log.CreateTime),
+		}
+	}
+
+	return result, total, err
 }
 
 // GetVisitTrend 获取访问趋势
@@ -80,7 +125,7 @@ func GetVisitTrend(startDate, endDate time.Time) (*model.VisitTrendVO, error) {
 		var uv int64
 		database.DB.Table("sys_log").
 			Where("DATE(create_time) = ?", dateStr).
-			Distinct("create_by").
+			Distinct("operator_id").
 			Count(&uv)
 		uvs = append(uvs, uv)
 
@@ -117,7 +162,7 @@ func GetVisitStats() (*model.VisitStatsVO, error) {
 
 	database.DB.Table("sys_log").
 		Where("DATE(create_time) = ?", today).
-		Distinct("create_by").
+		Distinct("operator_id").
 		Count(&stats.TodayUV)
 
 	database.DB.Table("sys_log").
@@ -132,7 +177,7 @@ func GetVisitStats() (*model.VisitStatsVO, error) {
 
 	database.DB.Table("sys_log").
 		Where("DATE(create_time) >= ?", weekStart).
-		Distinct("create_by").
+		Distinct("operator_id").
 		Count(&stats.WeekUV)
 
 	// 本月统计
@@ -142,12 +187,12 @@ func GetVisitStats() (*model.VisitStatsVO, error) {
 
 	database.DB.Table("sys_log").
 		Where("DATE(create_time) >= ?", monthStart).
-		Distinct("create_by").
+		Distinct("operator_id").
 		Count(&stats.MonthUV)
 
 	// 总统计
 	database.DB.Table("sys_log").Count(&stats.TotalPV)
-	database.DB.Table("sys_log").Distinct("create_by").Count(&stats.TotalUV)
+	database.DB.Table("sys_log").Distinct("operator_id").Count(&stats.TotalUV)
 
 	return stats, nil
 }

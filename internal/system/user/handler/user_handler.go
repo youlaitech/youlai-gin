@@ -9,9 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"youlai-gin/internal/system/user/api"
-	"youlai-gin/internal/system/user/service"
+	userService "youlai-gin/internal/system/user/service"
+	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
 	pkgContext "youlai-gin/pkg/context"
+	"youlai-gin/pkg/middleware"
 	"youlai-gin/pkg/response"
 	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/validator"
@@ -19,28 +21,28 @@ import (
 
 // RegisterUserRoutes 注册用户路由
 func RegisterUserRoutes(r *gin.RouterGroup) {
-	r.GET("/users", GetUserList)
-	r.POST("/users", SaveUser)
+	r.GET("/users", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeList), GetUserList)
+	r.POST("/users", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeInsert), SaveUser)
 	r.GET("/users/:userId/form", GetUserForm)
-	r.PUT("/users/:userId", UpdateUser)
-	r.DELETE("/users/:ids", DeleteUsers)
-	r.PATCH("/users/:userId/status", UpdateUserStatus)
+	r.PUT("/users/:userId", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeUpdate), UpdateUser)
+	r.DELETE("/users/:ids", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeDelete), DeleteUsers)
+	r.PATCH("/users/:userId/status", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeUpdate), UpdateUserStatus)
 	r.GET("/users/me", GetCurrentUser)
 	r.GET("/users/profile", GetUserProfile)
-	r.PUT("/users/profile", UpdateUserProfile)
-	r.PUT("/users/:userId/password/reset", ResetUserPassword)
-	r.PUT("/users/password", ChangeCurrentUserPassword)
+	r.PUT("/users/profile", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeUpdate), UpdateUserProfile)
+	r.PUT("/users/:userId/password/reset", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeResetPassword), ResetUserPassword)
+	r.PUT("/users/password", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeChangePassword), ChangeCurrentUserPassword)
 	r.POST("/users/mobile/code", SendMobileCode)
-	r.PUT("/users/mobile", BindOrChangeMobile)
-	r.DELETE("/users/mobile", UnbindMobile)
+	r.PUT("/users/mobile", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeUpdate), BindOrChangeMobile)
+	r.DELETE("/users/mobile", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeUpdate), UnbindMobile)
 	r.POST("/users/email/code", SendEmailCode)
-	r.PUT("/users/email", BindOrChangeEmail)
-	r.DELETE("/users/email", UnbindEmail)
+	r.PUT("/users/email", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeUpdate), BindOrChangeEmail)
+	r.DELETE("/users/email", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeUpdate), UnbindEmail)
 
 	// Excel 导入导出
 	r.GET("/users/export", ExportUsers)
 	r.GET("/users/template", DownloadUserTemplate)
-	r.POST("/users/import", ImportUsers)
+	r.POST("/users/import", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeImport), ImportUsers)
 	r.GET("/users/options", GetUserOptions)
 }
 
@@ -61,7 +63,7 @@ func GetUserList(c *gin.Context) {
 		return
 	}
 
-	result, err := service.GetUserPage(&query, currentUser)
+	result, err := userService.GetUserPage(&query, currentUser)
 	if err != nil {
 		c.Error(err)
 		return
@@ -81,7 +83,7 @@ func SaveUser(c *gin.Context) {
 		return
 	}
 
-	if err := service.SaveUser(&form); err != nil {
+	if err := userService.SaveUser(&form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -102,7 +104,7 @@ func GetUserForm(c *gin.Context) {
 		return
 	}
 
-	formData, err := service.GetUserForm(userId)
+	formData, err := userService.GetUserForm(userId)
 	if err != nil {
 		c.Error(err)
 		return
@@ -131,7 +133,7 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	form.ID = types.BigInt(userId)
-	if err := service.SaveUser(&form); err != nil {
+	if err := userService.SaveUser(&form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -147,7 +149,7 @@ func UpdateUser(c *gin.Context) {
 func DeleteUsers(c *gin.Context) {
 	ids := c.Param("ids")
 
-	if err := service.DeleteUsers(ids); err != nil {
+	if err := userService.DeleteUsers(ids); err != nil {
 		c.Error(err)
 		return
 	}
@@ -175,7 +177,7 @@ func UpdateUserStatus(c *gin.Context) {
 		return
 	}
 
-	if err := service.UpdateUserStatus(userId, status); err != nil {
+	if err := userService.UpdateUserStatus(userId, status); err != nil {
 		c.Error(err)
 		return
 	}
@@ -196,7 +198,7 @@ func GetCurrentUser(c *gin.Context) {
 	}
 
 	// 使用token中的角色信息获取用户详情和权限
-	currentUser, err := service.GetCurrentUserInfoWithRoles(userDetails.UserID, userDetails.Roles)
+	currentUser, err := userService.GetCurrentUserInfoWithRoles(userDetails.UserID, userDetails.Roles)
 	if err != nil {
 		c.Error(err)
 		return
@@ -216,7 +218,7 @@ func GetUserProfile(c *gin.Context) {
 		return
 	}
 
-	profile, err := service.GetUserProfile(userId)
+	profile, err := userService.GetUserProfile(userId)
 	if err != nil {
 		c.Error(err)
 		return
@@ -242,7 +244,7 @@ func UpdateUserProfile(c *gin.Context) {
 		return
 	}
 
-	if err := service.UpdateUserProfile(userId, &form); err != nil {
+	if err := userService.UpdateUserProfile(userId, &form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -264,7 +266,7 @@ func ResetUserPassword(c *gin.Context) {
 
 	password := c.Query("password")
 
-	if err := service.ResetUserPassword(userId, password); err != nil {
+	if err := userService.ResetUserPassword(userId, password); err != nil {
 		c.Error(err)
 		return
 	}
@@ -289,7 +291,7 @@ func ChangeCurrentUserPassword(c *gin.Context) {
 		return
 	}
 
-	if err := service.ChangeUserPassword(userId, &form); err != nil {
+	if err := userService.ChangeUserPassword(userId, &form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -307,7 +309,7 @@ func SendMobileCode(c *gin.Context) {
 		return
 	}
 
-	if err := service.SendMobileCode(mobile); err != nil {
+	if err := userService.SendMobileCode(mobile); err != nil {
 		c.Error(err)
 		return
 	}
@@ -331,7 +333,7 @@ func BindOrChangeMobile(c *gin.Context) {
 		return
 	}
 
-	if err := service.BindOrChangeMobile(userId, &form); err != nil {
+	if err := userService.BindOrChangeMobile(userId, &form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -355,7 +357,7 @@ func UnbindMobile(c *gin.Context) {
 		return
 	}
 
-	if err := service.UnbindMobile(userId, &form); err != nil {
+	if err := userService.UnbindMobile(userId, &form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -374,7 +376,7 @@ func SendEmailCode(c *gin.Context) {
 		return
 	}
 
-	if err := service.SendEmailCode(email); err != nil {
+	if err := userService.SendEmailCode(email); err != nil {
 		c.Error(err)
 		return
 	}
@@ -398,7 +400,7 @@ func BindOrChangeEmail(c *gin.Context) {
 		return
 	}
 
-	if err := service.BindOrChangeEmail(userId, &form); err != nil {
+	if err := userService.BindOrChangeEmail(userId, &form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -422,7 +424,7 @@ func UnbindEmail(c *gin.Context) {
 		return
 	}
 
-	if err := service.UnbindEmail(userId, &form); err != nil {
+	if err := userService.UnbindEmail(userId, &form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -435,7 +437,7 @@ func UnbindEmail(c *gin.Context) {
 // @Tags 02.用户接口
 // @Router /api/v1/users/options [get]
 func GetUserOptions(c *gin.Context) {
-	options, err := service.GetUserOptions()
+	options, err := userService.GetUserOptions()
 	if err != nil {
 		c.Error(err)
 		return
@@ -462,7 +464,7 @@ func ExportUsers(c *gin.Context) {
 	}
 
 	// 导出用户数据
-	exporter, err := service.ExportUsersToExcel(&query, currentUser)
+	exporter, err := userService.ExportUsersToExcel(&query, currentUser)
 	if err != nil {
 		c.Error(err)
 		return
@@ -488,7 +490,7 @@ func ExportUsers(c *gin.Context) {
 // @Tags 02.用户接口
 // @Router /api/v1/users/template [get]
 func DownloadUserTemplate(c *gin.Context) {
-	exporter, err := service.GenerateUserTemplate()
+	exporter, err := userService.GenerateUserTemplate()
 	if err != nil {
 		c.Error(err)
 		return
@@ -542,7 +544,7 @@ func ImportUsers(c *gin.Context) {
 	}
 	defer f.Close()
 
-	result, err := service.ImportUsersFromExcel(f)
+	result, err := userService.ImportUsersFromExcel(f)
 	if err != nil {
 		c.Error(err)
 		return
@@ -554,3 +556,4 @@ func ImportUsers(c *gin.Context) {
 func isExcelFile(filename string) bool {
 	return len(filename) >= 5 && filename[len(filename)-5:] == allowedExcelTypes
 }
+

@@ -2,8 +2,9 @@ package middleware
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,27 +13,31 @@ import (
 	"youlai-gin/pkg/database"
 	pkgContext "youlai-gin/pkg/context"
 	"youlai-gin/pkg/logger"
+	"youlai-gin/pkg/enums"
 )
 
-// OperationLog 操作日志实体
+// OperationLogEntity 操作日志实体
 type OperationLogEntity struct {
-	ID              int64  `gorm:"primaryKey;autoIncrement" json:"id"`
-	Module          string `gorm:"column:module;size:50" json:"module"`                // 日志模块
-	RequestMethod   string `gorm:"column:request_method;size:64" json:"requestMethod"` // 请求方式
-	RequestParams   string `gorm:"column:request_params;type:text" json:"requestParams"` // 请求参数
-	ResponseContent string `gorm:"column:response_content;type:mediumtext" json:"responseContent"` // 响应内容
-	Content         string `gorm:"column:content;size:255" json:"content"`            // 日志内容
-	RequestURI      string `gorm:"column:request_uri;size:255" json:"requestUri"`     // 请求路径
-	Method          string `gorm:"column:method;size:255" json:"method"`              // 方法名
-	IP              string `gorm:"column:ip;size:50" json:"ip"`                       // IP地址
-	Province        string `gorm:"column:province;size:100" json:"province"`          // 省份
-	City            string `gorm:"column:city;size:100" json:"city"`                  // 城市
-	ExecutionTime   int64  `gorm:"column:execution_time" json:"executionTime"`         // 执行时间(毫秒)
-	Browser         string `gorm:"column:browser;size:100" json:"browser"`            // 浏览器
-	BrowserVersion  string `gorm:"column:browser_version;size:100" json:"browserVersion"` // 浏览器版本
-	OS              string `gorm:"column:os;size:100" json:"os"`                      // 终端系统
-	CreateBy        int64  `gorm:"column:create_by" json:"createBy"`                  // 创建人ID
-	CreateTime      time.Time `gorm:"column:create_time;autoCreateTime" json:"createTime"`
+	ID            int64      `gorm:"primaryKey;autoIncrement" json:"id"`
+	Module        int        `gorm:"column:module" json:"module"`
+	ActionType    int        `gorm:"column:action_type" json:"actionType"`
+	Title         string     `gorm:"column:title;size:100" json:"title"`
+	Content       string     `gorm:"column:content;type:text" json:"content"`
+	OperatorID    int64      `gorm:"column:operator_id" json:"operatorId"`
+	OperatorName  string     `gorm:"column:operator_name;size:50" json:"operatorName"`
+	RequestURI    string     `gorm:"column:request_uri;size:255" json:"requestUri"`
+	RequestMethod string     `gorm:"column:request_method;size:10" json:"requestMethod"`
+	IP            string     `gorm:"column:ip;size:45" json:"ip"`
+	Province      string     `gorm:"column:province;size:100" json:"province"`
+	City          string     `gorm:"column:city;size:100" json:"city"`
+	Device        string     `gorm:"column:device;size:100" json:"device"`
+	OS            string     `gorm:"column:os;size:100" json:"os"`
+	Browser       string     `gorm:"column:browser;size:100" json:"browser"`
+	Status        int        `gorm:"column:status" json:"status"`
+	ErrorMsg      string     `gorm:"column:error_msg;size:255" json:"errorMsg"`
+	ExecutionTime int        `gorm:"column:execution_time" json:"executionTime"`
+	CreateBy      int64      `gorm:"column:create_by" json:"createBy"`
+	CreateTime    time.Time  `gorm:"column:create_time;autoCreateTime" json:"createTime"`
 }
 
 func (OperationLogEntity) TableName() string {
@@ -41,25 +46,27 @@ func (OperationLogEntity) TableName() string {
 
 // OperationLogConfig 操作日志配置
 type OperationLogConfig struct {
-	Module          string // 操作模块
-	Operation       string // 操作类型
-	SaveRequestBody bool   // 是否保存请求体
-	SaveResponse    bool   // 是否保存响应体
-	MaxBodySize     int    // 最大请求体大小（字节），0 表示不限制
+	Module           enums.LogModule
+	ActionType       enums.ActionType
+	Title            string
+	Content          string
+	SaveRequestBody  bool
+	SaveResponse     bool
+	MaxBodySize      int
 }
 
 // DefaultOperationLogConfig 默认配置
 var DefaultOperationLogConfig = OperationLogConfig{
 	SaveRequestBody: true,
-	SaveResponse:    false, // 不保存响应体
-	MaxBodySize:     10240, // 最大 10KB
+	SaveResponse:    false,
+	MaxBodySize:     10240,
 }
 
 // OperationLog 操作日志中间件
-func OperationLog(module, operation string) gin.HandlerFunc {
+func OperationLog(module enums.LogModule, actionType enums.ActionType) gin.HandlerFunc {
 	return OperationLogWithConfig(OperationLogConfig{
 		Module:          module,
-		Operation:       operation,
+		ActionType:      actionType,
 		SaveRequestBody: true,
 		SaveResponse:    false,
 		MaxBodySize:     10240,
@@ -71,26 +78,19 @@ func OperationLogWithConfig(config OperationLogConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 
-		// 获取用户信息
 		userID, _ := pkgContext.GetCurrentUserID(c)
+		var username string
+		if user, err := pkgContext.GetCurrentUser(c); err == nil {
+			username = user.Username
+		}
 
-		// 保存请求体
-		var requestBody string
 		if config.SaveRequestBody && c.Request.Body != nil {
 			bodyBytes, err := io.ReadAll(c.Request.Body)
 			if err == nil {
-				// 限制大小
-				if config.MaxBodySize > 0 && len(bodyBytes) > config.MaxBodySize {
-					requestBody = string(bodyBytes[:config.MaxBodySize]) + "...(truncated)"
-				} else {
-					requestBody = string(bodyBytes)
-				}
-				// 恢复 Body，供后续使用
 				c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 			}
 		}
 
-		// 保存响应体（如果需要）
 		var responseBody string
 		if config.SaveResponse {
 			writer := &responseWriter{
@@ -106,41 +106,56 @@ func OperationLogWithConfig(config OperationLogConfig) gin.HandlerFunc {
 			}()
 		}
 
-		// 执行请求
 		c.Next()
 
-		// 计算执行时长
+		ua := c.Request.UserAgent()
 		duration := time.Since(start).Milliseconds()
 
-		// 提取错误信息
 		var errorMsg string
+		status := 1
 		if len(c.Errors) > 0 {
+			status = 0
 			errorMsg = c.Errors.String()
-			if len(errorMsg) > 500 {
-				errorMsg = errorMsg[:500]
+			if len(errorMsg) > 255 {
+				errorMsg = errorMsg[:255]
 			}
 		}
 
-		// 构建日志记录
-		logEntry := OperationLogEntity{
-			Module:          config.Module,
-			RequestMethod:   c.Request.Method,
-			RequestParams:   requestBody,
-			ResponseContent: responseBody,
-			Content:         config.Operation,
-			RequestURI:      c.Request.URL.Path,
-			Method:          config.Operation,
-			IP:              c.ClientIP(),
-			Province:        "",
-			City:            "",
-			ExecutionTime:   duration,
-			Browser:         c.Request.UserAgent(),
-			BrowserVersion:  "",
-			OS:              "",
-			CreateBy:        userID,
+		module := config.Module
+		if module == 0 {
+			module = enums.LogModuleOther
 		}
 
-		// 异步保存日志
+		actionType := config.ActionType
+		if actionType == 0 {
+			actionType = enums.ActionTypeOther
+		}
+
+		title := config.Title
+		if title == "" {
+			title = enums.LogModuleDesc[module] + "-" + enums.ActionTypeDesc[actionType]
+		}
+
+		logEntry := OperationLogEntity{
+			Module:        int(module),
+			ActionType:    int(actionType),
+			Title:         title,
+			Content:       config.Content,
+			OperatorID:    userID,
+			OperatorName:  username,
+			RequestURI:    c.Request.URL.Path,
+			RequestMethod: c.Request.Method,
+			IP:            c.ClientIP(),
+			Province:      "",
+			City:          "",
+			Device:        "",
+			OS:            ParseOS(ua),
+			Browser:       ParseBrowser(ua),
+			Status:        status,
+			ErrorMsg:      errorMsg,
+			ExecutionTime: int(duration),
+		}
+
 		go saveOperationLog(logEntry)
 	}
 }
@@ -150,6 +165,11 @@ func saveOperationLog(log OperationLogEntity) {
 	if err := database.DB.Create(&log).Error; err != nil {
 		logger.Error("保存操作日志失败", zap.Error(err))
 	}
+}
+
+// SaveOperationLog 导出的保存操作日志函数
+func SaveOperationLog(log OperationLogEntity) error {
+	return database.DB.Create(&log).Error
 }
 
 // responseWriter 用于捕获响应体
@@ -168,8 +188,8 @@ func (w *responseWriter) WriteString(s string) (int, error) {
 	return w.ResponseWriter.WriteString(s)
 }
 
-// OperationLogJSON JSON 日志中间件（仅保存关键信息）
-func OperationLogJSON(module, operation string) gin.HandlerFunc {
+// OperationLogJSON JSON 日志中间件
+func OperationLogJSON(actionType string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 
@@ -179,11 +199,9 @@ func OperationLogJSON(module, operation string) gin.HandlerFunc {
 
 		duration := time.Since(start)
 
-		// 使用结构化日志记录
 		logger.Info(
 			"[操作日志]",
-			zap.String("module", module),
-			zap.String("operation", operation),
+			zap.String("actionType", actionType),
 			zap.Int64("userId", userID),
 			zap.String("path", c.Request.URL.Path),
 			zap.String("method", c.Request.Method),
@@ -193,19 +211,91 @@ func OperationLogJSON(module, operation string) gin.HandlerFunc {
 	}
 }
 
-// GetOperationLogList 获取操作日志列表
+// OperationLogQuery 操作日志查询参数
 type OperationLogQuery struct {
-	Module    string `form:"module"`
-	Operation string `form:"operation"`
-	Username  string `form:"username"`
-	StartTime string `form:"startTime"`
-	EndTime   string `form:"endTime"`
-	PageNum   int    `form:"pageNum" binding:"required,min=1"`
-	PageSize  int    `form:"pageSize" binding:"required,min=1,max=100"`
+	ActionType string `form:"actionType"`
+	StartTime  string `form:"startTime"`
+	EndTime    string `form:"endTime"`
+	PageNum    int    `form:"pageNum" binding:"required,min=1"`
+	PageSize   int    `form:"pageSize" binding:"required,min=1,max=100"`
 }
 
-// ToJSON 将日志转换为 JSON（用于响应体记录）
-func (log *OperationLogEntity) ToJSON() string {
-	data, _ := json.Marshal(log)
-	return string(data)
+// ParseBrowser 从 User-Agent 字符串中提取浏览器名称和版本
+func ParseBrowser(ua string) string {
+	re := regexp.MustCompile(`(?:Edg|OPR|Opera|Firefox|Chrome|Safari|Version|MSIE|Trident)/[\d.]+`)
+	matches := re.FindAllString(ua, -1)
+	browser := ""
+
+	switch {
+	case strings.Contains(ua, "Edg/"):
+		browser = "Edge"
+	case strings.Contains(ua, "OPR/") || strings.Contains(ua, "Opera/"):
+		browser = "Opera"
+	case strings.Contains(ua, "Firefox/"):
+		browser = "Firefox"
+	case strings.Contains(ua, "Chrome/") && !strings.Contains(ua, "Edg/"):
+		browser = "Chrome"
+	case strings.Contains(ua, "Safari/") && !strings.Contains(ua, "Chrome"):
+		browser = "Safari"
+	case strings.Contains(ua, "MSIE") || strings.Contains(ua, "Trident/"):
+		browser = "IE"
+	}
+
+	// 提取版本号
+	for _, m := range matches {
+		if strings.HasPrefix(m, browser) && strings.Contains(m, "/") {
+			if idx := strings.Index(m, "/"); idx != -1 {
+				browser = browser + " " + m[idx+1:]
+			}
+			break
+		}
+		// Safari 的版本号在 Version/ 后面
+		if browser == "Safari" && strings.HasPrefix(m, "Version/") {
+			if idx := strings.Index(m, "/"); idx != -1 {
+				browser = "Safari " + m[idx+1:]
+			}
+			break
+		}
+	}
+
+	return browser
+}
+
+// ParseOS 从 User-Agent 字符串中提取操作系统
+func ParseOS(ua string) string {
+	switch {
+	case strings.Contains(ua, "Windows NT 10"):
+		return "Windows 10"
+	case strings.Contains(ua, "Windows NT 6.3"):
+		return "Windows 8.1"
+	case strings.Contains(ua, "Windows NT 6.1"):
+		return "Windows 7"
+	case strings.Contains(ua, "Windows"):
+		return "Windows"
+	case strings.Contains(ua, "Mac OS X"):
+		re := regexp.MustCompile(`Mac OS X ([\d_]+)`)
+		matches := re.FindStringSubmatch(ua)
+		if len(matches) > 1 {
+			return "macOS " + strings.ReplaceAll(matches[1], "_", ".")
+		}
+		return "macOS"
+	case strings.Contains(ua, "Android"):
+		re := regexp.MustCompile(`Android ([\d.]+)`)
+		matches := re.FindStringSubmatch(ua)
+		if len(matches) > 1 {
+			return "Android " + matches[1]
+		}
+		return "Android"
+	case strings.Contains(ua, "iPhone") || strings.Contains(ua, "iPad"):
+		re := regexp.MustCompile(`OS ([\d_]+)`)
+		matches := re.FindStringSubmatch(ua)
+		if len(matches) > 1 {
+			return "iOS " + strings.ReplaceAll(matches[1], "_", ".")
+		}
+		return "iOS"
+	case strings.Contains(ua, "Linux"):
+		return "Linux"
+	default:
+		return ""
+	}
 }

@@ -101,7 +101,7 @@ func BadRequest(msg string) *AppError {
 	return &AppError{
 		Code:       constant.CodeBadRequest,
 		Msg:        msg,
-		HTTPStatus: http.StatusBadRequest,
+		HTTPStatus: http.StatusOK,
 	}
 }
 
@@ -113,7 +113,7 @@ func InvalidParam(msg string) *AppError {
 	return &AppError{
 		Code:       constant.CodeInvalidUserInput,
 		Msg:        msg,
-		HTTPStatus: http.StatusBadRequest,
+		HTTPStatus: http.StatusOK,
 	}
 }
 
@@ -134,7 +134,7 @@ func UserNotFound() *AppError {
 	return &AppError{
 		Code:       constant.CodeUserNotExist,
 		Msg:        constant.MsgUserNotExist,
-		HTTPStatus: http.StatusBadRequest,
+		HTTPStatus: http.StatusOK,
 	}
 }
 
@@ -143,7 +143,7 @@ func UserPasswordError() *AppError {
 	return &AppError{
 		Code:       constant.CodeUserPasswordError,
 		Msg:        constant.MsgUserPasswordError,
-		HTTPStatus: http.StatusBadRequest,
+		HTTPStatus: http.StatusOK,
 	}
 }
 
@@ -177,13 +177,13 @@ func Unauthorized(msg string) *AppError {
 	}
 }
 
-// Forbidden 无权限访问
+// Forbidden 无权限访问（A0300）
 func Forbidden(msg string) *AppError {
 	if msg == "" {
-		msg = "无权限访问"
+		msg = constant.MsgAccessPermissionException
 	}
 	return &AppError{
-		Code:       constant.CodeAccessUnauthorized,
+		Code:       constant.CodeAccessPermissionException,
 		Msg:        msg,
 		HTTPStatus: http.StatusForbidden,
 	}

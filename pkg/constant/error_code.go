@@ -31,6 +31,9 @@ const (
 	CodeRefreshTokenInvalid = "A0231" // 刷新令牌无效
 	MsgRefreshTokenInvalid  = "刷新令牌无效或已过期"
 
+	CodeAccessPermissionException = "A0300" // 访问权限异常
+	MsgAccessPermissionException  = "访问权限异常"
+
 	CodeAccessUnauthorized = "A0301" // 访问未授权
 	MsgAccessUnauthorized  = "访问未授权"
 

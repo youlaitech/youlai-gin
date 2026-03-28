@@ -9,4 +9,7 @@ const (
 	UserRefreshTokenPrefix = "auth:user:refresh_token:" // 用户ID -> 刷新令牌
 	BlacklistTokenPrefix   = "auth:blacklist:token:"    // Token 黑名单
 	UserTokenVersion       = "auth:user:token_version:" // 用户 Token 版本号
+
+	// 限流相关
+	RateLimiterIPPrefix = "rate_limiter:ip:" // IP 限流
 )

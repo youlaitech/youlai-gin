@@ -1,0 +1,1635 @@
+definitions:
+  common.KeyValue:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
+  handler.UploadResult:
+    properties:
+      name:
+        description: 原始文件名
+        type: string
+      path:
+        description: 存储路径
+        type: string
+      size:
+        description: 文件大小
+        type: integer
+      url:
+        description: 访问URL
+        type: string
+    type: object
+  health.HealthResponse:
+    properties:
+      services:
+        additionalProperties:
+          type: string
+        description: 服务状态
+        type: object
+      status:
+        description: 状态：healthy, unhealthy
+        type: string
+      timestamp:
+        description: 时间戳
+        type: integer
+      version:
+        description: 版本号
+        type: string
+    type: object
+  model.DeptForm:
+    properties:
+      code:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      parentId:
+        type: integer
+      sort:
+        type: integer
+      status:
+        enum:
+        - 0
+        - 1
+        type: integer
+    required:
+    - code
+    - name
+    type: object
+  model.DictForm:
+    properties:
+      dictCode:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      remark:
+        type: string
+      status:
+        enum:
+        - 0
+        - 1
+        type: integer
+    required:
+    - dictCode
+    - name
+    type: object
+  model.DictItemForm:
+    properties:
+      dictCode:
+        type: string
+      id:
+        type: integer
+      label:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        enum:
+        - 0
+        - 1
+        type: integer
+      tagType:
+        type: string
+      value:
+        type: string
+    required:
+    - dictCode
+    - label
+    - value
+    type: object
+  model.LoginRequest:
+    properties:
+      password:
+        description: 密码
+        example: "123456"
+        type: string
+      username:
+        description: 用户名
+        example: admin
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  model.MenuForm:
+    properties:
+      alwaysShow:
+        type: integer
+      component:
+        type: string
+      icon:
+        type: string
+      id:
+        type: integer
+      keepAlive:
+        type: integer
+      name:
+        type: string
+      params:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      parentId:
+        type: integer
+      perm:
+        type: string
+      redirect:
+        type: string
+      routeName:
+        type: string
+      routePath:
+        type: string
+      sort:
+        type: integer
+      type:
+        enum:
+        - C
+        - M
+        - B
+        type: string
+      visible:
+        enum:
+        - 0
+        - 1
+        type: integer
+    required:
+    - name
+    - type
+    type: object
+  model.RoleForm:
+    properties:
+      code:
+        type: string
+      dataScope:
+        enum:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        type: integer
+      deptIds:
+        items:
+          type: integer
+        type: array
+      id:
+        type: integer
+      name:
+        type: string
+      sort:
+        type: integer
+      status:
+        enum:
+        - 0
+        - 1
+        type: integer
+    required:
+    - code
+    - name
+    type: object
+  model.SmsLoginRequest:
+    properties:
+      code:
+        description: 验证码
+        example: "1234"
+        type: string
+      mobile:
+        description: 手机号
+        example: "18812345678"
+        type: string
+    required:
+    - code
+    - mobile
+    type: object
+  model.WechatBindMobileRequest:
+    properties:
+      mobile:
+        description: 手机号
+        example: "18812345678"
+        type: string
+      openId:
+        description: 微信openid
+        example: xxx
+        type: string
+      smsCode:
+        description: 短信验证码
+        example: "1234"
+        type: string
+    required:
+    - mobile
+    - openId
+    - smsCode
+    type: object
+  model.WechatPhoneLoginRequest:
+    properties:
+      loginCode:
+        description: 微信登录code
+        example: xxx
+        type: string
+      phoneCode:
+        description: 微信手机号code
+        example: xxx
+        type: string
+    required:
+    - loginCode
+    - phoneCode
+    type: object
+  model.WechatSilentLoginRequest:
+    properties:
+      code:
+        description: 微信登录code
+        example: xxx
+        type: string
+    required:
+    - code
+    type: object
+  response.Result:
+    properties:
+      code:
+        type: string
+      data: {}
+      msg:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/auth/captcha:
+    get:
+      description: 获取图形验证码
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: code/msg/data，data 为 CaptchaVO
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 获取验证码
+      tags:
+      - 01.认证接口
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 用户名密码登录，返回访问令牌和刷新令牌
+      parameters:
+      - description: 登录信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: code/msg/data，data 为 AuthenticationToken
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 账号密码登录
+      tags:
+      - 01.认证接口
+  /api/v1/auth/login/sms:
+    post:
+      consumes:
+      - application/json
+      description: 使用手机号和短信验证码登录
+      parameters:
+      - description: 短信登录信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.SmsLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: code/msg/data，data 为 AuthenticationToken
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 短信验证码登录
+      tags:
+      - 01.认证接口
+  /api/v1/auth/logout:
+    delete:
+      consumes:
+      - application/json
+      description: 使当前访问令牌失效
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: code/msg
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - Bearer: []
+      summary: 退出登录
+      tags:
+      - 01.认证接口
+  /api/v1/auth/refresh-token:
+    post:
+      consumes:
+      - application/json
+      description: 使用刷新令牌获取新的访问令牌
+      parameters:
+      - description: 刷新令牌信息 {\
+        in: body
+        name: body
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: code/msg/data，data 为 AuthenticationToken
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 刷新令牌
+      tags:
+      - 01.认证接口
+  /api/v1/auth/sms/code:
+    post:
+      consumes:
+      - application/json
+      description: 发送短信验证码到指定手机号
+      parameters:
+      - description: 手机号信息 {\
+        in: body
+        name: body
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: code/msg
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 发送登录短信验证码
+      tags:
+      - 01.认证接口
+  /api/v1/codegen/{tableName}/config:
+    delete:
+      parameters:
+      - description: 表名
+        in: path
+        name: tableName
+        required: true
+        type: string
+      responses: {}
+      summary: 删除生成配置
+      tags:
+      - 11.代码生成
+    get:
+      parameters:
+      - description: 表名
+        in: path
+        name: tableName
+        required: true
+        type: string
+      responses: {}
+      summary: 获取生成配置
+      tags:
+      - 11.代码生成
+    post:
+      parameters:
+      - description: 表名
+        in: path
+        name: tableName
+        required: true
+        type: string
+      responses: {}
+      summary: 保存生成配置
+      tags:
+      - 11.代码生成
+  /api/v1/codegen/{tableName}/download:
+    get:
+      parameters:
+      - description: 表名（可逗号分隔）
+        in: path
+        name: tableName
+        required: true
+        type: string
+      responses: {}
+      summary: 下载代码
+      tags:
+      - 11.代码生成
+  /api/v1/codegen/{tableName}/preview:
+    get:
+      parameters:
+      - description: 表名
+        in: path
+        name: tableName
+        required: true
+        type: string
+      responses: {}
+      summary: 预览代码
+      tags:
+      - 11.代码生成
+  /api/v1/codegen/table:
+    get:
+      responses: {}
+      summary: 数据表分页
+      tags:
+      - 11.代码生成
+  /api/v1/configs:
+    get:
+      responses: {}
+      summary: 配置分页
+      tags:
+      - 07.系统配置
+    post:
+      responses: {}
+      summary: 新增配置
+      tags:
+      - 07.系统配置
+  /api/v1/configs/{id}:
+    get:
+      parameters:
+      - description: 配置ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses: {}
+      summary: 配置详情
+      tags:
+      - 07.系统配置
+    put:
+      parameters:
+      - description: 配置ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses: {}
+      summary: 更新配置
+      tags:
+      - 07.系统配置
+  /api/v1/configs/{id}/form:
+    get:
+      parameters:
+      - description: 配置ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses: {}
+      summary: 配置表单
+      tags:
+      - 07.系统配置
+  /api/v1/configs/{ids}:
+    delete:
+      parameters:
+      - description: 配置ID列表
+        in: path
+        name: ids
+        required: true
+        type: string
+      responses: {}
+      summary: 删除配置
+      tags:
+      - 07.系统配置
+  /api/v1/configs/key/{key}:
+    get:
+      parameters:
+      - description: 配置键
+        in: path
+        name: key
+        required: true
+        type: string
+      responses: {}
+      summary: 根据键获取配置
+      tags:
+      - 07.系统配置
+  /api/v1/configs/refresh:
+    post:
+      responses: {}
+      summary: 刷新全部配置缓存
+      tags:
+      - 07.系统配置
+  /api/v1/configs/refresh/{key}:
+    post:
+      parameters:
+      - description: 配置键
+        in: path
+        name: key
+        required: true
+        type: string
+      responses: {}
+      summary: 刷新配置缓存
+      tags:
+      - 07.系统配置
+  /api/v1/depts:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 部门列表
+      tags:
+      - 05.部门接口
+    post:
+      parameters:
+      - description: 部门信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.DeptForm'
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 新增部门
+      tags:
+      - 05.部门接口
+  /api/v1/depts/{id}:
+    delete:
+      parameters:
+      - description: 部门ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 删除部门
+      tags:
+      - 05.部门接口
+    put:
+      parameters:
+      - description: 部门ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 部门信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.DeptForm'
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 更新部门
+      tags:
+      - 05.部门接口
+  /api/v1/depts/{id}/form:
+    get:
+      parameters:
+      - description: 部门ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 获取部门表单数据
+      tags:
+      - 05.部门接口
+  /api/v1/depts/options:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 部门下拉列表
+      tags:
+      - 05.部门接口
+  /api/v1/dicts:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 字典分页列表
+      tags:
+      - 06.字典接口
+    post:
+      parameters:
+      - description: 字典信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.DictForm'
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 新增字典
+      tags:
+      - 06.字典接口
+  /api/v1/dicts/{id}:
+    delete:
+      parameters:
+      - description: 字典ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 删除字典
+      tags:
+      - 06.字典接口
+    put:
+      parameters:
+      - description: 字典ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 字典信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.DictForm'
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 更新字典
+      tags:
+      - 06.字典接口
+  /api/v1/dicts/{id}/form:
+    get:
+      parameters:
+      - description: 字典ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 获取字典表单数据
+      tags:
+      - 06.字典接口
+  /api/v1/dicts/{id}/items:
+    get:
+      parameters:
+      - description: 字典编码
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 字典项列表
+      tags:
+      - 06.字典接口
+    post:
+      parameters:
+      - description: 字典编码
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 字典项信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.DictItemForm'
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 新增字典项
+      tags:
+      - 06.字典接口
+  /api/v1/dicts/{id}/items/{itemId}:
+    put:
+      parameters:
+      - description: 字典编码
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 字典项ID
+        in: path
+        name: itemId
+        required: true
+        type: integer
+      - description: 字典项信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.DictItemForm'
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 修改字典项
+      tags:
+      - 06.字典接口
+  /api/v1/dicts/{id}/items/{itemId}/form:
+    get:
+      parameters:
+      - description: 字典编码
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 字典项ID
+        in: path
+        name: itemId
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 字典项表单数据
+      tags:
+      - 06.字典接口
+  /api/v1/dicts/{id}/items/{itemIds}:
+    delete:
+      parameters:
+      - description: 字典编码
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 字典项ID（多个用逗号分隔）
+        in: path
+        name: itemIds
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 删除字典项
+      tags:
+      - 06.字典接口
+  /api/v1/dicts/options:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 字典下拉列表
+      tags:
+      - 06.字典接口
+  /api/v1/files:
+    delete:
+      parameters:
+      - description: 文件路径
+        in: query
+        name: path
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Result'
+      summary: 删除文件
+      tags:
+      - 10.文件接口
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: 文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: 存储路径前缀
+        in: formData
+        name: path
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Result'
+            - properties:
+                data:
+                  $ref: '#/definitions/handler.UploadResult'
+              type: object
+      summary: 文件上传
+      tags:
+      - 10.文件接口
+  /api/v1/files/batch:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: 文件列表
+        in: formData
+        name: files
+        required: true
+        type: file
+      - description: 存储路径前缀
+        in: formData
+        name: path
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Result'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/handler.UploadResult'
+                  type: array
+              type: object
+      summary: 批量文件上传
+      tags:
+      - 10.文件接口
+  /api/v1/files/image:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: 图片文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Result'
+            - properties:
+                data:
+                  $ref: '#/definitions/handler.UploadResult'
+              type: object
+      summary: 图片上传
+      tags:
+      - 10.文件接口
+  /api/v1/health:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/health.HealthResponse'
+      summary: 健康检查
+      tags:
+      - 98.基础能力
+  /api/v1/logs:
+    get:
+      responses: {}
+      summary: 日志分页
+      tags:
+      - 09.日志接口
+  /api/v1/logs/visits/overview:
+    get:
+      responses: {}
+      summary: 访问概览
+      tags:
+      - 09.日志接口
+  /api/v1/logs/visits/trend:
+    get:
+      responses: {}
+      summary: 访问趋势
+      tags:
+      - 09.日志接口
+  /api/v1/menus:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 菜单列表
+      tags:
+      - 04.菜单接口
+    post:
+      parameters:
+      - description: 菜单信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.MenuForm'
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 新增菜单
+      tags:
+      - 04.菜单接口
+  /api/v1/menus/{id}:
+    delete:
+      parameters:
+      - description: 菜单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 删除菜单
+      tags:
+      - 04.菜单接口
+    put:
+      parameters:
+      - description: 菜单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 菜单信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.MenuForm'
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 更新菜单
+      tags:
+      - 04.菜单接口
+  /api/v1/menus/{id}/form:
+    get:
+      parameters:
+      - description: 菜单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 获取菜单表单数据
+      tags:
+      - 04.菜单接口
+  /api/v1/menus/options:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 菜单下拉列表
+      tags:
+      - 04.菜单接口
+  /api/v1/menus/routes:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 获取当前用户路由
+      tags:
+      - 04.菜单接口
+  /api/v1/notices:
+    get:
+      responses: {}
+      summary: 通知公告分页
+      tags:
+      - 08.通知公告
+    post:
+      responses: {}
+      summary: 新增通知公告
+      tags:
+      - 08.通知公告
+  /api/v1/notices/{id}:
+    put:
+      parameters:
+      - description: 公告ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses: {}
+      summary: 修改通知公告
+      tags:
+      - 08.通知公告
+  /api/v1/notices/{id}/detail:
+    get:
+      parameters:
+      - description: 公告ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses: {}
+      summary: 通知公告详情
+      tags:
+      - 08.通知公告
+  /api/v1/notices/{id}/form:
+    get:
+      parameters:
+      - description: 公告ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses: {}
+      summary: 通知公告表单
+      tags:
+      - 08.通知公告
+  /api/v1/notices/{id}/publish:
+    put:
+      parameters:
+      - description: 公告ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses: {}
+      summary: 发布通知公告
+      tags:
+      - 08.通知公告
+  /api/v1/notices/{id}/revoke:
+    put:
+      parameters:
+      - description: 公告ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses: {}
+      summary: 撤回通知公告
+      tags:
+      - 08.通知公告
+  /api/v1/notices/{ids}:
+    delete:
+      parameters:
+      - description: 公告ID列表
+        in: path
+        name: ids
+        required: true
+        type: string
+      responses: {}
+      summary: 删除通知公告
+      tags:
+      - 08.通知公告
+  /api/v1/notices/my:
+    get:
+      responses: {}
+      summary: 我的通知公告
+      tags:
+      - 08.通知公告
+  /api/v1/notices/read-all:
+    put:
+      responses: {}
+      summary: 通知全部已读
+      tags:
+      - 08.通知公告
+  /api/v1/notices/unread-count:
+    get:
+      responses: {}
+      summary: 未读通知数量
+      tags:
+      - 08.通知公告
+  /api/v1/roles:
+    get:
+      parameters:
+      - description: 页码
+        in: query
+        name: pageNum
+        type: integer
+      - description: 每页数量
+        in: query
+        name: pageSize
+        type: integer
+      - description: 关键字
+        in: query
+        name: keywords
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 角色分页列表
+      tags:
+      - 03.角色接口
+    post:
+      parameters:
+      - description: 角色信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.RoleForm'
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 新增角色
+      tags:
+      - 03.角色接口
+  /api/v1/roles/{id}:
+    delete:
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 删除角色
+      tags:
+      - 03.角色接口
+    put:
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 角色信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.RoleForm'
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 更新角色
+      tags:
+      - 03.角色接口
+  /api/v1/roles/{id}/dept-ids:
+    get:
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 获取角色自定义部门ID列表
+      tags:
+      - 03.角色接口
+  /api/v1/roles/{id}/depts:
+    put:
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 部门ID列表
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            type: integer
+          type: array
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 分配角色自定义部门
+      tags:
+      - 03.角色接口
+  /api/v1/roles/{id}/form:
+    get:
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 获取角色表单数据
+      tags:
+      - 03.角色接口
+  /api/v1/roles/{id}/menu-ids:
+    get:
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 获取角色菜单ID列表
+      tags:
+      - 03.角色接口
+  /api/v1/roles/{id}/menus:
+    put:
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 菜单ID列表
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            type: integer
+          type: array
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 分配菜单权限
+      tags:
+      - 03.角色接口
+  /api/v1/roles/options:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 角色下拉列表
+      tags:
+      - 03.角色接口
+  /api/v1/sse/connect:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: JWT Token (可选，优先使用Authorization Header)
+        in: query
+        name: token
+        type: string
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: SSE Stream
+          schema:
+            type: string
+      summary: 建立SSE连接
+      tags:
+      - 14.SSE连接
+  /api/v1/sse/online-count:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Result'
+      summary: 获取在线用户数
+      tags:
+      - 14.SSE连接
+  /api/v1/user/perms:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 获取当前用户权限（按钮权限）
+      tags:
+      - 04.菜单接口
+  /api/v1/users:
+    get:
+      responses: {}
+      summary: 用户分页列表
+      tags:
+      - 02.用户接口
+    post:
+      responses: {}
+      summary: 保存用户
+      tags:
+      - 02.用户接口
+  /api/v1/users/{ids}:
+    delete:
+      parameters:
+      - description: 用户ID列表
+        in: path
+        name: ids
+        required: true
+        type: string
+      responses: {}
+      summary: 删除用户
+      tags:
+      - 02.用户接口
+  /api/v1/users/{userId}:
+    put:
+      parameters:
+      - description: 用户ID
+        in: path
+        name: userId
+        required: true
+        type: integer
+      responses: {}
+      summary: 更新用户
+      tags:
+      - 02.用户接口
+  /api/v1/users/{userId}/form:
+    get:
+      parameters:
+      - description: 用户ID
+        in: path
+        name: userId
+        required: true
+        type: integer
+      responses: {}
+      summary: 获取用户表单
+      tags:
+      - 02.用户接口
+  /api/v1/users/{userId}/password/reset:
+    put:
+      parameters:
+      - description: 用户ID
+        in: path
+        name: userId
+        required: true
+        type: integer
+      responses: {}
+      summary: 重置用户密码
+      tags:
+      - 02.用户接口
+  /api/v1/users/{userId}/status:
+    patch:
+      parameters:
+      - description: 用户ID
+        in: path
+        name: userId
+        required: true
+        type: integer
+      responses: {}
+      summary: 修改用户状态
+      tags:
+      - 02.用户接口
+  /api/v1/users/email:
+    delete:
+      responses: {}
+      summary: 解绑邮箱
+      tags:
+      - 02.用户接口
+    put:
+      responses: {}
+      summary: 绑定或更换邮箱
+      tags:
+      - 02.用户接口
+  /api/v1/users/email/code:
+    post:
+      responses: {}
+      summary: 发送邮箱验证码
+      tags:
+      - 02.用户接口
+  /api/v1/users/export:
+    get:
+      responses: {}
+      summary: 导出用户
+      tags:
+      - 02.用户接口
+  /api/v1/users/me:
+    get:
+      responses: {}
+      summary: 当前登录用户
+      tags:
+      - 02.用户接口
+  /api/v1/users/mobile:
+    delete:
+      responses: {}
+      summary: 解绑手机号
+      tags:
+      - 02.用户接口
+    put:
+      responses: {}
+      summary: 绑定或更换手机号
+      tags:
+      - 02.用户接口
+  /api/v1/users/mobile/code:
+    post:
+      responses: {}
+      summary: 发送手机号验证码
+      tags:
+      - 02.用户接口
+  /api/v1/users/options:
+    get:
+      responses: {}
+      summary: 用户下拉选项
+      tags:
+      - 02.用户接口
+  /api/v1/users/password:
+    put:
+      responses: {}
+      summary: 修改当前用户密码
+      tags:
+      - 02.用户接口
+  /api/v1/users/profile:
+    get:
+      responses: {}
+      summary: 个人中心信息
+      tags:
+      - 02.用户接口
+    put:
+      responses: {}
+      summary: 更新个人中心信息
+      tags:
+      - 02.用户接口
+  /api/v1/users/template:
+    get:
+      responses: {}
+      summary: 下载用户导入模板
+      tags:
+      - 02.用户接口
+  /api/v1/wechat/miniapp/auth/bind-mobile:
+    post:
+      consumes:
+      - application/json
+      description: 微信小程序绑定手机号
+      parameters:
+      - description: 绑定信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.WechatBindMobileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: code/msg/data
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 绑定手机号
+      tags:
+      - 13.微信小程序认证
+  /api/v1/wechat/miniapp/auth/phone-login:
+    post:
+      consumes:
+      - application/json
+      description: 微信小程序手机号快捷登录
+      parameters:
+      - description: 登录信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.WechatPhoneLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: code/msg/data
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 手机号快捷登录
+      tags:
+      - 13.微信小程序认证
+  /api/v1/wechat/miniapp/auth/silent-login:
+    post:
+      consumes:
+      - application/json
+      description: 微信小程序静默登录
+      parameters:
+      - description: 登录信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.WechatSilentLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: code/msg/data
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 静默登录
+      tags:
+      - 13.微信小程序认证
+swagger: "2.0"

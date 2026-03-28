@@ -8,24 +8,24 @@ import (
 	"youlai-gin/pkg/response"
 )
 
-// RegisterWechatRoutes 注册微信小程序认证路由
-func RegisterWechatRoutes(r *gin.RouterGroup) {
-	r.POST("/wechat/miniapp/auth/silent-login", WechatSilentLogin)
-	r.POST("/wechat/miniapp/auth/phone-login", WechatPhoneLogin)
-	r.POST("/wechat/miniapp/auth/bind-mobile", WechatBindMobile)
+// RegisterWxMaRoutes 注册微信小程序认证路由
+func RegisterWxMaRoutes(r *gin.RouterGroup) {
+	r.POST("/wxma/auth/silent-login", WxMaSilentLogin)
+	r.POST("/wxma/auth/phone-login", WxMaPhoneLogin)
+	r.POST("/wxma/auth/bind-mobile", WxMaBindMobile)
 }
 
-// WechatSilentLogin 静默登录
+// WxMaSilentLogin 静默登录
 // @Summary 静默登录
 // @Description 微信小程序静默登录
-// @Tags 13.微信小程序认证
+// @Tags 12.微信小程序认证
 // @Accept application/json
 // @Produce json
-// @Param body body model.WechatSilentLoginRequest true "登录信息"
+// @Param body body model.WxMaSilentLoginRequest true "登录信息"
 // @Success 200 {object} map[string]interface{} "code/msg/data"
-// @Router /api/v1/wechat/miniapp/auth/silent-login [post]
-func WechatSilentLogin(c *gin.Context) {
-	var req model.WechatSilentLoginRequest
+// @Router /api/v1/wxma/auth/silent-login [post]
+func WxMaSilentLogin(c *gin.Context) {
+	var req model.WxMaSilentLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "请求参数错误: "+err.Error())
 		return
@@ -45,17 +45,17 @@ func WechatSilentLogin(c *gin.Context) {
 	response.Ok(c, result)
 }
 
-// WechatPhoneLogin 手机号快捷登录
+// WxMaPhoneLogin 手机号快捷登录
 // @Summary 手机号快捷登录
 // @Description 微信小程序手机号快捷登录
-// @Tags 13.微信小程序认证
+// @Tags 12.微信小程序认证
 // @Accept application/json
 // @Produce json
-// @Param body body model.WechatPhoneLoginRequest true "登录信息"
+// @Param body body model.WxMaPhoneLoginRequest true "登录信息"
 // @Success 200 {object} map[string]interface{} "code/msg/data"
-// @Router /api/v1/wechat/miniapp/auth/phone-login [post]
-func WechatPhoneLogin(c *gin.Context) {
-	var req model.WechatPhoneLoginRequest
+// @Router /api/v1/wxma/auth/phone-login [post]
+func WxMaPhoneLogin(c *gin.Context) {
+	var req model.WxMaPhoneLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "请求参数错误: "+err.Error())
 		return
@@ -75,17 +75,17 @@ func WechatPhoneLogin(c *gin.Context) {
 	response.Ok(c, result)
 }
 
-// WechatBindMobile 绑定手机号
+// WxMaBindMobile 绑定手机号
 // @Summary 绑定手机号
 // @Description 微信小程序绑定手机号
-// @Tags 13.微信小程序认证
+// @Tags 12.微信小程序认证
 // @Accept application/json
 // @Produce json
-// @Param body body model.WechatBindMobileRequest true "绑定信息"
+// @Param body body model.WxMaBindMobileRequest true "绑定信息"
 // @Success 200 {object} map[string]interface{} "code/msg/data"
-// @Router /api/v1/wechat/miniapp/auth/bind-mobile [post]
-func WechatBindMobile(c *gin.Context) {
-	var req model.WechatBindMobileRequest
+// @Router /api/v1/wxma/auth/bind-mobile [post]
+func WxMaBindMobile(c *gin.Context) {
+	var req model.WxMaBindMobileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "请求参数错误: "+err.Error())
 		return

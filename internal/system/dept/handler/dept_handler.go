@@ -2,15 +2,18 @@ package handler
 
 import (
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+
 	"youlai-gin/internal/system/dept/model"
 	"youlai-gin/internal/system/dept/service"
 	pkgContext "youlai-gin/pkg/context"
+	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/middleware"
 	"youlai-gin/pkg/response"
 	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/validator"
-
-	"github.com/gin-gonic/gin"
 )
 
 func RegisterDeptRoutes(r *gin.RouterGroup) {
@@ -19,10 +22,10 @@ func RegisterDeptRoutes(r *gin.RouterGroup) {
 	{
 		depts.GET("", GetDeptList)
 		depts.GET("/options", GetDeptOptions)
-		depts.POST("", SaveDept)
+		depts.POST("", middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeInsert), SaveDept)
 		depts.GET("/:id/form", GetDeptForm)
-		depts.PUT("/:id", UpdateDept)
-		depts.DELETE("/:id", DeleteDept)
+		depts.PUT("/:id", middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeUpdate), UpdateDept)
+		depts.DELETE("/:id", middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeDelete), DeleteDept)
 	}
 }
 

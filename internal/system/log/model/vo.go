@@ -4,19 +4,24 @@ import "youlai-gin/pkg/types"
 
 // LogPageVO 日志分页VO
 type LogPageVO struct {
-	ID         types.BigInt `json:"id"`
-	Module     string       `json:"module"`
-	Content    string       `json:"content"`
-	RequestURI string       `json:"requestUri"`
-	Method     string       `json:"method"`
-	IP         string       `json:"ip"`
-	Region     string       `json:"region"`
-	Browser    string       `json:"browser"`
-	OS         string       `json:"os"`
-	ExecutionTime int64     `json:"executionTime"`
-	CreateBy   types.BigInt `json:"createBy"`
-	CreateTime types.LocalTime `json:"createTime"`
-	Operator   string       `json:"operator"`
+	ID            types.BigInt    `json:"id"`
+	Module        string          `json:"module"`
+	ActionType    string          `json:"actionType"`
+	Title         string          `json:"title"`
+	Content       string          `json:"content"`
+	OperatorID    types.BigInt    `json:"operatorId"`
+	OperatorName  string          `json:"operatorName"`
+	Status        int             `json:"status"`
+	RequestURI    string          `json:"requestUri"`
+	RequestMethod string          `json:"requestMethod"`
+	IP            string          `json:"ip"`
+	Region        string          `json:"region"`
+	Device        string          `json:"device"`
+	Browser       string          `json:"browser"`
+	OS            string          `json:"os"`
+	ExecutionTime int             `json:"executionTime"`
+	ErrorMsg      string          `json:"errorMsg"`
+	CreateTime    types.LocalTime `json:"createTime"`
 }
 
 // VisitTrendVO 访问趋势VO

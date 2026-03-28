@@ -8,9 +8,10 @@ import (
 	"youlai-gin/internal/system/notice/model"
 	"youlai-gin/internal/system/notice/repository"
 	"youlai-gin/pkg/common"
+	"youlai-gin/pkg/database"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/sse"
 	"youlai-gin/pkg/types"
-	"youlai-gin/pkg/websocket"
 )
 
 // GetNoticePage 通知分页查询
@@ -79,7 +80,7 @@ func SaveNotice(form *model.NoticeForm) error {
 		return errs.SystemError("保存通知失败")
 	}
 
-	// 如果是发布状态，推送WebSocket消息
+	// 如果是发布状态，推送通知
 	if notice.Status == 1 {
 		go pushNotice(notice, form.TargetUsers)
 	}
@@ -118,34 +119,30 @@ func GetUnreadCount(userID int64) (int64, error) {
 	return repository.GetUnreadCount(userID)
 }
 
-// pushNotice 推送通知（WebSocket）
+// pushNotice 推送通知（SSE）
 func pushNotice(notice *model.Notice, targetUsers []types.BigInt) {
-	if websocket.DefaultHub == nil {
+	sseService := sse.GetSseService()
+	if sseService == nil {
 		return
 	}
 
-	message := &websocket.Message{
-		Type:    "notice",
-		Title:   notice.Title,
-		Content: notice.Content,
-		Data: map[string]interface{}{
-			"id":    notice.ID,
-			"type":  notice.Type,
-			"level": notice.Level,
-		},
+	noticeData := map[string]interface{}{
+		"id":          notice.ID,
+		"title":       notice.Title,
+		"type":        notice.Type,
+		"level":       notice.Level,
+		"publishTime": notice.PublishTime,
 	}
 
 	if notice.TargetType == 1 {
 		// 广播给所有在线用户
-		websocket.DefaultHub.BroadcastMessage(message)
+		onlineUsers := sseService.GetOnlineUsers()
+		for _, u := range onlineUsers {
+			sseService.SendToUser(u.Username, "notice", noticeData)
+		}
 	} else if len(targetUsers) > 0 {
 		// 发送给指定用户
-		// websocket.SendMessage expects []int64, convert back
-		ids := make([]int64, len(targetUsers))
-		for i, id := range targetUsers {
-			ids[i] = int64(id)
-		}
-		websocket.DefaultHub.SendMessage(ids, message)
+		// TODO: 需要将用户ID转换为用户名
 	}
 }
 
@@ -166,11 +163,14 @@ func PublishNotice(id int64, publisherID int64) error {
 		return errs.SystemError("发布通知失败")
 	}
 
+	// 发布时先删除该通知之前的用户通知数据（重新发布场景）
+	database.DB.Exec("DELETE FROM sys_user_notice WHERE notice_id = ?", id)
+
 	notice.Status = 1
 	notice.PublisherID = types.BigInt(publisherID)
 	notice.PublishTime = types.LocalTime(now)
 
-	// 推送WebSocket消息
+	// 推送通知
 	var targetUsers []types.BigInt
 	if notice.TargetUsers != "" {
 		json.Unmarshal([]byte(notice.TargetUsers), &targetUsers)
@@ -197,6 +197,18 @@ func RevokeNotice(id int64) error {
 		"revoke_time":   now,
 	}); err != nil {
 		return errs.SystemError("撤回通知失败")
+	}
+
+	// 撤回时删除用户通知状态记录
+	database.DB.Exec("DELETE FROM sys_user_notice WHERE notice_id = ?", id)
+
+	// 通知前端移除该通知
+	sseService := sse.GetSseService()
+	if sseService != nil {
+		onlineUsers := sseService.GetOnlineUsers()
+		for _, u := range onlineUsers {
+			sseService.SendToUser(u.Username, "notice-revoke", map[string]interface{}{"id": id})
+		}
 	}
 
 	return nil

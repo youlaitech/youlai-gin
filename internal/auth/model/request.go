@@ -8,6 +8,6 @@ type LoginRequest struct {
 
 // SmsLoginRequest 短信验证码登录请求
 type SmsLoginRequest struct {
-	Mobile string `json:"mobile" binding:"required" example:"18812345678"` // 手机号
+	Mobile string `json:"mobile" binding:"required" example:"18888888888"` // 手机号
 	Code   string `json:"code" binding:"required" example:"1234"`          // 验证码
 }

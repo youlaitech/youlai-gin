@@ -51,7 +51,6 @@ func Load(env ...string) error {
 
 	Cfg = &cfg
 
-	fmt.Printf("✓ 配置加载成功 [环境: %s, 文件: %s]\n", environment, configFile)
 	return nil
 }
 

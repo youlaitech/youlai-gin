@@ -8,7 +8,9 @@ import (
 
 	"youlai-gin/internal/system/config/model"
 	"youlai-gin/internal/system/config/service"
+	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/middleware"
 	"youlai-gin/pkg/response"
 	"youlai-gin/pkg/validator"
 )
@@ -18,13 +20,13 @@ func RegisterRoutes(r *gin.RouterGroup) {
 	// 使用复数形式
 	config := r.Group("/configs")
 	{
-		config.GET("", GetConfigPage)
+		config.GET("", middleware.OperationLog(enums.LogModuleConfig, enums.ActionTypeList), GetConfigPage)
 		config.GET("/:id/form", GetConfigForm)
 		config.GET("/:id", GetConfigByID)
 		config.GET("/key/:key", GetConfigByKey)
-		config.POST("", SaveConfig)
-		config.PUT("/:id", UpdateConfig)
-		config.DELETE("/:ids", DeleteConfigs)
+		config.POST("", middleware.OperationLog(enums.LogModuleConfig, enums.ActionTypeInsert), SaveConfig)
+		config.PUT("/:id", middleware.OperationLog(enums.LogModuleConfig, enums.ActionTypeUpdate), UpdateConfig)
+		config.DELETE("/:ids", middleware.OperationLog(enums.LogModuleConfig, enums.ActionTypeDelete), DeleteConfigs)
 		config.POST("/refresh/:key", RefreshConfigCache)
 		config.POST("/refresh", RefreshAllConfigCache)
 	}

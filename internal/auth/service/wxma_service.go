@@ -73,7 +73,7 @@ type WechatTokenResponse struct {
 }
 
 // SilentLogin 静默登录
-func SilentLogin(code string) (*authModel.WechatMiniappLoginResult, error) {
+func SilentLogin(code string) (*authModel.WxMaLoginResult, error) {
 	session, err := getJsCodeSession(code)
 	if err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func SilentLogin(code string) (*authModel.WechatMiniappLoginResult, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &authModel.WechatMiniappLoginResult{
+		return &authModel.WxMaLoginResult{
 			NeedBindMobile: false,
 			AccessToken:    token.AccessToken,
 			RefreshToken:   token.RefreshToken,
@@ -110,7 +110,7 @@ func SilentLogin(code string) (*authModel.WechatMiniappLoginResult, error) {
 
 	// 未绑定用户，返回需要绑定手机号
 	slog.Info("微信小程序静默登录：用户未绑定手机号", "openId", openID)
-	return &authModel.WechatMiniappLoginResult{
+	return &authModel.WxMaLoginResult{
 		NeedBindMobile: true,
 		OpenID:         openID,
 	}, nil

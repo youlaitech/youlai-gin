@@ -9,6 +9,7 @@ import (
 	"youlai-gin/internal/system/dict/repository"
 	"youlai-gin/pkg/common"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/sse"
 	"youlai-gin/pkg/types"
 )
 
@@ -81,6 +82,11 @@ func SaveDict(form *model.DictForm) error {
 		}
 	}
 
+	// 发送字典变更通知
+	if sseService := sse.GetSseService(); sseService != nil {
+		sseService.SendDictChange(form.DictCode)
+	}
+
 	return nil
 }
 
@@ -136,6 +142,11 @@ func DeleteDict(id int64) error {
 
 	if err := repository.DeleteDict(id); err != nil {
 		return errs.SystemError("删除字典失败")
+	}
+
+	// 发送字典变更通知
+	if sseService := sse.GetSseService(); sseService != nil {
+		sseService.SendDictChange(dict.DictCode)
 	}
 
 	return nil
@@ -210,6 +221,11 @@ func SaveDictItem(form *model.DictItemForm) error {
 		}
 	}
 
+	// 发送字典变更通知
+	if sseService := sse.GetSseService(); sseService != nil {
+		sseService.SendDictChange(form.DictCode)
+	}
+
 	return nil
 }
 
@@ -237,7 +253,7 @@ func GetDictItemForm(id int64) (*model.DictItemForm, error) {
 
 // DeleteDictItem 删除字典项
 func DeleteDictItem(id int64) error {
-	_, err := repository.GetDictItemByID(id)
+	item, err := repository.GetDictItemByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errs.NotFound("字典项不存在")
@@ -247,6 +263,11 @@ func DeleteDictItem(id int64) error {
 
 	if err := repository.DeleteDictItem(id); err != nil {
 		return errs.SystemError("删除字典项失败")
+	}
+
+	// 发送字典变更通知
+	if sseService := sse.GetSseService(); sseService != nil {
+		sseService.SendDictChange(item.DictCode)
 	}
 
 	return nil

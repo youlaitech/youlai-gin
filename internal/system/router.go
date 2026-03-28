@@ -5,7 +5,6 @@ import (
 	"youlai-gin/internal/system/config"
 	"youlai-gin/internal/system/dept"
 	"youlai-gin/internal/system/dict"
-	"youlai-gin/internal/system/statistics"
 	"youlai-gin/internal/system/log"
 	"youlai-gin/internal/system/menu"
 	"youlai-gin/internal/system/notice"
@@ -22,6 +21,5 @@ func RegisterRoutes(r *gin.RouterGroup) {
 	dict.RegisterRoutes(r)   // 字典管理
 	config.RegisterRoutes(r) // 配置管理
 	notice.RegisterRoutes(r) // 通知公告
-	statistics.RegisterRoutes(r) // 统计分析
 	log.RegisterRoutes(r)    // 日志管理
 }

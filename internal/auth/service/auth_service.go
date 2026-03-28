@@ -78,35 +78,35 @@ func GetCaptcha() (*authModel.CaptchaVO, error) {
 }
 
 // Login 账号密码登录
-func Login(req *authModel.LoginRequest) (*auth.AuthenticationToken, error) {
+func Login(req *authModel.LoginRequest) (*auth.AuthenticationToken, int64, error) {
 	// 1. 根据用户名查询用户
 	user, err := userRepo.FindByUsername(req.Username)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errs.BadRequest("用户名或密码错误")
+			return nil, 0, errs.BadRequest("用户名或密码错误")
 		}
-		return nil, errs.SystemError("查询用户失败")
+		return nil, 0, errs.SystemError("查询用户失败")
 	}
 
 	// 2. 验证密码
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
-		return nil, errs.BadRequest("用户名或密码错误")
+		return nil, 0, errs.BadRequest("用户名或密码错误")
 	}
 
 	// 3. 检查用户状态
 	if user.Status != 1 {
-		return nil, errs.BadRequest("用户已被禁用")
+		return nil, 0, errs.BadRequest("用户已被禁用")
 	}
 
 	// 4. 获取用户角色
 	roles, err := userRepo.GetUserRoles(int64(user.ID))
 	if err != nil {
-		return nil, errs.SystemError("查询用户角色失败")
+		return nil, 0, errs.SystemError("查询用户角色失败")
 	}
 
 	dataScopes, err := permService.GetUserDataScopes(int64(user.ID), roles, int64(user.DeptID))
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	// 5. 生成 Token
@@ -120,10 +120,10 @@ func Login(req *authModel.LoginRequest) (*auth.AuthenticationToken, error) {
 
 	token, err := tokenManager.GenerateToken(userDetails)
 	if err != nil {
-		return nil, errs.SystemError("生成令牌失败")
+		return nil, 0, errs.SystemError("生成令牌失败")
 	}
 
-	return token, nil
+	return token, int64(user.ID), nil
 }
 
 // Logout 退出登录
@@ -168,42 +168,42 @@ func SendSmsLoginCode(mobile string) error {
 }
 
 // LoginBySms 短信验证码登录
-func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, error) {
+func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, int64, error) {
 	// 1. 验证短信验证码
 	redisKey := fmt.Sprintf("captcha:sms:%s", req.Mobile)
 	ctx := context.Background()
 	cachedCode, err := redis.Client.Get(ctx, redisKey).Result()
 	if err != nil {
-		return nil, errs.BadRequest("验证码已过期或不存在")
+		return nil, 0, errs.BadRequest("验证码已过期或不存在")
 	}
 
 	if cachedCode != req.Code {
-		return nil, errs.BadRequest("验证码错误")
+		return nil, 0, errs.BadRequest("验证码错误")
 	}
 
 	// 2. 根据手机号查询用户
 	user, err := userRepo.GetUserByMobile(req.Mobile)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errs.BadRequest("用户不存在")
+			return nil, 0, errs.BadRequest("用户不存在")
 		}
-		return nil, errs.SystemError("查询用户失败")
+		return nil, 0, errs.SystemError("查询用户失败")
 	}
 
 	// 3. 检查用户状态
 	if user.Status != 1 {
-		return nil, errs.BadRequest("用户已被禁用")
+		return nil, 0, errs.BadRequest("用户已被禁用")
 	}
 
 	// 4. 获取用户角色
 	roles, err := userRepo.GetUserRoles(int64(user.ID))
 	if err != nil {
-		return nil, errs.SystemError("查询用户角色失败")
+		return nil, 0, errs.SystemError("查询用户角色失败")
 	}
 
 	dataScopes, err := permService.GetUserDataScopes(int64(user.ID), roles, int64(user.DeptID))
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	// 5. 验证成功后删除验证码
@@ -220,8 +220,8 @@ func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, erro
 
 	token, err := tokenManager.GenerateToken(userDetails)
 	if err != nil {
-		return nil, errs.SystemError("生成令牌失败")
+		return nil, 0, errs.SystemError("生成令牌失败")
 	}
 
-	return token, nil
+	return token, int64(user.ID), nil
 }

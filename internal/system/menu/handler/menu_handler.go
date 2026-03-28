@@ -2,15 +2,18 @@ package handler
 
 import (
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+
 	"youlai-gin/internal/system/menu/model"
 	"youlai-gin/internal/system/menu/service"
 	pkgContext "youlai-gin/pkg/context"
+	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/middleware"
 	"youlai-gin/pkg/response"
 	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/validator"
-
-	"github.com/gin-gonic/gin"
 )
 
 func RegisterMenuRoutes(r *gin.RouterGroup) {
@@ -19,10 +22,10 @@ func RegisterMenuRoutes(r *gin.RouterGroup) {
 		menus.GET("", GetMenuList)
 		menus.GET("/options", GetMenuOptions)
 		menus.GET("/routes", GetCurrentUserRoutes)
-		menus.POST("", SaveMenu)
+		menus.POST("", middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeInsert), SaveMenu)
 		menus.GET("/:id/form", GetMenuForm)
-		menus.PUT("/:id", UpdateMenu)
-		menus.DELETE("/:id", DeleteMenu)
+		menus.PUT("/:id", middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeUpdate), UpdateMenu)
+		menus.DELETE("/:id", middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeDelete), DeleteMenu)
 	}
 
 	// 用户权限接口

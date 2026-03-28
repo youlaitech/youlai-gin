@@ -3,14 +3,17 @@ package handler
 import (
 	"strconv"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+
 	"youlai-gin/internal/system/dict/model"
 	"youlai-gin/internal/system/dict/service"
+	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/middleware"
 	"youlai-gin/pkg/response"
 	"youlai-gin/pkg/types"
 	"youlai-gin/pkg/validator"
-
-	"github.com/gin-gonic/gin"
 )
 
 // RegisterDictRoutes 注册字典模块路由
@@ -18,23 +21,23 @@ func RegisterDictRoutes(r *gin.RouterGroup) {
 	dicts := r.Group("/dicts")
 	{
 		// 字典分页查询
-		dicts.GET("", GetDictPage)
+		dicts.GET("", middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeList), GetDictPage)
 		// 字典下拉列表
 		dicts.GET("/options", GetDictList)
-		dicts.POST("", SaveDict)
+		dicts.POST("", middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeInsert), SaveDict)
 
 		// 字典项路由
 		dicts.GET("/:id/items", GetDictItemPageByCode)
 		dicts.GET("/:id/items/options", GetDictItemsByCode)
-		dicts.POST("/:id/items", SaveDictItemByCode)
+		dicts.POST("/:id/items", middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeInsert), SaveDictItemByCode)
 		dicts.GET("/:id/items/:itemId/form", GetDictItemFormByCode)
-		dicts.PUT("/:id/items/:itemId", UpdateDictItemByCode)
-		dicts.DELETE("/:id/items/:itemIds", DeleteDictItemsByCode)
+		dicts.PUT("/:id/items/:itemId", middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeUpdate), UpdateDictItemByCode)
+		dicts.DELETE("/:id/items/:itemIds", middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeDelete), DeleteDictItemsByCode)
 
 		// 字典操作
 		dicts.GET("/:id/form", GetDictForm)
-		dicts.PUT("/:id", UpdateDict)
-		dicts.DELETE("/:id", DeleteDict)
+		dicts.PUT("/:id", middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeUpdate), UpdateDict)
+		dicts.DELETE("/:id", middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeDelete), DeleteDict)
 	}
 }
 

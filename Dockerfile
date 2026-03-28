@@ -1,5 +1,5 @@
 # 构建阶段
-FROM golang:1.21-alpine AS builder
+FROM golang:1.22-alpine AS builder
 
 # 设置工作目录
 WORKDIR /app
@@ -17,7 +17,7 @@ RUN go mod download
 COPY . .
 
 # 编译项目
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o youlai-gin main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o youlai-gin .
 
 # 运行阶段
 FROM alpine:latest

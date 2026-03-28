@@ -8,7 +8,9 @@ import (
 	"youlai-gin/internal/auth/model"
 	"youlai-gin/internal/auth/service"
 	pkgAuth "youlai-gin/pkg/auth"
+	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/middleware"
 	"youlai-gin/pkg/response"
 	"youlai-gin/pkg/validator"
 )
@@ -16,17 +18,17 @@ import (
 // RegisterAuthRoutes 注册认证相关 HTTP 路由
 func RegisterAuthRoutes(r *gin.RouterGroup) {
 	r.GET("/auth/captcha", GetCaptcha)
-	r.POST("/auth/login", Login)
-	r.POST("/auth/login/sms", LoginBySms)
+	r.POST("/auth/login", middleware.OperationLog(enums.LogModuleLogin, enums.ActionTypeLogin), Login)
+	r.POST("/auth/login/sms", middleware.OperationLog(enums.LogModuleLogin, enums.ActionTypeLogin), LoginBySms)
 	r.POST("/auth/sms/code", SendSmsCode)
-	r.DELETE("/auth/logout", Logout)
+	r.DELETE("/auth/logout", middleware.OperationLog(enums.LogModuleLogin, enums.ActionTypeLogout), Logout)
 	r.POST("/auth/refresh-token", RefreshToken)
 }
 
 // GetCaptcha 获取验证码
 // @Summary 获取验证码
 // @Description 获取图形验证码
-// @Tags 01.认证接口
+// @Tags 01.认证中心
 // @Produce json
 // @Success 200 {object} map[string]interface{} "code/msg/data，data 为 CaptchaVO"
 // @Router /api/v1/auth/captcha [get]
@@ -43,7 +45,7 @@ func GetCaptcha(c *gin.Context) {
 // Login 账号密码登录
 // @Summary 账号密码登录
 // @Description 用户名密码登录，返回访问令牌和刷新令牌
-// @Tags 01.认证接口
+// @Tags 01.认证中心
 // @Accept application/json
 // @Produce json
 // @Param body body model.LoginRequest true "登录信息"
@@ -61,19 +63,22 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	token, err := service.Login(&req)
+	token, userID, err := service.Login(&req)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
 	response.Ok(c, token)
+
+	// 异步保存登录日志
+	go saveLoginLog(c, userID, "/api/v1/auth/login")
 }
 
 // Logout 退出登录
 // @Summary 退出登录
 // @Description 使当前访问令牌失效
-// @Tags 01.认证接口
+// @Tags 01.认证中心
 // @Accept json
 // @Produce json
 // @Security Bearer
@@ -95,7 +100,7 @@ func Logout(c *gin.Context) {
 // RefreshToken 刷新令牌
 // @Summary 刷新令牌
 // @Description 使用刷新令牌获取新的访问令牌
-// @Tags 01.认证接口
+// @Tags 01.认证中心
 // @Accept json
 // @Produce json
 // @Param body body map[string]string true "刷新令牌信息 {\"refreshToken\":\"刷新令牌\"}"
@@ -126,7 +131,7 @@ func RefreshToken(c *gin.Context) {
 // SendSmsCode 发送登录短信验证码
 // @Summary 发送登录短信验证码
 // @Description 发送短信验证码到指定手机号
-// @Tags 01.认证接口
+// @Tags 01.认证中心
 // @Accept json
 // @Produce json
 // @Param body body map[string]string true "手机号信息 {\"mobile\":\"手机号\"}"
@@ -157,7 +162,7 @@ func SendSmsCode(c *gin.Context) {
 // LoginBySms 短信验证码登录
 // @Summary 短信验证码登录
 // @Description 使用手机号和短信验证码登录
-// @Tags 01.认证接口
+// @Tags 01.认证中心
 // @Accept json
 // @Produce json
 // @Param body body model.SmsLoginRequest true "短信登录信息"
@@ -175,12 +180,32 @@ func LoginBySms(c *gin.Context) {
 		return
 	}
 
-	token, err := service.LoginBySms(&req)
+	token, userID, err := service.LoginBySms(&req)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
 	response.Ok(c, token)
+
+	// 异步保存登录日志
+	go saveLoginLog(c, userID, "/api/v1/auth/login/sms")
+}
+
+// saveLoginLog 异步保存登录操作日志（登录为公开路由，中间件无法获取 userID）
+func saveLoginLog(c *gin.Context, userID int64, requestURI string) {
+	logEntry := middleware.OperationLogEntity{
+		Module:        int(enums.LogModuleLogin),
+		ActionType:    int(enums.ActionTypeLogin),
+		RequestURI:    requestURI,
+		RequestMethod: "POST",
+		IP:            c.ClientIP(),
+		OS:            middleware.ParseOS(c.Request.UserAgent()),
+		Browser:       middleware.ParseBrowser(c.Request.UserAgent()),
+		Status:        1,
+		CreateBy:      userID,
+	}
+
+	middleware.SaveOperationLog(logEntry)
 }
 
