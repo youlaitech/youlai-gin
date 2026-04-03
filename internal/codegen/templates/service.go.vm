@@ -27,8 +27,7 @@ func Get${entityName}Page(query *model.${entityName}Query) (*common.PagedData, e
 		}
 	}
 
-	pageMeta := common.NewPageMeta(query.PageNum, query.PageSize, total)
-	return &common.PagedData{Data: voList, Page: pageMeta}, nil
+	return &common.PagedData{List: voList, Total: total}, nil
 }
 
 // Save${entityName} 保存${businessName}（新增或更新）

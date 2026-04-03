@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container h-full flex flex-1 flex-col">
+  <div class="page-container h-full flex flex-1 flex-col">
     <!-- 搜索 -->
     <PageSearch
       ref="searchRef"
@@ -64,7 +64,7 @@
 defineOptions({ name: "$entityName" });
 
 import ${entityName}API from "@/api/${moduleName}/${entityKebab}";
-import type { ${entityName}Form, ${entityName}QueryParams } from "@/types/api";
+import type { ${entityName}Form, ${entityName}QueryParams } from "@/api/${moduleName}/${entityKebab}";
 import type { IObject, IModalConfig, IContentConfig, ISearchConfig } from "@/components/CURD/types";
 import usePage from "@/components/CURD/usePage";
 
