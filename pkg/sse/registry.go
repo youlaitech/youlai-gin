@@ -138,3 +138,30 @@ func (r *SseSessionRegistry) IsUserOnline(username string) bool {
 	emitters, ok := r.userEmittersMap[username]
 	return ok && len(emitters) > 0
 }
+
+// CloseAll 关闭所有SSE连接，在服务关闭时调用
+func (r *SseSessionRegistry) CloseAll() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	count := len(r.emitterUserMap)
+	if count == 0 {
+		return
+	}
+	logger.Info("应用关闭，主动断开SSE连接...", zap.Int("count", count))
+
+	for emitter := range r.emitterUserMap {
+		if emitter.done != nil {
+			select {
+			case <-emitter.done:
+			default:
+				close(emitter.done)
+			}
+		}
+	}
+	r.userEmittersMap = make(map[string]map[*SseEmitter]bool)
+	r.emitterUserMap = make(map[*SseEmitter]*SessionInfo)
+	r.emitterTimeMap = make(map[*SseEmitter]int64)
+
+	logger.Info("所有SSE连接已断开")
+}

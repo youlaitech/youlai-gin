@@ -141,6 +141,11 @@ func (s *SseService) RemoveEmitter(emitter *SseEmitter) {
 	s.registry.RemoveEmitter(emitter)
 }
 
+// CloseAll 关闭所有SSE连接，在服务关闭时调用
+func (s *SseService) CloseAll() {
+	s.registry.CloseAll()
+}
+
 func (s *SseService) broadcast(eventName string, data interface{}) {
 	emitters := s.registry.GetAllEmitters()
 	for _, emitter := range emitters {

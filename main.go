@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -127,7 +132,32 @@ func main() {
 	})
 
 	logger.Log.Sugar().Infof("服务启动在 :8000 [环境: %s]", config.GetEnv())
-	if err := r.Run(":8000"); err != nil {
-		log.Fatalf("failed to start server: %v", err)
+
+	srv := &http.Server{
+		Addr:    ":8000",
+		Handler: r,
 	}
+
+	// 优雅关闭
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("failed to start server: %v", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	logger.Log.Sugar().Info("正在关闭服务器...")
+
+	// 主动断开所有 SSE 连接
+	sse.GetSseService().CloseAll()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("服务器关闭失败: %v", err)
+	}
+	logger.Log.Sugar().Info("服务器已关闭")
 }
