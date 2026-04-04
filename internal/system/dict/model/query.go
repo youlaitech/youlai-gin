@@ -1,6 +1,6 @@
 package model
 
-import "youlai-gin/pkg/common"
+import common "youlai-gin/pkg/model"
 
 // DictQuery 字典查询参数
 type DictQuery struct {

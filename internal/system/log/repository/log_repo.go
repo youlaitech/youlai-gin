@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"youlai-gin/internal/system/log/model"
-	pkgDatabase "youlai-gin/pkg/database"
-	"youlai-gin/pkg/database"
+	pkgDatabase "youlai-gin/internal/common/database"
+	"youlai-gin/internal/common/database"
 	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/types"
 )

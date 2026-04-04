@@ -3,7 +3,7 @@ package repository
 import (
 	"strings"
 
-	"youlai-gin/pkg/database"
+	"youlai-gin/internal/common/database"
 	"youlai-gin/internal/system/menu/model"
 )
 

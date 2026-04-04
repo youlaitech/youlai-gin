@@ -6,13 +6,12 @@ import (
 	"log"
 
 	"youlai-gin/internal/system/role/repository"
-	pkgRedis "youlai-gin/pkg/redis"
+	pkgRedis "youlai-gin/internal/common/redis"
+	"youlai-gin/pkg/constant"
 )
 
-// Redis Hash key: system:role:perms
-// field: roleCode, value: 权限标识JSON数组
 // 角色/菜单变更时调用刷新方法更新缓存
-const rolePermsKey = "system:role:perms"
+var rolePermsKey = constant.RedisKeyRolePerms
 
 // RefreshRolePermsCacheByCode 刷新单个角色的权限缓存（角色菜单变更后调用）
 func RefreshRolePermsCacheByCode(roleCode string) error {

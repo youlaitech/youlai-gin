@@ -1,18 +1,14 @@
 package handler
 
 import (
-	"strconv"
-	"strings"
-
 	"github.com/gin-gonic/gin"
 
 	"youlai-gin/internal/system/notice/model"
 	"youlai-gin/internal/system/notice/service"
-	pkgContext "youlai-gin/pkg/context"
-	"youlai-gin/pkg/errs"
-	"youlai-gin/pkg/response"
+	pkgContext "youlai-gin/internal/common/context"
+	response "youlai-gin/internal/common"
 	"youlai-gin/pkg/types"
-	"youlai-gin/pkg/validator"
+	"youlai-gin/internal/common/validator"
 )
 
 // RegisterRoutes 注册通知公告路由
@@ -75,10 +71,9 @@ func SaveNotice(c *gin.Context) {
 // @Param id path int true "公告ID"
 // @Router /api/v1/notices/{id}/form [get]
 func GetNoticeForm(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "通知")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的通知ID"))
+		c.Error(err)
 		return
 	}
 
@@ -97,10 +92,9 @@ func GetNoticeForm(c *gin.Context) {
 // @Param id path int true "公告ID"
 // @Router /api/v1/notices/{id}/detail [get]
 func GetNoticeDetail(c *gin.Context) {
-	idStr := c.Param("id")
-	noticeID, err := strconv.ParseInt(idStr, 10, 64)
+	noticeID, err := pkgContext.ParsePathParam(c, "id", "通知")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的通知ID"))
+		c.Error(err)
 		return
 	}
 
@@ -130,10 +124,9 @@ func GetNoticeDetail(c *gin.Context) {
 // @Param id path int true "公告ID"
 // @Router /api/v1/notices/{id} [put]
 func UpdateNotice(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "通知")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的通知ID"))
+		c.Error(err)
 		return
 	}
 
@@ -158,10 +151,9 @@ func UpdateNotice(c *gin.Context) {
 // @Param id path int true "公告ID"
 // @Router /api/v1/notices/{id}/publish [put]
 func PublishNotice(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "通知")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的通知ID"))
+		c.Error(err)
 		return
 	}
 
@@ -185,10 +177,9 @@ func PublishNotice(c *gin.Context) {
 // @Param id path int true "公告ID"
 // @Router /api/v1/notices/{id}/revoke [put]
 func RevokeNotice(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "通知")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的通知ID"))
+		c.Error(err)
 		return
 	}
 
@@ -207,18 +198,13 @@ func RevokeNotice(c *gin.Context) {
 // @Router /api/v1/notices/{ids} [delete]
 func DeleteNotices(c *gin.Context) {
 	idsStr := c.Param("ids")
-	if idsStr == "" {
-		c.Error(errs.BadRequest("ID不能为空"))
+	ids, err := pkgContext.ParseIntList(idsStr, "通知")
+	if err != nil {
+		c.Error(err)
 		return
 	}
 
-	idStrArr := strings.Split(idsStr, ",")
-	for _, idStr := range idStrArr {
-		id, err := strconv.ParseInt(strings.TrimSpace(idStr), 10, 64)
-		if err != nil {
-			c.Error(errs.BadRequest("无效的通知ID"))
-			return
-		}
+	for _, id := range ids {
 		if err := service.DeleteNotice(id); err != nil {
 			c.Error(err)
 			return

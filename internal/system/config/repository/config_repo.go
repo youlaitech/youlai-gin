@@ -1,9 +1,9 @@
 package repository
 
 import (
-	"youlai-gin/pkg/database"
+	"youlai-gin/internal/common/database"
 	"youlai-gin/internal/system/config/model"
-	pkgDatabase "youlai-gin/pkg/database"
+	pkgDatabase "youlai-gin/internal/common/database"
 )
 
 // GetConfigList 获取配置列表

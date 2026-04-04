@@ -1,9 +1,6 @@
 package model
 
-import (
-	"youlai-gin/pkg/common"
-	"youlai-gin/pkg/types"
-)
+import "youlai-gin/pkg/types"
 
 // NoticeForm 通知公告表单
 type NoticeForm struct {
@@ -16,19 +13,4 @@ type NoticeForm struct {
 	PublishTime string         `json:"publishTime"`
 	TargetType  int            `json:"targetType"`
 	TargetUsers []types.BigInt `json:"targetUsers"` // 目标用户ID列表
-}
-
-// NoticePageQuery 通知分页查询
-type NoticeQuery struct {
-	common.BaseQuery
-	Title  string `form:"title"`
-	Type   *int   `form:"type"`
-	Status *int   `form:"status"`
-}
-
-// UserNoticeQuery 用户通知查询
-type UserNoticeQuery struct {
-	common.BaseQuery
-	Type   *int `form:"type"`
-	IsRead *int `form:"isRead"` // 0:未读 1:已读
 }

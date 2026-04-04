@@ -13,11 +13,11 @@ import (
 	"gorm.io/gorm"
 
 	authModel "youlai-gin/internal/auth/model"
-	permService "youlai-gin/internal/system/permission/service"
+	permService "youlai-gin/internal/common/permission/service"
 	userRepo "youlai-gin/internal/system/user/repository"
-	"youlai-gin/pkg/auth"
+	"youlai-gin/internal/common/auth"
 	"youlai-gin/pkg/errs"
-	"youlai-gin/pkg/redis"
+	"youlai-gin/internal/common/redis"
 )
 
 // tokenManager 全局 TokenManager 实例
@@ -41,7 +41,7 @@ func GetCaptcha() (*authModel.CaptchaVO, error) {
 		0,            // 噪点数量 0（清爽）
 		0,            // 无干扰线
 		4,            // 验证码长度 4位
-		"23456789", // 只使用清晰数字
+		"23456789",   // 只使用清晰数字
 		bgColor,      // 浅色背景
 		nil,          // 默认字体
 	)
@@ -80,7 +80,7 @@ func GetCaptcha() (*authModel.CaptchaVO, error) {
 // Login 账号密码登录
 func Login(req *authModel.LoginRequest) (*auth.AuthenticationToken, int64, error) {
 	// 1. 根据用户名查询用户
-	user, err := userRepo.FindByUsername(req.Username)
+	user, err := userRepo.GetUserByUsername(req.Username)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, 0, errs.BadRequest("用户名或密码错误")

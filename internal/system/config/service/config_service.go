@@ -9,9 +9,9 @@ import (
 
 	"youlai-gin/internal/system/config/model"
 	"youlai-gin/internal/system/config/repository"
-	"youlai-gin/pkg/common"
+	common "youlai-gin/pkg/model"
 	"youlai-gin/pkg/errs"
-	"youlai-gin/pkg/redis"
+	"youlai-gin/internal/common/redis"
 )
 
 const (

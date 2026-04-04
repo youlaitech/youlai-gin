@@ -7,10 +7,10 @@ import (
 
 	"youlai-gin/internal/system/notice/model"
 	"youlai-gin/internal/system/notice/repository"
-	"youlai-gin/pkg/common"
-	"youlai-gin/pkg/database"
+	common "youlai-gin/pkg/model"
+	"youlai-gin/internal/common/database"
 	"youlai-gin/pkg/errs"
-	"youlai-gin/pkg/sse"
+	"youlai-gin/internal/message"
 	"youlai-gin/pkg/types"
 )
 
@@ -121,7 +121,7 @@ func GetUnreadCount(userID int64) (int64, error) {
 
 // pushNotice 推送通知（SSE）
 func pushNotice(notice *model.Notice, targetUsers []types.BigInt) {
-	sseService := sse.GetSseService()
+	sseService := message.GetSseService()
 	if sseService == nil {
 		return
 	}
@@ -203,7 +203,7 @@ func RevokeNotice(id int64) error {
 	database.DB.Exec("DELETE FROM sys_user_notice WHERE notice_id = ?", id)
 
 	// 通知前端移除该通知
-	sseService := sse.GetSseService()
+	sseService := message.GetSseService()
 	if sseService != nil {
 		onlineUsers := sseService.GetOnlineUsers()
 		for _, u := range onlineUsers {

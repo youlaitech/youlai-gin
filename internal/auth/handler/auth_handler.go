@@ -7,12 +7,12 @@ import (
 
 	"youlai-gin/internal/auth/model"
 	"youlai-gin/internal/auth/service"
-	pkgAuth "youlai-gin/pkg/auth"
+	pkgAuth "youlai-gin/internal/common/auth"
 	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
-	"youlai-gin/pkg/middleware"
-	"youlai-gin/pkg/response"
-	"youlai-gin/pkg/validator"
+	"youlai-gin/internal/middleware"
+	response "youlai-gin/internal/common"
+	"youlai-gin/internal/common/validator"
 )
 
 // RegisterAuthRoutes 注册认证相关 HTTP 路由
@@ -101,19 +101,13 @@ func Logout(c *gin.Context) {
 // @Summary 刷新令牌
 // @Description 使用刷新令牌获取新的访问令牌
 // @Tags 01.认证中心
-// @Accept json
+// @Accept application/x-www-form-urlencoded
 // @Produce json
-// @Param body body map[string]string true "刷新令牌信息 {\"refreshToken\":\"刷新令牌\"}"
+// @Param refresh_token formData string true "刷新令牌"
 // @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
 // @Router /api/v1/auth/refresh-token [post]
 func RefreshToken(c *gin.Context) {
-	var req map[string]string
-	if err := validator.BindJSON(c, &req); err != nil {
-		c.Error(err)
-		return
-	}
-
-	refreshToken := req["refreshToken"]
+	refreshToken := c.PostForm("refresh_token")
 	if refreshToken == "" {
 		c.Error(errs.BadRequest("刷新令牌不能为空"))
 		return

@@ -1,6 +1,6 @@
 package model
 
-import "youlai-gin/pkg/common"
+import common "youlai-gin/pkg/model"
 
 // Config 系统配置实体
 type Config struct {

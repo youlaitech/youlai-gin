@@ -11,10 +11,10 @@ import (
 	"youlai-gin/internal/system/menu/repository"
 	roleRepo "youlai-gin/internal/system/role/repository"
 	roleService "youlai-gin/internal/system/role/service"
-	"youlai-gin/pkg/common"
+	common "youlai-gin/pkg/model"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/types"
-	"youlai-gin/pkg/utils"
+	"youlai-gin/internal/common/utils"
 )
 
 // GetMenuList 菜单列表（树形结构）

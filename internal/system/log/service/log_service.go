@@ -5,7 +5,7 @@ import (
 
 	"youlai-gin/internal/system/log/model"
 	"youlai-gin/internal/system/log/repository"
-	"youlai-gin/pkg/common"
+	common "youlai-gin/pkg/model"
 	"youlai-gin/pkg/errs"
 )
 

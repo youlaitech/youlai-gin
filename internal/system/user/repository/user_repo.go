@@ -1,13 +1,13 @@
-package repository
+﻿package repository
 
 import (
 	roleRepo "youlai-gin/internal/system/role/repository"
-	"youlai-gin/internal/system/permission/datascope"
-	"youlai-gin/internal/system/user/api"
-	"youlai-gin/internal/system/user/domain"
-	"youlai-gin/pkg/auth"
-	"youlai-gin/pkg/database"
-	pkgDatabase "youlai-gin/pkg/database"
+	"youlai-gin/internal/common/permission/datascope"
+	"youlai-gin/internal/system/user/model"
+	"youlai-gin/internal/common/auth"
+	"youlai-gin/internal/common/database"
+	pkgDatabase "youlai-gin/internal/common/database"
+	"youlai-gin/pkg/constant"
 	"youlai-gin/pkg/types"
 )
 
@@ -17,8 +17,8 @@ func GetRolePermsByCodes(roleCodes []string) ([]roleRepo.RolePerms, error) {
 }
 
 // GetUserPage 用户分页查询
-func GetUserPage(query *api.UserQueryReq, currentUser *auth.UserDetails) ([]api.UserPageResp, int64, error) {
-	var users []api.UserPageResp
+func GetUserPage(query *model.UserQuery, currentUser *auth.UserDetails) ([]model.UserPageVO, int64, error) {
+	var users []model.UserPageVO
 	var total int64
 
 	db := database.DB.Table("sys_user u").
@@ -37,7 +37,7 @@ func GetUserPage(query *api.UserQueryReq, currentUser *auth.UserDetails) ([]api.
 				WHERE sur.user_id = u.id
 					AND sr.code = ?
 			)`,
-			"ROOT",
+			constant.RoleCodeRoot,
 		)
 
 	// 数据权限过滤（多角色并集策略）
@@ -86,34 +86,29 @@ func GetUserPage(query *api.UserQueryReq, currentUser *auth.UserDetails) ([]api.
 }
 
 // GetUserByID 根据ID查询用户
-func GetUserByID(id int64) (*domain.User, error) {
-	var user domain.User
+func GetUserByID(id int64) (*model.User, error) {
+	var user model.User
 	err := database.DB.Where("id = ? AND is_deleted = 0", id).First(&user).Error
 	return &user, err
 }
 
 // GetUserByUsername 根据用户名查询用户（用于登录认证）
-func GetUserByUsername(username string) (*domain.User, error) {
-	var user domain.User
+func GetUserByUsername(username string) (*model.User, error) {
+	var user model.User
 	err := database.DB.Where("username = ? AND is_deleted = 0", username).First(&user).Error
 	return &user, err
 }
 
-// FindByUsername GetUserByUsername 的别名函数
-func FindByUsername(username string) (*domain.User, error) {
-	return GetUserByUsername(username)
-}
-
 // GetUserByMobile 根据手机号查询用户
-func GetUserByMobile(mobile string) (*domain.User, error) {
-	var user domain.User
+func GetUserByMobile(mobile string) (*model.User, error) {
+	var user model.User
 	err := database.DB.Where("mobile = ? AND is_deleted = 0", mobile).First(&user).Error
 	return &user, err
 }
 
 // GetUserByEmail 根据邮箱查询用户
-func GetUserByEmail(email string) (*domain.User, error) {
-	var user domain.User
+func GetUserByEmail(email string) (*model.User, error) {
+	var user model.User
 	err := database.DB.Where("email = ? AND is_deleted = 0", email).First(&user).Error
 	return &user, err
 }
@@ -130,34 +125,34 @@ func GetUserRoles(userID int64) ([]string, error) {
 }
 
 // CreateUser 创建用户
-func CreateUser(user *domain.User) error {
+func CreateUser(user *model.User) error {
 	return database.DB.Create(user).Error
 }
 
 // UpdateUser 更新用户
-func UpdateUser(user *domain.User) error {
-	return database.DB.Model(&domain.User{}).Where("id = ?", user.ID).Updates(user).Error
+func UpdateUser(user *model.User) error {
+	return database.DB.Model(&model.User{}).Where("id = ?", user.ID).Updates(user).Error
 }
 
 // DeleteUser 删除用户（逻辑删除）
 func DeleteUser(id int64) error {
-	return database.DB.Model(&domain.User{}).Where("id = ?", id).Update("is_deleted", 1).Error
+	return database.DB.Model(&model.User{}).Where("id = ?", id).Update("is_deleted", 1).Error
 }
 
 // DeleteUsersByIDs 批量删除用户
 func DeleteUsersByIDs(ids []int64) error {
-	return database.DB.Model(&domain.User{}).Where("id IN ?", ids).Update("is_deleted", 1).Error
+	return database.DB.Model(&model.User{}).Where("id IN ?", ids).Update("is_deleted", 1).Error
 }
 
 // UpdateUserStatus 更新用户状态
 func UpdateUserStatus(userId int64, status int) error {
-	return database.DB.Model(&domain.User{}).Where("id = ?", userId).Update("status", status).Error
+	return database.DB.Model(&model.User{}).Where("id = ?", userId).Update("status", status).Error
 }
 
 // CheckUsernameExists 检查用户名是否存在
 func CheckUsernameExists(username string, excludeId int64) (bool, error) {
 	var count int64
-	db := database.DB.Model(&domain.User{}).Where("username = ? AND is_deleted = 0", username)
+	db := database.DB.Model(&model.User{}).Where("username = ? AND is_deleted = 0", username)
 	if excludeId > 0 {
 		db = db.Where("id != ?", excludeId)
 	}
@@ -168,7 +163,7 @@ func CheckUsernameExists(username string, excludeId int64) (bool, error) {
 // GetUserRoleIDs 获取用户角色ID列表
 func GetUserRoleIDs(userId int64) ([]int64, error) {
 	var roleIds []int64
-	err := database.DB.Model(&domain.UserRole{}).
+	err := database.DB.Model(&model.UserRole{}).
 		Where("user_id = ?", userId).
 		Pluck("role_id", &roleIds).Error
 	return roleIds, err
@@ -195,16 +190,16 @@ func SaveUserRoles(userId int64, roleIds []int64) error {
 	}()
 
 	// 删除旧的角色关联
-	if err := tx.Where("user_id = ?", userId).Delete(&domain.UserRole{}).Error; err != nil {
+	if err := tx.Where("user_id = ?", userId).Delete(&model.UserRole{}).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
 
 	// 新增角色关联
 	if len(roleIds) > 0 {
-		userRoles := make([]domain.UserRole, len(roleIds))
+		userRoles := make([]model.UserRole, len(roleIds))
 		for i, roleId := range roleIds {
-			userRoles[i] = domain.UserRole{
+			userRoles[i] = model.UserRole{
 				UserID: types.BigInt(userId),
 				RoleID: types.BigInt(roleId),
 			}
@@ -219,8 +214,8 @@ func SaveUserRoles(userId int64, roleIds []int64) error {
 }
 
 // GetUserProfile 获取用户个人信息
-func GetUserProfile(userId int64) (*api.UserProfileResp, error) {
-	var profile api.UserProfileResp
+func GetUserProfile(userId int64) (*model.UserProfileVO, error) {
+	var profile model.UserProfileVO
 	err := database.DB.Table("sys_user u").
 		Select(`u.id, u.username, u.nickname, u.avatar, u.gender, u.mobile, u.email,
 			d.name as dept_name,
@@ -235,7 +230,7 @@ func GetUserProfile(userId int64) (*api.UserProfileResp, error) {
 }
 
 // UpdateUserProfile 更新用户个人信息
-func UpdateUserProfile(userId int64, req *api.UserProfileUpdateReq) error {
+func UpdateUserProfile(userId int64, req *model.UserProfileForm) error {
 	updates := map[string]interface{}{}
 	if req.Nickname != "" {
 		updates["nickname"] = req.Nickname
@@ -246,38 +241,38 @@ func UpdateUserProfile(userId int64, req *api.UserProfileUpdateReq) error {
 	if req.Gender != nil {
 		updates["gender"] = *req.Gender
 	}
-	return database.DB.Model(&domain.User{}).Where("id = ?", userId).Updates(updates).Error
+	return database.DB.Model(&model.User{}).Where("id = ?", userId).Updates(updates).Error
 }
 
 // UpdateUserPassword 更新用户密码
 func UpdateUserPassword(userId int64, password string) error {
-	return database.DB.Model(&domain.User{}).Where("id = ?", userId).Update("password", password).Error
+	return database.DB.Model(&model.User{}).Where("id = ?", userId).Update("password", password).Error
 }
 
 // UpdateUserMobile 更新用户手机号
 func UpdateUserMobile(userId int64, mobile string) error {
-	return database.DB.Model(&domain.User{}).Where("id = ?", userId).Update("mobile", mobile).Error
+	return database.DB.Model(&model.User{}).Where("id = ?", userId).Update("mobile", mobile).Error
 }
 
 // UnbindUserMobile 解绑用户手机号
 func UnbindUserMobile(userId int64) error {
-	return database.DB.Model(&domain.User{}).Where("id = ?", userId).Update("mobile", nil).Error
+	return database.DB.Model(&model.User{}).Where("id = ?", userId).Update("mobile", nil).Error
 }
 
 // UpdateUserEmail 更新用户邮箱
 func UpdateUserEmail(userId int64, email string) error {
-	return database.DB.Model(&domain.User{}).Where("id = ?", userId).Update("email", email).Error
+	return database.DB.Model(&model.User{}).Where("id = ?", userId).Update("email", email).Error
 }
 
 // UnbindUserEmail 解绑用户邮箱
 func UnbindUserEmail(userId int64) error {
-	return database.DB.Model(&domain.User{}).Where("id = ?", userId).Update("email", nil).Error
+	return database.DB.Model(&model.User{}).Where("id = ?", userId).Update("email", nil).Error
 }
 
 // GetUserOptions 获取用户下拉选项
-func GetUserOptions() ([]domain.User, error) {
-	var users []domain.User
-	err := database.DB.Model(&domain.User{}).
+func GetUserOptions() ([]model.User, error) {
+	var users []model.User
+	err := database.DB.Model(&model.User{}).
 		Select("id, username, nickname").
 		Where("status = 1 AND is_deleted = 0").
 		Order("id ASC").

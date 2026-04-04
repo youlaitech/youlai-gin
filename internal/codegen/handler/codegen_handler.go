@@ -1,4 +1,4 @@
-package handler
+﻿package handler
 
 import (
 	"net/http"
@@ -6,11 +6,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"youlai-gin/internal/codegen/model"
+	"youlai-gin/internal/codegen/dto"
 	"youlai-gin/internal/codegen/service"
 	"youlai-gin/pkg/errs"
-	"youlai-gin/pkg/response"
-	"youlai-gin/pkg/validator"
+	response "youlai-gin/internal/common"
+	"youlai-gin/internal/common/validator"
 )
 
 // GetTablePage 数据表分页
@@ -18,7 +18,7 @@ import (
 // @Tags 11.代码生成
 // @Router /api/v1/codegen/table [get]
 func GetTablePage(c *gin.Context) {
-	var query model.TableQuery
+	var query dto.TableQuery
 	if err := validator.BindQuery(c, &query); err != nil {
 		c.Error(err)
 		return
@@ -55,7 +55,7 @@ func GetGenConfig(c *gin.Context) {
 // @Router /api/v1/codegen/{tableName}/config [post]
 func SaveGenConfig(c *gin.Context) {
 	tableName := c.Param("tableName")
-	var body model.GenConfigFormDto
+	var body dto.GenConfigFormDto
 	if err := validator.BindJSON(c, &body); err != nil {
 		c.Error(err)
 		return

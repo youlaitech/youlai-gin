@@ -54,7 +54,6 @@ youlai-gin/
 │  ├─ dev.yaml                # 开发环境配置
 │  ├─ prod.yaml               # 生产环境配置
 │  └─ test.yaml               # 测试环境配置
-├─ docs/                      # Swagger 文档 (swag 自动生成)
 ├─ internal/                  # 私有应用代码
 │  ├─ auth/                   # 认证模块(登录/Token/会话)
 │  ├─ codegen/                # 代码生成模块

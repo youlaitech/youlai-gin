@@ -8,10 +8,10 @@ import (
 
 	"youlai-gin/internal/system/dept/model"
 	"youlai-gin/internal/system/dept/repository"
-	"youlai-gin/pkg/auth"
+	"youlai-gin/internal/common/auth"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/types"
-	"youlai-gin/pkg/utils"
+	"youlai-gin/internal/common/utils"
 )
 
 // GetDeptList 部门列表（树形结构）

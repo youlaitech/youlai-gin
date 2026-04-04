@@ -1,6 +1,6 @@
 package model
 
-import "youlai-gin/pkg/common"
+import common "youlai-gin/pkg/model"
 
 // LogPageQuery 日志分页查询
 type LogQuery struct {

@@ -1,4 +1,4 @@
-package service
+﻿package service
 
 import (
 	"errors"
@@ -7,9 +7,9 @@ import (
 
 	"youlai-gin/internal/system/dict/model"
 	"youlai-gin/internal/system/dict/repository"
-	"youlai-gin/pkg/common"
+	common "youlai-gin/pkg/model"
 	"youlai-gin/pkg/errs"
-	"youlai-gin/pkg/sse"
+	"youlai-gin/internal/message"
 	"youlai-gin/pkg/types"
 )
 
@@ -83,7 +83,7 @@ func SaveDict(form *model.DictForm) error {
 	}
 
 	// 发送字典变更通知
-	if sseService := sse.GetSseService(); sseService != nil {
+	if sseService := message.GetSseService(); sseService != nil {
 		sseService.SendDictChange(form.DictCode)
 	}
 
@@ -145,7 +145,7 @@ func DeleteDict(id int64) error {
 	}
 
 	// 发送字典变更通知
-	if sseService := sse.GetSseService(); sseService != nil {
+	if sseService := message.GetSseService(); sseService != nil {
 		sseService.SendDictChange(dict.DictCode)
 	}
 
@@ -222,7 +222,7 @@ func SaveDictItem(form *model.DictItemForm) error {
 	}
 
 	// 发送字典变更通知
-	if sseService := sse.GetSseService(); sseService != nil {
+	if sseService := message.GetSseService(); sseService != nil {
 		sseService.SendDictChange(form.DictCode)
 	}
 
@@ -266,7 +266,7 @@ func DeleteDictItem(id int64) error {
 	}
 
 	// 发送字典变更通知
-	if sseService := sse.GetSseService(); sseService != nil {
+	if sseService := message.GetSseService(); sseService != nil {
 		sseService.SendDictChange(item.DictCode)
 	}
 

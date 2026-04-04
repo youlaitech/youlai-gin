@@ -1,18 +1,16 @@
 package handler
 
 import (
-	"strconv"
-
 	"github.com/gin-gonic/gin"
 
 	"youlai-gin/internal/system/role/model"
 	"youlai-gin/internal/system/role/service"
+	pkgContext "youlai-gin/internal/common/context"
 	"youlai-gin/pkg/enums"
-	"youlai-gin/pkg/errs"
-	"youlai-gin/pkg/middleware"
-	"youlai-gin/pkg/response"
+	"youlai-gin/internal/middleware"
+	response "youlai-gin/internal/common"
 	"youlai-gin/pkg/types"
-	"youlai-gin/pkg/validator"
+	"youlai-gin/internal/common/validator"
 )
 
 func RegisterRoleRoutes(r *gin.RouterGroup) {
@@ -94,10 +92,9 @@ func SaveRole(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles/{id}/form [get]
 func GetRoleForm(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "角色")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的角色ID"))
+		c.Error(err)
 		return
 	}
 
@@ -117,10 +114,9 @@ func GetRoleForm(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles/{id} [put]
 func UpdateRole(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "角色")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的角色ID"))
+		c.Error(err)
 		return
 	}
 
@@ -145,10 +141,9 @@ func UpdateRole(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles/{id} [delete]
 func DeleteRole(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "角色")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的角色ID"))
+		c.Error(err)
 		return
 	}
 
@@ -166,10 +161,9 @@ func DeleteRole(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles/{id}/menu-ids [get]
 func GetRoleMenuIds(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "角色")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的角色ID"))
+		c.Error(err)
 		return
 	}
 
@@ -189,10 +183,9 @@ func GetRoleMenuIds(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles/{id}/menus [put]
 func UpdateRoleMenus(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "角色")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的角色ID"))
+		c.Error(err)
 		return
 	}
 
@@ -216,10 +209,9 @@ func UpdateRoleMenus(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles/{id}/dept-ids [get]
 func GetRoleDeptIds(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "角色")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的角色ID"))
+		c.Error(err)
 		return
 	}
 
@@ -239,10 +231,9 @@ func GetRoleDeptIds(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles/{id}/depts [put]
 func UpdateRoleDepts(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "角色")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的角色ID"))
+		c.Error(err)
 		return
 	}
 

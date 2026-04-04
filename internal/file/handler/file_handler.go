@@ -4,9 +4,9 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"youlai-gin/pkg/errs"
-	"youlai-gin/pkg/response"
-	"youlai-gin/pkg/storage"
-	"youlai-gin/pkg/utils"
+	response "youlai-gin/internal/common"
+	"youlai-gin/internal/common/storage"
+	"youlai-gin/internal/common/utils"
 )
 
 // UploadResult 上传结果

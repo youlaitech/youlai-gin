@@ -1,0 +1,142 @@
+package handler
+
+import (
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+
+	"youlai-gin/internal/${moduleName}/${entityKebab}/model"
+	"youlai-gin/internal/${moduleName}/${entityKebab}/service"
+	"youlai-gin/internal/common"
+	"youlai-gin/pkg/types"
+	"youlai-gin/internal/common/validator"
+)
+
+// Register${entityName}Routes 注册${businessName}模块路由
+func Register${entityName}Routes(r *gin.RouterGroup) {
+	items := r.Group("/${entityKebab}s")
+	{
+		items.GET("", Get${entityName}Page)
+		items.POST("", Save${entityName})
+		items.GET("/:id/form", Get${entityName}Form)
+		items.PUT("/:id", Update${entityName})
+		items.DELETE("/:id", Delete${entityName})
+	}
+}
+
+// Get${entityName}Page ${businessName}分页列表
+// @Summary ${businessName}分页列表
+// @Tags ${businessName}管理
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/${entityKebab}s [get]
+func Get${entityName}Page(c *gin.Context) {
+	var query model.${entityName}Query
+	if err := c.ShouldBindQuery(&query); err != nil {
+		common.BadRequest(c, "参数错误")
+		return
+	}
+
+	result, err := service.Get${entityName}Page(&query)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	common.OkPaged(c, result)
+}
+
+// Save${entityName} 新增${businessName}
+// @Summary 新增${businessName}
+// @Tags ${businessName}管理
+// @Param body body model.${entityName}Form true "${businessName}信息"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/${entityKebab}s [post]
+func Save${entityName}(c *gin.Context) {
+	var form model.${entityName}Form
+	if err := validator.BindJSON(c, &form); err != nil {
+		c.Error(err)
+		return
+	}
+
+	if err := service.Save${entityName}(&form); err != nil {
+		c.Error(err)
+		return
+	}
+
+	common.OkMsg(c, "保存成功")
+}
+
+// Get${entityName}Form 获取${businessName}表单数据
+// @Summary 获取${businessName}表单数据
+// @Tags ${businessName}管理
+// @Param id path int true "ID"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/${entityKebab}s/{id}/form [get]
+func Get${entityName}Form(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		common.BadRequest(c, "无效的ID")
+		return
+	}
+
+	form, err := service.Get${entityName}Form(id)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	common.Ok(c, form)
+}
+
+// Update${entityName} 更新${businessName}
+// @Summary 更新${businessName}
+// @Tags ${businessName}管理
+// @Param id path int true "ID"
+// @Param body body model.${entityName}Form true "${businessName}信息"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/${entityKebab}s/{id} [put]
+func Update${entityName}(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		common.BadRequest(c, "无效的ID")
+		return
+	}
+
+	var form model.${entityName}Form
+	if err := validator.BindJSON(c, &form); err != nil {
+		c.Error(err)
+		return
+	}
+
+	form.ID = types.BigInt(id)
+	if err := service.Save${entityName}(&form); err != nil {
+		c.Error(err)
+		return
+	}
+
+	common.OkMsg(c, "更新成功")
+}
+
+// Delete${entityName} 删除${businessName}
+// @Summary 删除${businessName}
+// @Tags ${businessName}管理
+// @Param id path int true "ID"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/${entityKebab}s/{id} [delete]
+func Delete${entityName}(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		common.BadRequest(c, "无效的ID")
+		return
+	}
+
+	if err := service.Delete${entityName}(id); err != nil {
+		c.Error(err)
+		return
+	}
+
+	common.OkMsg(c, "删除成功")
+}

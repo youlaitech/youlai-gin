@@ -1,6 +1,6 @@
 package model
 
-import "youlai-gin/pkg/common"
+import common "youlai-gin/pkg/model"
 
 type RoleQuery struct {
 	common.BaseQuery

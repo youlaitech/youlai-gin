@@ -2,9 +2,9 @@ package repository
 
 import (
 	"youlai-gin/internal/system/dept/model"
-	"youlai-gin/internal/system/permission/datascope"
-	"youlai-gin/pkg/auth"
-	"youlai-gin/pkg/database"
+	"youlai-gin/internal/common/permission/datascope"
+	"youlai-gin/internal/common/auth"
+	"youlai-gin/internal/common/database"
 )
 
 // GetDeptList 部门列表查询

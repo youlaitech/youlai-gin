@@ -45,10 +45,6 @@ config/local*.yaml
 config/local*.yml
 config/local*.json
 
-# Swagger generated docs (保留目录，忽略二进制文件)
-docs/*.json
-docs/*.yaml
-
 # Coverage & profiling
 coverage.out
 *.cover

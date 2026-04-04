@@ -6,15 +6,15 @@ import (
 	"youlai-gin/internal/system/log/model"
 	"youlai-gin/internal/system/log/service"
 	"youlai-gin/pkg/errs"
-	"youlai-gin/pkg/response"
-	"youlai-gin/pkg/validator"
+	response "youlai-gin/internal/common"
+	"youlai-gin/internal/common/validator"
 )
 
 // RegisterRoutes 注册日志路由
 func RegisterRoutes(r *gin.RouterGroup) {
 	r.GET("/logs", GetLogPage)
-	r.GET("/logs/visits/trend", GetVisitTrend)
-	r.GET("/logs/visits/overview", GetVisitOverview)
+	r.GET("/logs/analytics/trend", GetVisitTrend)
+	r.GET("/logs/analytics/overview", GetVisitOverview)
 }
 
 // GetLogPage 日志分页列表
@@ -40,7 +40,7 @@ func GetLogPage(c *gin.Context) {
 // GetVisitTrend 访问趋势统计
 // @Summary 访问趋势
 // @Tags 09.日志接口
-// @Router /api/v1/logs/visits/trend [get]
+// @Router /api/v1/logs/analytics/trend [get]
 func GetVisitTrend(c *gin.Context) {
 	startDate := c.Query("startDate")
 	endDate := c.Query("endDate")
@@ -62,7 +62,7 @@ func GetVisitTrend(c *gin.Context) {
 // GetVisitOverview 访问统计概览
 // @Summary 访问统计概览
 // @Tags 09.日志接口
-// @Router /api/v1/logs/views [get]
+// @Router /api/v1/logs/analytics/overview [get]
 func GetVisitOverview(c *gin.Context) {
 	result, err := service.GetVisitStats()
 	if err != nil {

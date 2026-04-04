@@ -73,3 +73,15 @@ func ToBigIntSlice(ids []int64) []BigInt {
 	}
 	return res
 }
+
+// ToInt64Slice converts []BigInt to []int64
+func ToInt64Slice(ids []BigInt) []int64 {
+	if ids == nil {
+		return nil
+	}
+	res := make([]int64, len(ids))
+	for i, id := range ids {
+		res[i] = int64(id)
+	}
+	return res
+}

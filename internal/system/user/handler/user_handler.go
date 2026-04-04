@@ -8,15 +8,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"youlai-gin/internal/system/user/api"
+	"youlai-gin/internal/system/user/model"
 	userService "youlai-gin/internal/system/user/service"
 	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
-	pkgContext "youlai-gin/pkg/context"
-	"youlai-gin/pkg/middleware"
-	"youlai-gin/pkg/response"
+	pkgContext "youlai-gin/internal/common/context"
+	"youlai-gin/internal/middleware"
+	response "youlai-gin/internal/common"
 	"youlai-gin/pkg/types"
-	"youlai-gin/pkg/validator"
+	"youlai-gin/internal/common/utils"
+	"youlai-gin/internal/common/validator"
 )
 
 // RegisterUserRoutes 注册用户路由
@@ -51,7 +52,7 @@ func RegisterUserRoutes(r *gin.RouterGroup) {
 // @Tags 02.用户接口
 // @Router /api/v1/users [get]
 func GetUserList(c *gin.Context) {
-	var query api.UserQueryReq
+	var query model.UserQuery
 	if err := validator.BindQuery(c, &query); err != nil {
 		c.Error(err)
 		return
@@ -77,7 +78,7 @@ func GetUserList(c *gin.Context) {
 // @Tags 02.用户接口
 // @Router /api/v1/users [post]
 func SaveUser(c *gin.Context) {
-	var form api.UserSaveReq
+	var form model.UserForm
 	if err := validator.BindJSON(c, &form); err != nil {
 		c.Error(err)
 		return
@@ -97,10 +98,9 @@ func SaveUser(c *gin.Context) {
 // @Param userId path int true "用户ID"
 // @Router /api/v1/users/{userId}/form [get]
 func GetUserForm(c *gin.Context) {
-	userIdStr := c.Param("userId")
-	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	userId, err := pkgContext.ParsePathParam(c, "userId", "用户")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的用户ID"))
+		c.Error(err)
 		return
 	}
 
@@ -119,14 +119,13 @@ func GetUserForm(c *gin.Context) {
 // @Param userId path int true "用户ID"
 // @Router /api/v1/users/{userId} [put]
 func UpdateUser(c *gin.Context) {
-	userIdStr := c.Param("userId")
-	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	userId, err := pkgContext.ParsePathParam(c, "userId", "用户")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的用户ID"))
+		c.Error(err)
 		return
 	}
 
-	var form api.UserSaveReq
+	var form model.UserForm
 	if err := validator.BindJSON(c, &form); err != nil {
 		c.Error(err)
 		return
@@ -163,14 +162,17 @@ func DeleteUsers(c *gin.Context) {
 // @Param userId path int true "用户ID"
 // @Router /api/v1/users/{userId}/status [patch]
 func UpdateUserStatus(c *gin.Context) {
-	userIdStr := c.Param("userId")
-	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	userId, err := pkgContext.ParsePathParam(c, "userId", "用户")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的用户ID"))
+		c.Error(err)
 		return
 	}
 
 	statusStr := c.Query("status")
+	if statusStr == "" {
+		c.Error(errs.BadRequest("状态值不能为空"))
+		return
+	}
 	status, err := strconv.Atoi(statusStr)
 	if err != nil {
 		c.Error(errs.BadRequest("无效的状态值"))
@@ -238,7 +240,7 @@ func UpdateUserProfile(c *gin.Context) {
 		return
 	}
 
-	var form api.UserProfileUpdateReq
+	var form model.UserProfileForm
 	if err := validator.BindJSON(c, &form); err != nil {
 		c.Error(err)
 		return
@@ -257,10 +259,9 @@ func UpdateUserProfile(c *gin.Context) {
 // @Param userId path int true "用户ID"
 // @Router /api/v1/users/{userId}/password/reset [put]
 func ResetUserPassword(c *gin.Context) {
-	userIdStr := c.Param("userId")
-	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	userId, err := pkgContext.ParsePathParam(c, "userId", "用户")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的用户ID"))
+		c.Error(err)
 		return
 	}
 
@@ -285,7 +286,7 @@ func ChangeCurrentUserPassword(c *gin.Context) {
 		return
 	}
 
-	var form api.PasswordUpdateReq
+	var form model.PasswordForm
 	if err := validator.BindJSON(c, &form); err != nil {
 		c.Error(err)
 		return
@@ -327,7 +328,7 @@ func BindOrChangeMobile(c *gin.Context) {
 		return
 	}
 
-	var form api.MobileUpdateReq
+	var form model.MobileBindingForm
 	if err := validator.BindJSON(c, &form); err != nil {
 		c.Error(err)
 		return
@@ -351,7 +352,7 @@ func UnbindMobile(c *gin.Context) {
 		return
 	}
 
-	var form api.PasswordVerifyReq
+	var form model.PasswordVerifyForm
 	if err := validator.BindJSON(c, &form); err != nil {
 		c.Error(err)
 		return
@@ -394,7 +395,7 @@ func BindOrChangeEmail(c *gin.Context) {
 		return
 	}
 
-	var form api.EmailUpdateReq
+	var form model.EmailBindingForm
 	if err := validator.BindJSON(c, &form); err != nil {
 		c.Error(err)
 		return
@@ -418,7 +419,7 @@ func UnbindEmail(c *gin.Context) {
 		return
 	}
 
-	var form api.PasswordVerifyReq
+	var form model.PasswordVerifyForm
 	if err := validator.BindJSON(c, &form); err != nil {
 		c.Error(err)
 		return
@@ -451,7 +452,7 @@ func GetUserOptions(c *gin.Context) {
 // @Tags 02.用户接口
 // @Router /api/v1/users/export [get]
 func ExportUsers(c *gin.Context) {
-	var query api.UserQueryReq
+	var query model.UserQuery
 	if err := validator.BindQuery(c, &query); err != nil {
 		c.Error(err)
 		return
@@ -515,11 +516,6 @@ func DownloadUserTemplate(c *gin.Context) {
 // @Summary 导入用户
 // @Tags 02.用户接口
 // @Router /api/v1/users/import [post]
-const (
-	maxUploadSize     = 10 << 20 // 10MB
-	allowedExcelTypes = ".xlsx"
-)
-
 func ImportUsers(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -527,13 +523,8 @@ func ImportUsers(c *gin.Context) {
 		return
 	}
 
-	if file.Size > maxUploadSize {
-		c.Error(errs.BadRequest("文件大小不能超过10MB"))
-		return
-	}
-
-	if !isExcelFile(file.Filename) {
-		c.Error(errs.BadRequest("仅支持.xlsx格式的Excel文件"))
+	if err := utils.ValidateExcel(file); err != nil {
+		c.Error(err)
 		return
 	}
 
@@ -551,9 +542,5 @@ func ImportUsers(c *gin.Context) {
 	}
 
 	response.Ok(c, result)
-}
-
-func isExcelFile(filename string) bool {
-	return len(filename) >= 5 && filename[len(filename)-5:] == allowedExcelTypes
 }
 

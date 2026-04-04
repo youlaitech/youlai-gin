@@ -7,13 +7,13 @@ import (
 
 	"gorm.io/gorm"
 
-	permService "youlai-gin/internal/system/permission/service"
+	permService "youlai-gin/internal/common/permission/service"
 	"youlai-gin/internal/system/role/model"
 	"youlai-gin/internal/system/role/repository"
 	userRepo "youlai-gin/internal/system/user/repository"
-	"youlai-gin/pkg/common"
+	common "youlai-gin/pkg/model"
 	"youlai-gin/pkg/errs"
-	"youlai-gin/pkg/redis"
+	"youlai-gin/internal/common/redis"
 	"youlai-gin/pkg/types"
 )
 

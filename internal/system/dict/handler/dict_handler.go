@@ -1,19 +1,16 @@
 package handler
 
 import (
-	"strconv"
-	"strings"
-
 	"github.com/gin-gonic/gin"
 
 	"youlai-gin/internal/system/dict/model"
 	"youlai-gin/internal/system/dict/service"
+	pkgContext "youlai-gin/internal/common/context"
 	"youlai-gin/pkg/enums"
-	"youlai-gin/pkg/errs"
-	"youlai-gin/pkg/middleware"
-	"youlai-gin/pkg/response"
+	"youlai-gin/internal/middleware"
+	response "youlai-gin/internal/common"
 	"youlai-gin/pkg/types"
-	"youlai-gin/pkg/validator"
+	"youlai-gin/internal/common/validator"
 )
 
 // RegisterDictRoutes 注册字典模块路由
@@ -124,10 +121,9 @@ func SaveDict(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/dicts/{id}/form [get]
 func GetDictForm(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "字典")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的字典ID"))
+		c.Error(err)
 		return
 	}
 
@@ -148,10 +144,9 @@ func GetDictForm(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/dicts/{id} [put]
 func UpdateDict(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "字典")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的字典ID"))
+		c.Error(err)
 		return
 	}
 
@@ -177,10 +172,9 @@ func UpdateDict(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/dicts/{id} [delete]
 func DeleteDict(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "字典")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的字典ID"))
+		c.Error(err)
 		return
 	}
 
@@ -244,10 +238,9 @@ func SaveDictItemByCode(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/dicts/{id}/items/{itemId}/form [get]
 func GetDictItemFormByCode(c *gin.Context) {
-	itemIdStr := c.Param("itemId")
-	itemId, err := strconv.ParseInt(itemIdStr, 10, 64)
+	itemId, err := pkgContext.ParsePathParam(c, "itemId", "字典项")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的字典项ID"))
+		c.Error(err)
 		return
 	}
 
@@ -270,10 +263,9 @@ func GetDictItemFormByCode(c *gin.Context) {
 // @Router /api/v1/dicts/{id}/items/{itemId} [put]
 func UpdateDictItemByCode(c *gin.Context) {
 	dictCode := c.Param("id")
-	itemIdStr := c.Param("itemId")
-	itemId, err := strconv.ParseInt(itemIdStr, 10, 64)
+	itemId, err := pkgContext.ParsePathParam(c, "itemId", "字典项")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的字典项ID"))
+		c.Error(err)
 		return
 	}
 
@@ -303,27 +295,9 @@ func UpdateDictItemByCode(c *gin.Context) {
 // @Router /api/v1/dicts/{id}/items/{itemIds} [delete]
 func DeleteDictItemsByCode(c *gin.Context) {
 	itemIdsStr := c.Param("itemIds")
-	if itemIdsStr == "" {
-		c.Error(errs.BadRequest("无效的字典项ID"))
-		return
-	}
-
-	idStrArr := strings.Split(itemIdsStr, ",")
-	ids := make([]int64, 0, len(idStrArr))
-	for _, idStr := range idStrArr {
-		idStr = strings.TrimSpace(idStr)
-		if idStr == "" {
-			continue
-		}
-		id, err := strconv.ParseInt(idStr, 10, 64)
-		if err != nil {
-			c.Error(errs.BadRequest("无效的字典项ID"))
-			return
-		}
-		ids = append(ids, id)
-	}
-	if len(ids) == 0 {
-		c.Error(errs.BadRequest("无效的字典项ID"))
+	ids, err := pkgContext.ParseIntList(itemIdsStr, "字典项")
+	if err != nil {
+		c.Error(err)
 		return
 	}
 

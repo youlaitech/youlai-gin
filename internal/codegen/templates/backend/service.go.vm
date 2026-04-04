@@ -1,0 +1,88 @@
+package service
+
+import (
+	"errors"
+
+	"gorm.io/gorm"
+
+	"youlai-gin/internal/${moduleName}/${entityKebab}/model"
+	"youlai-gin/internal/${moduleName}/${entityKebab}/repository"
+	common "youlai-gin/pkg/model"
+	"youlai-gin/pkg/errs"
+)
+
+// Get${entityName}Page ${businessName}分页列表
+func Get${entityName}Page(query *model.${entityName}Query) (*common.PagedData, error) {
+	list, total, err := repository.Get${entityName}Page(query)
+	if err != nil {
+		return nil, errs.SystemError("查询${businessName}列表失败")
+	}
+
+	voList := make([]model.${entityName}PageVO, len(list))
+	for i, item := range list {
+		voList[i] = model.${entityName}PageVO{
+#foreach($fieldConfig in $fieldConfigsInList)
+			${fieldConfig.goFieldName}: item.${fieldConfig.goFieldName},
+#end
+		}
+	}
+
+	return &common.PagedData{List: voList, Total: total}, nil
+}
+
+// Save${entityName} 保存${businessName}（新增或更新）
+func Save${entityName}(form *model.${entityName}Form) error {
+	item := &model.${entityName}{
+#foreach($fieldConfig in $fieldConfigsInForm)
+		${fieldConfig.goFieldName}: form.${fieldConfig.goFieldName},
+#end
+	}
+
+	if form.ID == 0 {
+		if err := repository.Create${entityName}(item); err != nil {
+			return errs.SystemError("创建${businessName}失败")
+		}
+		form.ID = item.ID
+		return nil
+	}
+
+	if err := repository.Update${entityName}(item); err != nil {
+		return errs.SystemError("更新${businessName}失败")
+	}
+
+	return nil
+}
+
+// Get${entityName}Form 获取${businessName}表单数据
+func Get${entityName}Form(id int64) (*model.${entityName}Form, error) {
+	item, err := repository.Get${entityName}ByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errs.NotFound("${businessName}不存在")
+		}
+		return nil, errs.SystemError("查询${businessName}失败")
+	}
+
+	return &model.${entityName}Form{
+#foreach($fieldConfig in $fieldConfigsInForm)
+		${fieldConfig.goFieldName}: item.${fieldConfig.goFieldName},
+#end
+	}, nil
+}
+
+// Delete${entityName} 删除${businessName}
+func Delete${entityName}(id int64) error {
+	_, err := repository.Get${entityName}ByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.NotFound("${businessName}不存在")
+		}
+		return errs.SystemError("查询${businessName}失败")
+	}
+
+	if err := repository.Delete${entityName}(id); err != nil {
+		return errs.SystemError("删除${businessName}失败")
+	}
+
+	return nil
+}

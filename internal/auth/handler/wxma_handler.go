@@ -5,7 +5,7 @@ import (
 
 	"youlai-gin/internal/auth/model"
 	"youlai-gin/internal/auth/service"
-	"youlai-gin/pkg/response"
+	response "youlai-gin/internal/common"
 )
 
 // RegisterWxMaRoutes 注册微信小程序认证路由

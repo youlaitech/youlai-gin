@@ -1,18 +1,16 @@
 package handler
 
 import (
-	"strconv"
-	"strings"
-
 	"github.com/gin-gonic/gin"
 
 	"youlai-gin/internal/system/config/model"
 	"youlai-gin/internal/system/config/service"
+	pkgContext "youlai-gin/internal/common/context"
 	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
-	"youlai-gin/pkg/middleware"
-	"youlai-gin/pkg/response"
-	"youlai-gin/pkg/validator"
+	"youlai-gin/internal/middleware"
+	response "youlai-gin/internal/common"
+	"youlai-gin/internal/common/validator"
 )
 
 // RegisterRoutes 注册配置管理路由
@@ -58,10 +56,9 @@ func GetConfigPage(c *gin.Context) {
 // @Param id path int true "配置ID"
 // @Router /api/v1/configs/{id}/form [get]
 func GetConfigForm(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "配置")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的配置ID"))
+		c.Error(err)
 		return
 	}
 
@@ -80,10 +77,9 @@ func GetConfigForm(c *gin.Context) {
 // @Param id path int true "配置ID"
 // @Router /api/v1/configs/{id} [get]
 func GetConfigByID(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "配置")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的配置ID"))
+		c.Error(err)
 		return
 	}
 
@@ -142,10 +138,9 @@ func SaveConfig(c *gin.Context) {
 // @Param id path int true "配置ID"
 // @Router /api/v1/configs/{id} [put]
 func UpdateConfig(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "配置")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的配置ID"))
+		c.Error(err)
 		return
 	}
 
@@ -171,32 +166,18 @@ func UpdateConfig(c *gin.Context) {
 // @Router /api/v1/configs/{ids} [delete]
 func DeleteConfigs(c *gin.Context) {
 	idsStr := c.Param("ids")
-	if idsStr == "" {
-		c.Error(errs.BadRequest("ID不能为空"))
+	ids, err := pkgContext.ParseIntList(idsStr, "配置")
+	if err != nil {
+		c.Error(err)
 		return
 	}
 
-	idStrArr := strings.Split(idsStr, ",")
-	if len(idStrArr) == 1 {
-		id, err := strconv.ParseInt(idsStr, 10, 64)
-		if err != nil {
-			c.Error(errs.BadRequest("无效的配置ID"))
-			return
-		}
-		if err := service.DeleteConfig(id); err != nil {
+	if len(ids) == 1 {
+		if err := service.DeleteConfig(ids[0]); err != nil {
 			c.Error(err)
 			return
 		}
 	} else {
-		ids := make([]int64, 0, len(idStrArr))
-		for _, idStr := range idStrArr {
-			id, err := strconv.ParseInt(strings.TrimSpace(idStr), 10, 64)
-			if err != nil {
-				c.Error(errs.BadRequest("无效的配置ID"))
-				return
-			}
-			ids = append(ids, id)
-		}
 		if err := service.BatchDeleteConfig(ids); err != nil {
 			c.Error(err)
 			return

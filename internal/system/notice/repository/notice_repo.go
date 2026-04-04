@@ -3,9 +3,9 @@ package repository
 import (
 	"gorm.io/gorm"
 
-	"youlai-gin/pkg/database"
+	"youlai-gin/internal/common/database"
 	"youlai-gin/internal/system/notice/model"
-	pkgDatabase "youlai-gin/pkg/database"
+	pkgDatabase "youlai-gin/internal/common/database"
 	"youlai-gin/pkg/types"
 )
 

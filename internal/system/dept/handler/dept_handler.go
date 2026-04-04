@@ -1,19 +1,16 @@
 package handler
 
 import (
-	"strconv"
-
 	"github.com/gin-gonic/gin"
 
 	"youlai-gin/internal/system/dept/model"
 	"youlai-gin/internal/system/dept/service"
-	pkgContext "youlai-gin/pkg/context"
+	pkgContext "youlai-gin/internal/common/context"
 	"youlai-gin/pkg/enums"
-	"youlai-gin/pkg/errs"
-	"youlai-gin/pkg/middleware"
-	"youlai-gin/pkg/response"
+	"youlai-gin/internal/middleware"
+	response "youlai-gin/internal/common"
 	"youlai-gin/pkg/types"
-	"youlai-gin/pkg/validator"
+	"youlai-gin/internal/common/validator"
 )
 
 func RegisterDeptRoutes(r *gin.RouterGroup) {
@@ -101,10 +98,9 @@ func SaveDept(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/depts/{id}/form [get]
 func GetDeptForm(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "部门")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的部门ID"))
+		c.Error(err)
 		return
 	}
 
@@ -124,10 +120,9 @@ func GetDeptForm(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/depts/{id} [put]
 func UpdateDept(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "部门")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的部门ID"))
+		c.Error(err)
 		return
 	}
 
@@ -152,10 +147,9 @@ func UpdateDept(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/depts/{id} [delete]
 func DeleteDept(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "部门")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的部门ID"))
+		c.Error(err)
 		return
 	}
 

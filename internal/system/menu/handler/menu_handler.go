@@ -1,19 +1,17 @@
 package handler
 
 import (
-	"strconv"
-
 	"github.com/gin-gonic/gin"
 
 	"youlai-gin/internal/system/menu/model"
 	"youlai-gin/internal/system/menu/service"
-	pkgContext "youlai-gin/pkg/context"
+	pkgContext "youlai-gin/internal/common/context"
 	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
-	"youlai-gin/pkg/middleware"
-	"youlai-gin/pkg/response"
+	"youlai-gin/internal/middleware"
+	response "youlai-gin/internal/common"
 	"youlai-gin/pkg/types"
-	"youlai-gin/pkg/validator"
+	"youlai-gin/internal/common/validator"
 )
 
 func RegisterMenuRoutes(r *gin.RouterGroup) {
@@ -110,10 +108,9 @@ func SaveMenu(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/{id}/form [get]
 func GetMenuForm(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "菜单")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的菜单ID"))
+		c.Error(err)
 		return
 	}
 
@@ -133,10 +130,9 @@ func GetMenuForm(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/{id} [put]
 func UpdateMenu(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "菜单")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的菜单ID"))
+		c.Error(err)
 		return
 	}
 
@@ -161,10 +157,9 @@ func UpdateMenu(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/{id} [delete]
 func DeleteMenu(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := pkgContext.ParsePathParam(c, "id", "菜单")
 	if err != nil {
-		c.Error(errs.BadRequest("无效的菜单ID"))
+		c.Error(err)
 		return
 	}
 

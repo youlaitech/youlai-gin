@@ -1,7 +1,7 @@
 package model
 
 import (
-	"youlai-gin/pkg/common"
+	common "youlai-gin/pkg/model"
 	"youlai-gin/pkg/types"
 )
 

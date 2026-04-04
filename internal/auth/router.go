@@ -5,7 +5,7 @@ import (
 
 	"youlai-gin/internal/auth/handler"
 	"youlai-gin/internal/auth/service"
-	pkgAuth "youlai-gin/pkg/auth"
+	pkgAuth "youlai-gin/internal/common/auth"
 )
 
 // RegisterRoutes 供上层 router 或 main 调用

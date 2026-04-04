@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"youlai-gin/pkg/database"
+	"youlai-gin/internal/common/database"
 )
 
 // RolePerms 角色权限结构

@@ -13,14 +13,13 @@ import (
 
 	youlaDocs "youlai-gin/api"
 	"youlai-gin/internal/router"
-	"youlai-gin/pkg/auth"
-	"youlai-gin/pkg/config"
-	"youlai-gin/pkg/database"
-	"youlai-gin/pkg/logger"
-	"youlai-gin/pkg/middleware"
-	"youlai-gin/pkg/redis"
-	"youlai-gin/pkg/requestid"
-	"youlai-gin/pkg/sse"
+	"youlai-gin/internal/common/auth"
+	"youlai-gin/internal/common/config"
+	"youlai-gin/internal/common/database"
+	"youlai-gin/internal/common/logger"
+	"youlai-gin/internal/common/redis"
+	"youlai-gin/internal/middleware"
+	"youlai-gin/internal/message"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -95,7 +94,7 @@ func main() {
 	}
 
 	// 初始化 SSE 服务
-	sse.InitSseService()
+	message.InitSseService()
 
 	// 初始化 TokenManager
 	tokenManager, err := auth.CreateTokenManager(&config.Cfg.Security)
@@ -108,7 +107,7 @@ func main() {
 	youlaDocs.SwaggerInfo.Description = "youlai 全家桶（Go/Gin）权限管理后台接口文档"
 	youlaDocs.SwaggerInfo.Version = "4.1.0"
 	r := gin.New()
-	r.Use(requestid.Middleware())
+	r.Use(logger.RequestIDMiddleware())
 	r.Use(logger.Middleware())
 	r.Use(logger.Recovery())
 	r.Use(middleware.ErrorHandler())
@@ -152,7 +151,7 @@ func main() {
 	logger.Log.Sugar().Info("正在关闭服务器...")
 
 	// 主动断开所有 SSE 连接
-	sse.GetSseService().CloseAll()
+	message.GetSseService().CloseAll()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

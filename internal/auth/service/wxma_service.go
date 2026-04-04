@@ -1,4 +1,4 @@
-package service
+﻿package service
 
 import (
 	"context"
@@ -12,14 +12,14 @@ import (
 	"gorm.io/gorm"
 
 	authModel "youlai-gin/internal/auth/model"
-	permService "youlai-gin/internal/system/permission/service"
-	"youlai-gin/internal/system/user/domain"
+	permService "youlai-gin/internal/common/permission/service"
+	"youlai-gin/internal/system/user/model"
 	userRepo "youlai-gin/internal/system/user/repository"
-	"youlai-gin/pkg/auth"
-	"youlai-gin/pkg/config"
-	"youlai-gin/pkg/database"
+	"youlai-gin/internal/common/auth"
+	"youlai-gin/internal/common/config"
+	"youlai-gin/internal/common/database"
 	"youlai-gin/pkg/errs"
-	"youlai-gin/pkg/redis"
+	"youlai-gin/internal/common/redis"
 	"youlai-gin/pkg/types"
 )
 
@@ -85,8 +85,8 @@ func SilentLogin(code string) (*authModel.WxMaLoginResult, error) {
 	}
 
 	// 查找是否已绑定用户
-	var social domain.UserSocial
-	err = database.DB.Where("platform = ? AND openid = ?", domain.PlatformWechatMini, openID).First(&social).Error
+	var social model.UserSocial
+	err = database.DB.Where("platform = ? AND openid = ?", model.PlatformWechatMini, openID).First(&social).Error
 
 	if err == nil {
 		// 已绑定用户，直接登录
@@ -258,7 +258,7 @@ func getAccessToken() (string, error) {
 }
 
 // findOrCreateUser 查询或创建用户
-func findOrCreateUser(mobile string) (*domain.User, error) {
+func findOrCreateUser(mobile string) (*model.User, error) {
 	user, err := userRepo.GetUserByMobile(mobile)
 	if err == nil {
 		return user, nil
@@ -269,7 +269,7 @@ func findOrCreateUser(mobile string) (*domain.User, error) {
 	}
 
 	// 创建新用户
-	user = &domain.User{
+	user = &model.User{
 		Username: "wx_" + uuid.New().String()[:8],
 		Nickname: "微信用户",
 		Mobile:   mobile,
@@ -295,8 +295,8 @@ func findOrCreateUser(mobile string) (*domain.User, error) {
 
 // bindWechatOpenID 绑定微信 openid
 func bindWechatOpenID(userID int64, openID, unionID, sessionKey string) {
-	var social domain.UserSocial
-	err := database.DB.Where("platform = ? AND openid = ?", domain.PlatformWechatMini, openID).First(&social).Error
+	var social model.UserSocial
+	err := database.DB.Where("platform = ? AND openid = ?", model.PlatformWechatMini, openID).First(&social).Error
 
 	if err == nil {
 		// 更新绑定
@@ -310,9 +310,9 @@ func bindWechatOpenID(userID int64, openID, unionID, sessionKey string) {
 
 	if err == gorm.ErrRecordNotFound {
 		// 新增绑定
-		social = domain.UserSocial{
+		social = model.UserSocial{
 			UserID:     types.BigInt(userID),
-			Platform:   domain.PlatformWechatMini,
+			Platform:   model.PlatformWechatMini,
 			OpenID:     openID,
 			UnionID:    unionID,
 			SessionKey: sessionKey,
@@ -349,7 +349,7 @@ func generateTokenByUserID(userID int64) (*auth.AuthenticationToken, error) {
 }
 
 // generateTokenByUser 根据用户生成Token
-func generateTokenByUser(user *domain.User) (*auth.AuthenticationToken, error) {
+func generateTokenByUser(user *model.User) (*auth.AuthenticationToken, error) {
 	roles, err := userRepo.GetUserRoles(int64(user.ID))
 	if err != nil {
 		return nil, errs.SystemError("查询用户角色失败")
