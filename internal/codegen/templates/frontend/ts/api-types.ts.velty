@@ -1,0 +1,46 @@
+/**
+ * ${entityName} ${businessName}类型定义
+ */
+
+import type { BaseQueryParams } from "@/api/common";
+
+/** ${businessName}查询参数 */
+export interface ${entityName}QueryParams extends BaseQueryParams {
+#foreach($fieldConfig in $fieldConfigsInQuery)
+  #if("${fieldConfig.fieldComment}" != "")
+  /** ${fieldConfig.fieldComment} */
+  #end
+  #if($fieldConfig.formType == "DATE" or $fieldConfig.formType == "DATE_TIME")
+    #if($fieldConfig.queryType == "BETWEEN")
+  ${fieldConfig.fieldName}?: [string, string];
+    #else
+  ${fieldConfig.fieldName}?: ${fieldConfig.tsType};
+    #end
+  #else
+  ${fieldConfig.fieldName}?: ${fieldConfig.tsType};
+  #end
+#end
+}
+
+/** ${businessName}表单对象 */
+export interface ${entityName}Form {
+#foreach($fieldConfig in $fieldConfigsInForm)
+  #if("${fieldConfig.fieldComment}" != "")
+  /** ${fieldConfig.fieldComment} */
+  #end
+  ${fieldConfig.fieldName}?: ${fieldConfig.tsType};
+#end
+}
+
+/** ${businessName}详情对象 */
+export type ${entityName}Detail = ${entityName}Item & ${entityName}Form;
+
+/** ${businessName}列表项 */
+export interface ${entityName}Item {
+#foreach($fieldConfig in $fieldConfigsInList)
+  #if("${fieldConfig.fieldComment}" != "")
+  /** ${fieldConfig.fieldComment} */
+  #end
+  ${fieldConfig.fieldName}?: ${fieldConfig.tsType};
+#end
+}

@@ -2,6 +2,7 @@ package message
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -67,19 +68,27 @@ func (h *SseHandler) Connect(c *gin.Context) {
 
 	// Start heartbeat goroutine
 	go func() {
-		ticker := c.Request.Context()
+		ticker := time.NewTicker(15 * time.Second)
+		defer ticker.Stop()
 		for {
 			select {
-			case <-ticker.Done():
+			case <-c.Request.Context().Done():
 				return
-			default:
-				emitter.SendHeartbeat()
+			case <-ticker.C:
+				if err := emitter.SendHeartbeat(); err != nil {
+					return
+				}
 			}
 		}
 	}()
 
-	// Wait for client disconnect
-	<-c.Request.Context().Done()
+	// 同时监听客户端断开和服务关闭信号
+	select {
+	case <-c.Request.Context().Done():
+		// 客户端主动断开连接
+	case <-emitter.Done():
+		// 服务端主动关闭（如应用停止）
+	}
 	h.sseService.RemoveEmitter(emitter)
 }
 

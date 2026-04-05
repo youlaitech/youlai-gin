@@ -1,4 +1,4 @@
-﻿package service
+package service
 
 import (
 	"archive/zip"
@@ -79,32 +79,50 @@ var codegenConfig = struct {
 	defaultRemoveTablePrefix: "sys_",
 }
 
+// 模板配置说明：
+// - backend/ 下是 Go 后端代码模板
+// - frontend/ 下按 ts/、js/ 分包
+// - 这里的 templatePath 作为“默认值”，实际使用时会再结合 frontendType 做一次路径解析
 var templateConfigs = map[templateName]templateConfig{
-	tplAPI:        {templatePath: "api.ts.vm", subpackageName: "api", extension: ".ts"},
-	tplAPITypes:   {templatePath: "api-types.ts.vm", subpackageName: "types", extension: ".ts"},
-	tplView:       {templatePath: "index.vue.vm", subpackageName: "views", extension: ".vue"},
-	tplHandler:    {templatePath: "handler.go.vm", subpackageName: "handler", extension: ".go"},
-	tplService:    {templatePath: "service.go.vm", subpackageName: "service", extension: ".go"},
-	tplRepository: {templatePath: "repository.go.vm", subpackageName: "repository", extension: ".go"},
-	tplModelEntity:{templatePath: "model-entity.go.vm", subpackageName: "model", extension: ".go"},
-	tplModelForm:  {templatePath: "model-form.go.vm", subpackageName: "model", extension: ".go"},
-	tplModelQuery: {templatePath: "model-query.go.vm", subpackageName: "model", extension: ".go"},
-	tplModelVo:    {templatePath: "model-vo.go.vm", subpackageName: "model", extension: ".go"},
-	tplRouter:     {templatePath: "router.go.vm", subpackageName: "", extension: ".go"},
+	tplAPI:        {templatePath: "frontend/ts/api.ts.velty", subpackageName: "api", extension: ".ts"},
+	tplAPITypes:   {templatePath: "frontend/ts/api-types.ts.velty", subpackageName: "types", extension: ".ts"},
+	tplView:       {templatePath: "frontend/ts/index.vue.velty", subpackageName: "views", extension: ".vue"},
+	tplHandler:    {templatePath: "backend/handler.go.velty", subpackageName: "handler", extension: ".go"},
+	tplService:    {templatePath: "backend/service.go.velty", subpackageName: "service", extension: ".go"},
+	tplRepository: {templatePath: "backend/repository.go.velty", subpackageName: "repository", extension: ".go"},
+	tplModelEntity:{templatePath: "backend/model-entity.go.velty", subpackageName: "model", extension: ".go"},
+	tplModelForm:  {templatePath: "backend/model-form.go.velty", subpackageName: "model", extension: ".go"},
+	tplModelQuery: {templatePath: "backend/model-query.go.velty", subpackageName: "model", extension: ".go"},
+	tplModelVo:    {templatePath: "backend/model-vo.go.velty", subpackageName: "model", extension: ".go"},
+	tplRouter:     {templatePath: "backend/router.go.velty", subpackageName: "", extension: ".go"},
 }
 
 // resolveFrontendTemplatePath 解析前端模板路径
 func resolveFrontendTemplatePath(name templateName, tc templateConfig, frontendType string) string {
-	if frontendType != "js" {
+	// 约定：TS 作为默认前端类型；选择 JS 时只替换少数模板（API、VIEW）。
+	// 其它模板仍然走 tc.templatePath（避免后续新增模板时忘记维护这里）。
+	if frontendType == "js" {
+		switch name {
+		case tplAPI:
+			return "frontend/js/api.js.velty"
+		case tplView:
+			return "frontend/js/index.js.vue.velty"
+		default:
+			return tc.templatePath
+		}
+	}
+
+	// 默认 TS
+	switch name {
+	case tplAPI:
+		return "frontend/ts/api.ts.velty"
+	case tplAPITypes:
+		return "frontend/ts/api-types.ts.velty"
+	case tplView:
+		return "frontend/ts/index.vue.velty"
+	default:
 		return tc.templatePath
 	}
-	if name == tplAPI {
-		return "api.js.vm"
-	}
-	if name == tplView {
-		return "index.js.vue.vm"
-	}
-	return tc.templatePath
 }
 
 // resolveFrontendExtension 解析前端文件后缀
@@ -561,24 +579,18 @@ func renderTemplate(
 ) (string, error) {
 	effectivePath := templatePath
 	if name == tplView && pageType == "curd" {
-		if strings.HasSuffix(effectivePath, "index.js.vue.vm") {
-			effectivePath = strings.Replace(effectivePath, "index.js.vue.vm", "index.curd.js.vue.vm", 1)
-		} else if strings.HasSuffix(effectivePath, "index.vue.vm") {
-			effectivePath = strings.Replace(effectivePath, "index.vue.vm", "index.curd.vue.vm", 1)
+		if strings.HasSuffix(effectivePath, "index.js.vue.velty") {
+			effectivePath = strings.Replace(effectivePath, "index.js.vue.velty", "index.curd.js.vue.velty", 1)
+		} else if strings.HasSuffix(effectivePath, "index.vue.velty") {
+			effectivePath = strings.Replace(effectivePath, "index.vue.velty", "index.curd.vue.velty", 1)
 		}
 	}
 
 	absPath := resolveBootTemplatePath(effectivePath)
 	content, err := os.ReadFile(absPath)
 	if err != nil {
-		return "", errs.SystemError("读取模板失败")
+		return "", errs.SystemError("读取模板失败: " + absPath)
 	}
-
-	// velty 对 Velocity 的 silent reference（$!）支持不完整，这里做一次兼容转换
-	// $!{foo} -> ${foo}
-	// $!bar   -> $bar
-	content = []byte(strings.ReplaceAll(string(content), "$!{", "${"))
-	content = []byte(strings.ReplaceAll(string(content), "$!", "$"))
 
 	planner := velty.New()
 	_ = planner.RegisterFunction("trim", strings.TrimSpace)
@@ -680,10 +692,10 @@ func resolveBootTemplatePath(templatePath string) string {
 
 func getFileName(entityName string, name templateName, extension string) string {
 	if name == tplAPI {
-		return toKebabCase(entityName) + extension
+		return "index" + extension
 	}
 	if name == tplAPITypes {
-		return toKebabCase(entityName) + extension
+		return "types" + extension
 	}
 	if name == tplView {
 		return "index.vue"
@@ -720,10 +732,10 @@ func getFilePath(name templateName, moduleName string, packageName string, subpa
 	frontend := codegenConfig.frontendAppName
 
 	if name == tplAPI {
-		return filepath.Join(frontend, "src", subpackageName, moduleName)
+		return filepath.Join(frontend, "src", subpackageName, moduleName, toKebabCase(entityName))
 	}
 	if name == tplAPITypes {
-		return filepath.Join(frontend, "src", "types", "api")
+		return filepath.Join(frontend, "src", "api", moduleName, toKebabCase(entityName))
 	}
 	if name == tplView {
 		return filepath.Join(frontend, "src", subpackageName, moduleName, toKebabCase(entityName))

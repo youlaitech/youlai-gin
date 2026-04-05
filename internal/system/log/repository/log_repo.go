@@ -106,9 +106,8 @@ func GetLogPage(query *model.LogQuery) ([]model.LogPageVO, int64, error) {
 func GetVisitTrend(startDate, endDate time.Time) (*model.VisitTrendVO, error) {
 	// 生成日期列表
 	dates := make([]string, 0)
-	pvs := make([]int64, 0)
-	uvs := make([]int64, 0)
-	ips := make([]int64, 0)
+	pvList := make([]int64, 0)
+	uvList := make([]int64, 0)
 
 	for d := startDate; !d.After(endDate); d = d.AddDate(0, 0, 1) {
 		dateStr := d.Format("2006-01-02")
@@ -119,30 +118,21 @@ func GetVisitTrend(startDate, endDate time.Time) (*model.VisitTrendVO, error) {
 		database.DB.Table("sys_log").
 			Where("DATE(create_time) = ?", dateStr).
 			Count(&pv)
-		pvs = append(pvs, pv)
+		pvList = append(pvList, pv)
 
-		// UV（独立用户）
-		var uv int64
-		database.DB.Table("sys_log").
-			Where("DATE(create_time) = ?", dateStr).
-			Distinct("operator_id").
-			Count(&uv)
-		uvs = append(uvs, uv)
-
-		// IP（独立IP）
-		var ipCount int64
+		// UV（独立访客）
+		var uvCount int64
 		database.DB.Table("sys_log").
 			Where("DATE(create_time) = ?", dateStr).
 			Distinct("ip").
-			Count(&ipCount)
-		ips = append(ips, ipCount)
+			Count(&uvCount)
+		uvList = append(uvList, uvCount)
 	}
 
 	return &model.VisitTrendVO{
-		Dates: dates,
-		PVs:   pvs,
-		UVs:   uvs,
-		IPs:   ips,
+		Dates:  dates,
+		PvList: pvList,
+		UvList: uvList,
 	}, nil
 }
 
@@ -158,41 +148,21 @@ func GetVisitStats() (*model.VisitStatsVO, error) {
 	// 今日统计
 	database.DB.Table("sys_log").
 		Where("DATE(create_time) = ?", today).
-		Count(&stats.TodayPV)
+		Count(&stats.TodayPvCount)
 
 	database.DB.Table("sys_log").
 		Where("DATE(create_time) = ?", today).
 		Distinct("operator_id").
-		Count(&stats.TodayUV)
-
-	database.DB.Table("sys_log").
-		Where("DATE(create_time) = ?", today).
-		Distinct("ip").
-		Count(&stats.TodayIP)
-
-	// 本周统计
-	database.DB.Table("sys_log").
-		Where("DATE(create_time) >= ?", weekStart).
-		Count(&stats.WeekPV)
-
-	database.DB.Table("sys_log").
-		Where("DATE(create_time) >= ?", weekStart).
-		Distinct("operator_id").
-		Count(&stats.WeekUV)
-
-	// 本月统计
-	database.DB.Table("sys_log").
-		Where("DATE(create_time) >= ?", monthStart).
-		Count(&stats.MonthPV)
-
-	database.DB.Table("sys_log").
-		Where("DATE(create_time) >= ?", monthStart).
-		Distinct("operator_id").
-		Count(&stats.MonthUV)
+		Count(&stats.TodayUvCount)
 
 	// 总统计
-	database.DB.Table("sys_log").Count(&stats.TotalPV)
-	database.DB.Table("sys_log").Distinct("operator_id").Count(&stats.TotalUV)
+	database.DB.Table("sys_log").Count(&stats.TotalPvCount)
+	database.DB.Table("sys_log").Distinct("operator_id").Count(&stats.TotalUvCount)
+
+	_ = weekStart
+	_ = monthStart
+	stats.UvGrowthRate = 0
+	stats.PvGrowthRate = 0
 
 	return stats, nil
 }

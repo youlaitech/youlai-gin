@@ -2,12 +2,7 @@ package model
 
 import "youlai-gin/pkg/common"
 
-#set($useTypes = false)
-#foreach($fieldConfig in $fieldConfigsInQuery)
-#if($fieldConfig.queryType != "BETWEEN" and $fieldConfig.goType == "types.BigInt")
-#set($useTypes = true)
-#end
-#end
+#set($useTypes = false)#foreach($fieldConfig in $fieldConfigsInQuery)#if($fieldConfig.queryType != "BETWEEN" and $fieldConfig.goType == "types.BigInt")#set($useTypes = true)#end#end
 #if($useTypes)
 import "youlai-gin/pkg/types"
 #end

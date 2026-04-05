@@ -55,9 +55,18 @@ func (e *SseEmitter) Done() <-chan struct{} {
 	return e.done
 }
 
-func (e *SseEmitter) SendHeartbeat() {
-	fmt.Fprintf(e.w, ": heartbeat\n\n")
+func (e *SseEmitter) SendHeartbeat() error {
+	select {
+	case <-e.done:
+		return fmt.Errorf("连接已关闭")
+	default:
+	}
+	_, err := fmt.Fprintf(e.w, ": heartbeat\n\n")
+	if err != nil {
+		return err
+	}
 	e.flusher.Flush()
+	return nil
 }
 
 type SseService struct {

@@ -103,11 +103,11 @@ func Logout(c *gin.Context) {
 // @Tags 01.认证中心
 // @Accept application/x-www-form-urlencoded
 // @Produce json
-// @Param refresh_token formData string true "刷新令牌"
+// @Param refreshToken formData string true "刷新令牌"
 // @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
 // @Router /api/v1/auth/refresh-token [post]
 func RefreshToken(c *gin.Context) {
-	refreshToken := c.PostForm("refresh_token")
+	refreshToken := c.PostForm("refreshToken")
 	if refreshToken == "" {
 		c.Error(errs.BadRequest("刷新令牌不能为空"))
 		return

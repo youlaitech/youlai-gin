@@ -2,8 +2,7 @@
   <div class="page-container">
     <el-card class="page-search" shadow="never">
       <el-form ref="queryFormRef" :model="queryParams" :inline="true">
-#foreach($fieldConfig in $fieldConfigs)
-#if($fieldConfig.isShowInQuery == 1)
+#foreach($fieldConfig in $fieldConfigsInQuery)
         <el-form-item label="$fieldConfig.fieldComment" prop="$fieldConfig.fieldName">
 #if($fieldConfig.formType == "INPUT")
           <el-input
@@ -77,7 +76,6 @@
 #end
         </el-form-item>
 #end
-#end
         <el-form-item class="search-buttons">
           <el-button type="primary" icon="search" @click="handleQuery">搜索</el-button>
           <el-button icon="refresh" @click="handleResetQuery">重置</el-button>
@@ -113,23 +111,21 @@
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55" align="center" />
-        #foreach($fieldConfig in $fieldConfigs)
-          #if($fieldConfig.isShowInList == 1)
-            #if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
-              <el-table-column label="$fieldConfig.fieldComment" width="150" align="center">
-                <template #default="scope">
-                  <DictTag v-model="scope.row.$fieldConfig.fieldName" code="$fieldConfig.dictType" />
-                </template>
-              </el-table-column>
-            #else
-              <el-table-column
-                key="$fieldConfig.fieldName"
-                label="$fieldConfig.fieldComment"
-                prop="$fieldConfig.fieldName"
-                min-width="150"
-                align="center"
-              />
-            #end
+        #foreach($fieldConfig in $fieldConfigsInList)
+          #if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
+            <el-table-column label="$fieldConfig.fieldComment" width="150" align="center">
+              <template #default="scope">
+                <DictTag v-model="scope.row.$fieldConfig.fieldName" code="$fieldConfig.dictType" />
+              </template>
+            </el-table-column>
+          #else
+            <el-table-column
+              key="$fieldConfig.fieldName"
+              label="$fieldConfig.fieldComment"
+              prop="$fieldConfig.fieldName"
+              min-width="150"
+              align="center"
+            />
           #end
         #end
         <el-table-column fixed="right" label="操作" width="220">
@@ -169,7 +165,7 @@
       </div>
     </el-card>
 
-    <!-- $!{businessName}表单弹窗 -->
+    <!-- ${businessName}表单弹窗 -->
     <el-dialog
         v-model="dialog.visible"
         :title="dialog.title"
@@ -177,8 +173,8 @@
         @close="handleCloseDialog"
     >
       <el-form ref="dataFormRef" :model="formData" :rules="rules" label-width="100px">
-          #foreach($fieldConfig in $fieldConfigs)
-              #if($fieldConfig.isShowInForm == 1 and $fieldConfig.formType != "HIDDEN")
+          #foreach($fieldConfig in $fieldConfigsInForm)
+              #if($fieldConfig.formType != "HIDDEN")
                 <el-form-item label="$fieldConfig.fieldComment" prop="$fieldConfig.fieldName">
                     #if($fieldConfig.formType == "INPUT")
                       <el-input
@@ -282,7 +278,7 @@
     pageSize: 10,
   });
 
-  // $!{businessName}表格数据
+  // ${businessName}表格数据
   const pageData = ref<${entityName}Item[]>([]);
 
   // 弹窗
@@ -291,21 +287,17 @@
     visible: false,
   });
 
-  // $!{businessName}表单数据
+  // ${businessName}表单数据
   const formData = reactive<${entityName}Form>({});
 
-  // $!{businessName}表单校验规则
+  // ${businessName}表单校验规则
   const rules = reactive({
-    #if($fieldConfigs)
-      #foreach($fieldConfig in $fieldConfigs)
-        #if($fieldConfig.isShowInForm == 1 and $fieldConfig.isRequired == 1 and $fieldConfig.formType != "HIDDEN")
+    #foreach($fieldConfig in $fieldConfigsInForm)#if($fieldConfig.isRequired == 1 and $fieldConfig.formType != "HIDDEN")
     ${fieldConfig.fieldName}: [{ required: true, message: "请输入${fieldConfig.fieldComment}", trigger: "blur" }],
-        #end
-      #end
-    #end
+    #end#end
   });
 
-  /** 查询$!{businessName} */
+  /** 查询${businessName} */
   function handleQuery() {
     loading.value = true;
           ${entityName}API.getPage(queryParams)
@@ -318,7 +310,7 @@
         });
   }
 
-  /** 重置$!{businessName}查询 */
+  /** 重置${businessName}查询 */
   function handleResetQuery() {
     queryFormRef.value!.resetFields();
     queryParams.pageNum = 1;
@@ -330,20 +322,20 @@
     removeIds.value = selection.map((item: any) => String(item.id));
   }
 
-  /** 打开$!{businessName}弹窗 */
+  /** 打开${businessName}弹窗 */
   function handleOpenDialog(id?: string) {
     dialog.visible = true;
     if (id) {
-      dialog.title = "修改$!{businessName}";
+      dialog.title = "修改${businessName}";
             ${entityName}API.getFormData(id).then((data) => {
         Object.assign(formData, data);
       });
     } else {
-      dialog.title = "新增$!{businessName}";
+      dialog.title = "新增${businessName}";
     }
   }
 
-  /** 提交$!{businessName}表单 */
+  /** 提交${businessName}表单 */
   function handleSubmit() {
     dataFormRef.value.validate((valid: any) => {
       if (valid) {
@@ -370,7 +362,7 @@
     });
   }
 
-  /** 关闭$!{businessName}弹窗 */
+  /** 关闭${businessName}弹窗 */
   function handleCloseDialog() {
     dialog.visible = false;
     dataFormRef.value.resetFields();
@@ -378,7 +370,7 @@
     formData.id = undefined;
   }
 
-  /** 删除$!{businessName} */
+  /** 删除${businessName} */
   function handleDelete(id?: string) {
     const ids = [id || removeIds.value].join(",");
     if (!ids) {

@@ -27,10 +27,14 @@
       @operate-click="handleOperateClick"
       @filter-change="handleFilterChange"
     >
-#foreach($fieldConfig in $fieldConfigs)
-#if($fieldConfig.isShowInList == 1 and $fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
+#foreach($fieldConfig in $fieldConfigsInList)
+#if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
       <template #$fieldConfig.fieldName="scope">
         <DictTag v-model="scope.row[scope.prop]" code="$fieldConfig.dictType" />
+      </template>
+#else
+      <template #$fieldConfig.fieldName="scope">
+        {{ scope.row[$fieldConfig.fieldName] }}
       </template>
 #end
 #end
@@ -38,10 +42,14 @@
 
     <!-- 新增 -->
     <PageModal ref="addModalRef" :modal-config="addModalConfig" @submit-click="handleSubmitClick">
-#foreach($fieldConfig in $fieldConfigs)
-#if($fieldConfig.isShowInForm == 1 and $fieldConfig.formType != "HIDDEN" and $fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
+#foreach($fieldConfig in $fieldConfigsInForm)
+#if($fieldConfig.formType != "HIDDEN" and $fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
       <template #$fieldConfig.fieldName="scope">
         <DictSelect v-model="scope.formData[scope.prop]" code="$fieldConfig.dictType" v-bind="scope.attrs" />
+      </template>
+#else
+      <template #$fieldConfig.fieldName="scope">
+        <el-input v-model="scope.formData[scope.prop]" :placeholder="$fieldConfig.fieldComment" clearable style="width: 100%" />
       </template>
 #end
 #end
@@ -49,10 +57,14 @@
 
     <!-- 编辑 -->
     <PageModal ref="editModalRef" :modal-config="editModalConfig" @submit-click="handleSubmitClick">
-#foreach($fieldConfig in $fieldConfigs)
-#if($fieldConfig.isShowInForm == 1 and $fieldConfig.formType != "HIDDEN" and $fieldConfig.dictType and $fieldConfig.dictType.trim() != "")
+#foreach($fieldConfig in $fieldConfigsInForm)
+#if($fieldConfig.formType != "HIDDEN" and $fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
       <template #$fieldConfig.fieldName="scope">
         <DictSelect v-model="scope.formData[scope.prop]" code="$fieldConfig.dictType" v-bind="scope.attrs" />
+      </template>
+#else
+      <template #$fieldConfig.fieldName="scope">
+        <el-input v-model="scope.formData[scope.prop]" :placeholder="$fieldConfig.fieldComment" clearable style="width: 100%" />
       </template>
 #end
 #end
@@ -88,8 +100,7 @@ const {
 const searchConfig: ISearchConfig = reactive({
   permPrefix: "${moduleName}:${entityKebab}",
   formItems: [
-#foreach($fieldConfig in $fieldConfigs)
-#if($fieldConfig.isShowInQuery == 1)
+#foreach($fieldConfig in $fieldConfigsInQuery)
 #if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
     {
       type: "custom",
@@ -130,7 +141,6 @@ const searchConfig: ISearchConfig = reactive({
     },
 #end
 #end
-#end
   ],
 });
 
@@ -168,8 +178,7 @@ const contentConfig: IContentConfig<${entityName}QueryParams> = reactive({
   // 表格列配置
   cols: [
     { type: "selection", width: 55, align: "center" },
-#foreach($fieldConfig in $fieldConfigs)
-#if($fieldConfig.isShowInList == 1)
+#foreach($fieldConfig in $fieldConfigsInList)
 #if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
     {
       label: "$fieldConfig.fieldComment",
@@ -179,7 +188,6 @@ const contentConfig: IContentConfig<${entityName}QueryParams> = reactive({
     },
 #else
     { label: "$fieldConfig.fieldComment", prop: "$fieldConfig.fieldName" },
-#end
 #end
 #end
     {
@@ -200,7 +208,7 @@ const addModalConfig: IModalConfig<${entityName}Form> = reactive({
   pk: "id",
   // 弹窗配置
   dialog: {
-    title: "新增$!{entityComment}",
+    title: "新增${entityComment}",
     width: 800,
     draggable: true,
   },
@@ -209,8 +217,8 @@ const addModalConfig: IModalConfig<${entityName}Form> = reactive({
   },
   // 表单项配置
   formItems: [
-#foreach($fieldConfig in $fieldConfigs)
-#if($fieldConfig.isShowInForm == 1 and $fieldConfig.formType != "HIDDEN")
+#foreach($fieldConfig in $fieldConfigsInForm)
+#if($fieldConfig.formType != "HIDDEN")
 #if($fieldConfig.dictType and $fieldConfig.dictType.trim() != "")
     {
       type: "custom",
@@ -325,7 +333,6 @@ const addModalConfig: IModalConfig<${entityName}Form> = reactive({
     },
 #end
 #end
-#end
   ],
   // 提交函数
   formAction: (data: ${entityName}Form) => {
@@ -344,7 +351,7 @@ const editModalConfig: IModalConfig<${entityName}Form> = reactive({
   permPrefix: "${moduleName}:${entityKebab}",
   component: "drawer",
   drawer: {
-    title: "编辑$!{entityComment}",
+    title: "编辑${entityComment}",
     size: 500,
   },
   pk: "id",
