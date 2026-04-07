@@ -13,7 +13,7 @@ import (
 	"github.com/viant/velty"
 
 	"youlai-gin/internal/common/database"
-	"youlai-gin/internal/codegen/dto"
+	"youlai-gin/internal/codegen/model"
 	commonModel "youlai-gin/pkg/model"
 	"youlai-gin/pkg/errs"
 )
@@ -183,7 +183,7 @@ type genTableColumnRow struct {
 	DictType     string `gorm:"column:dict_type"`
 }
 
-func GetTablePage(query *dto.TableQuery) (*commonModel.PagedData, error) {
+func GetTablePage(query *model.TableQuery) (*commonModel.PagedData, error) {
 	offset := query.GetOffset()
 	limit := query.GetLimit()
 
@@ -210,7 +210,7 @@ ORDER BY t.CREATE_TIME DESC
 LIMIT ? OFFSET ?`, where)
 
 	listParams := append(params, limit, offset)
-	list := make([]dto.TableInfoVo, 0)
+	list := make([]model.TableInfoVO, 0)
 	if err := database.DB.Raw(listSQL, listParams...).Scan(&list).Error; err != nil {
 		return nil, errs.SystemError("查询数据表失败")
 	}
@@ -224,7 +224,7 @@ LIMIT ? OFFSET ?`, where)
 	return &commonModel.PagedData{List: list, Total: total}, nil
 }
 
-func GetGenConfig(tableName string) (*dto.GenConfigFormDto, error) {
+func GetGenConfig(tableName string) (*model.GenConfigForm, error) {
 	var cfg genTableRow
 	tx := database.DB.Table("gen_table").Where("table_name = ? AND is_deleted = 0", tableName).Limit(1).Find(&cfg)
 	if tx.Error != nil {
@@ -236,7 +236,7 @@ func GetGenConfig(tableName string) (*dto.GenConfigFormDto, error) {
 			return nil, errs.SystemError("查询字段配置失败")
 		}
 
-		resp := &dto.GenConfigFormDto{
+		resp := &model.GenConfigForm{
 			ID:               cfg.ID,
 			TableName:        cfg.TableName,
 			ModuleName:       cfg.ModuleName,
@@ -249,11 +249,11 @@ func GetGenConfig(tableName string) (*dto.GenConfigFormDto, error) {
 			FrontendAppName:  codegenConfig.frontendAppName,
 			PageType:         defaultStr(cfg.PageType, "classic"),
 			RemoveTablePrefix: defaultStr(cfg.RemoveTablePrefix, codegenConfig.defaultRemoveTablePrefix),
-			FieldConfigs:     make([]dto.FieldConfigDto, 0, len(fields)),
+			FieldConfigs:     make([]model.FieldConfigForm, 0, len(fields)),
 		}
 
 		for _, f := range fields {
-			resp.FieldConfigs = append(resp.FieldConfigs, dto.FieldConfigDto{
+			resp.FieldConfigs = append(resp.FieldConfigs, model.FieldConfigForm{
 				ID:            f.ID,
 				ColumnName:    f.ColumnName,
 				ColumnType:    f.ColumnType,
@@ -314,7 +314,7 @@ ORDER BY ORDINAL_POSITION ASC`, tableName).Scan(&cols).Error; err != nil {
 		return nil, errs.SystemError("查询表字段失败")
 	}
 
-	fieldConfigs := make([]dto.FieldConfigDto, 0, len(cols))
+	fieldConfigs := make([]model.FieldConfigForm, 0, len(cols))
 	for i, col := range cols {
 		javaType := getJavaTypeByColumnType(col.ColumnType)
 		isRequired := 1
@@ -322,7 +322,7 @@ ORDER BY ORDINAL_POSITION ASC`, tableName).Scan(&cols).Error; err != nil {
 			isRequired = 0
 		}
 		sort := i + 1
-		fieldConfigs = append(fieldConfigs, dto.FieldConfigDto{
+		fieldConfigs = append(fieldConfigs, model.FieldConfigForm{
 			ColumnName:    col.ColumnName,
 			ColumnType:    col.ColumnType,
 			FieldName:     toCamelCase(col.ColumnName),
@@ -339,7 +339,7 @@ ORDER BY ORDINAL_POSITION ASC`, tableName).Scan(&cols).Error; err != nil {
 		})
 	}
 
-	return &dto.GenConfigFormDto{
+	return &model.GenConfigForm{
 		TableName:        tableName,
 		BusinessName:     businessName,
 		ModuleName:       codegenConfig.defaultModuleName,
@@ -354,7 +354,7 @@ ORDER BY ORDINAL_POSITION ASC`, tableName).Scan(&cols).Error; err != nil {
 	}, nil
 }
 
-func SaveGenConfig(tableName string, body *dto.GenConfigFormDto) error {
+func SaveGenConfig(tableName string, body *model.GenConfigForm) error {
 	if body == nil {
 		return errs.BadRequest("参数错误")
 	}
@@ -503,7 +503,7 @@ func DeleteGenConfig(tableName string) error {
 	return nil
 }
 
-func GetPreview(tableName string, pageType string, typeParam string) ([]dto.CodegenPreviewVo, error) {
+func GetPreview(tableName string, pageType string, typeParam string) ([]model.CodegenPreviewVO, error) {
 	cfg, err := GetGenConfig(tableName)
 	if err != nil {
 		return nil, err
@@ -513,7 +513,7 @@ func GetPreview(tableName string, pageType string, typeParam string) ([]dto.Code
 		frontendType = "js"
 	}
 
-	previews := make([]dto.CodegenPreviewVo, 0)
+	previews := make([]model.CodegenPreviewVO, 0)
 	for name, tc := range templateConfigs {
 		if frontendType == "js" && name == tplAPITypes {
 			continue
@@ -529,7 +529,7 @@ func GetPreview(tableName string, pageType string, typeParam string) ([]dto.Code
 			return nil, err
 		}
 
-		previews = append(previews, dto.CodegenPreviewVo{
+		previews = append(previews, model.CodegenPreviewVO{
 			Path:     filepath.ToSlash(filePath),
 			FileName: fileName,
 			Content:  content,
@@ -574,7 +574,7 @@ func renderTemplate(
 	name templateName,
 	templatePath string,
 	subpackageName string,
-	cfg *dto.GenConfigFormDto,
+	cfg *model.GenConfigForm,
 	pageType string,
 ) (string, error) {
 	effectivePath := templatePath

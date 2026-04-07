@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"youlai-gin/internal/codegen/dto"
+	"youlai-gin/internal/codegen/model"
 	"youlai-gin/internal/codegen/service"
 	"youlai-gin/pkg/errs"
 	response "youlai-gin/internal/common"
@@ -18,7 +18,7 @@ import (
 // @Tags 11.代码生成
 // @Router /api/v1/codegen/table [get]
 func GetTablePage(c *gin.Context) {
-	var query dto.TableQuery
+	var query model.TableQuery
 	if err := validator.BindQuery(c, &query); err != nil {
 		c.Error(err)
 		return
@@ -55,7 +55,7 @@ func GetGenConfig(c *gin.Context) {
 // @Router /api/v1/codegen/{tableName}/config [post]
 func SaveGenConfig(c *gin.Context) {
 	tableName := c.Param("tableName")
-	var body dto.GenConfigFormDto
+	var body model.GenConfigForm
 	if err := validator.BindJSON(c, &body); err != nil {
 		c.Error(err)
 		return
