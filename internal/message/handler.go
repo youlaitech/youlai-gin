@@ -31,7 +31,7 @@ func NewSseHandler(tokenParser auth.TokenManager) *SseHandler {
 // @Success 200 {object} string "SSE Stream"
 // @Router /api/v1/sse/connect [get]
 func (h *SseHandler) Connect(c *gin.Context) {
-	// Get token from Authorization header or query parameter
+	// 从 Authorization 头或 query 参数获取 token
 	tokenString := ""
 	authHeader := c.GetHeader("Authorization")
 	if authHeader != "" && len(authHeader) > 7 && authHeader[:7] == "Bearer " {
@@ -45,7 +45,7 @@ func (h *SseHandler) Connect(c *gin.Context) {
 		return
 	}
 
-	// Parse token to get username
+	// 解析 token 获取用户信息
 	userDetails, err := h.tokenParser.ParseToken(tokenString)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, response.Result{Code: "A0401", Msg: "无效的Token"})
@@ -59,14 +59,14 @@ func (h *SseHandler) Connect(c *gin.Context) {
 		return
 	}
 
-	// Create SSE connection
+	// 创建 SSE 连接
 	emitter, err := h.sseService.CreateConnection(username, c.Writer)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.Result{Code: "B0001", Msg: "SSE连接创建失败"})
 		return
 	}
 
-	// Start heartbeat goroutine
+	// 启动心跳协程
 	go func() {
 		ticker := time.NewTicker(15 * time.Second)
 		defer ticker.Stop()

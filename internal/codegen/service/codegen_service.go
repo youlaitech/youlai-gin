@@ -14,6 +14,7 @@ import (
 
 	"youlai-gin/internal/common/database"
 	"youlai-gin/internal/codegen/model"
+	menuService "youlai-gin/internal/system/menu/service"
 	commonModel "youlai-gin/pkg/model"
 	"youlai-gin/pkg/errs"
 )
@@ -426,6 +427,12 @@ func SaveGenConfig(tableName string, body *model.GenConfigForm) error {
 			}
 		}
 
+		if body.ParentMenuId != nil && *body.ParentMenuId > 0 {
+			if err := menuService.AddMenuForCodegen(*body.ParentMenuId, tableName, moduleName, businessName, entityName); err != nil {
+				fmt.Printf("添加菜单失败: %v\n", err)
+			}
+		}
+
 		return nil
 	}
 
@@ -480,6 +487,12 @@ func SaveGenConfig(tableName string, body *model.GenConfigForm) error {
 
 		if err := database.DB.Table("gen_table_column").Create(&row).Error; err != nil {
 			return errs.SystemError("保存字段配置失败")
+		}
+	}
+
+	if body.ParentMenuId != nil && *body.ParentMenuId > 0 {
+		if err := menuService.AddMenuForCodegen(*body.ParentMenuId, tableName, moduleName, businessName, entityName); err != nil {
+			fmt.Printf("添加菜单失败: %v\n", err)
 		}
 	}
 
@@ -607,6 +620,7 @@ func renderTemplate(
 	_ = planner.DefineVariable("entityUpperSnake", "")
 	_ = planner.DefineVariable("entitySnake", "")
 	_ = planner.DefineVariable("businessName", "")
+	_ = planner.DefineVariable("entityComment", "")
 	_ = planner.DefineVariable("fieldConfigs", reflect.TypeOf([]templateFieldConfig{}))
 	_ = planner.DefineVariable("fieldConfigsInList", reflect.TypeOf([]templateFieldConfig{}))
 	_ = planner.DefineVariable("fieldConfigsInForm", reflect.TypeOf([]templateFieldConfig{}))
@@ -630,6 +644,7 @@ func renderTemplate(
 	_ = state.SetValue("entityUpperSnake", toSnakeUpper(cfg.EntityName))
 	_ = state.SetValue("entitySnake", toSnakeLower(cfg.EntityName))
 	_ = state.SetValue("businessName", cfg.BusinessName)
+	_ = state.SetValue("entityComment", cfg.BusinessName)
 
 	fields := make([]templateFieldConfig, 0, len(cfg.FieldConfigs))
 	for i := range cfg.FieldConfigs {

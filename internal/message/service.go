@@ -87,14 +87,14 @@ func (s *SseService) CreateConnection(username string, w http.ResponseWriter) (*
 
 	s.registry.UserConnected(username, emitter)
 
-	// Send initial online count
+	// 发送初始在线人数
 	if err := emitter.Send(TopicOnlineCount, s.registry.GetOnlineUserCount()); err != nil {
 		logger.Warn("发送初始在线用户数失败", zap.Error(err))
 	}
 
 	logger.Info("SSE连接已建立", zap.String("username", username), zap.Int("online", s.registry.GetOnlineUserCount()))
 
-	// Broadcast online count to all
+	// 广播在线人数
 	s.SendOnlineCount()
 
 	return emitter, nil

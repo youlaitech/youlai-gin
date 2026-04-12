@@ -62,7 +62,7 @@ func GetMenuOptions(onlyParent bool) ([]model.Menu, error) {
 // GetUserMenus 获取用户菜单（用于路由生成）
 func GetUserMenus(userId int64) ([]model.Menu, error) {
 	var menus []model.Menu
-	
+
 	// 查询用户是否是超级管理员（ROOT）
 	var isAdmin int
 	database.DB.Raw(`
@@ -71,10 +71,10 @@ func GetUserMenus(userId int64) ([]model.Menu, error) {
 		INNER JOIN sys_user_role ur ON r.id = ur.role_id
 		WHERE ur.user_id = ? AND r.code = 'ROOT' AND r.status = 1
 	`, userId).Scan(&isAdmin)
-	
+
 	// 超级管理员返回所有菜单
 		if isAdmin > 0 {
-		// include hidden routes as well so frontend routing still works even if menu is hidden
+		// 包含隐藏路由，确保前端路由即使菜单隐藏也能正常工作
 		err := database.DB.Raw(`
 			SELECT DISTINCT m.*
 			FROM sys_menu m
@@ -83,7 +83,7 @@ func GetUserMenus(userId int64) ([]model.Menu, error) {
 		`).Scan(&menus).Error
 		return menus, err
 	}
-	
+
 	// 普通用户根据角色权限查询菜单
 	err := database.DB.Raw(`
 		SELECT DISTINCT m.*
@@ -96,7 +96,7 @@ func GetUserMenus(userId int64) ([]model.Menu, error) {
 		AND m.type IN ('C','M')
 		ORDER BY m.sort ASC, m.id ASC
 	`, userId).Scan(&menus).Error
-	
+
 	return menus, err
 }
 
@@ -172,9 +172,19 @@ func CheckMenuNameExists(name string, parentId int64, excludeId int64) (bool, er
 	return count > 0, err
 }
 
-// GetChildrenCount 获取子菜单数量
+// GetChildrenCount
 func GetChildrenCount(parentId int64) (int64, error) {
 	var count int64
 	err := database.DB.Model(&model.Menu{}).Where("parent_id = ?", parentId).Count(&count).Error
 	return count, err
+}
+
+// GetMaxSortMenuByParentID
+func GetMaxSortMenuByParentID(parentId int64) (*model.Menu, error) {
+	var menu model.Menu
+	err := database.DB.Where("parent_id = ?", parentId).Order("sort DESC").First(&menu).Error
+	if err != nil {
+		return nil, err
+	}
+	return &menu, nil
 }

@@ -7,17 +7,17 @@ import (
 	"strconv"
 )
 
-// BigInt prevents precision loss in frontend JavaScript
+// BigInt 防止前端 JavaScript 精度丢失
 type BigInt int64
 
-// MarshalJSON implements json.Marshaler.
-// It converts int64 to string for JSON output.
+// MarshalJSON 实现 json.Marshaler 接口
+// 将 int64 转为字符串输出，避免 JS 数值精度丢失
 func (b BigInt) MarshalJSON() ([]byte, error) {
 	return json.Marshal(strconv.FormatInt(int64(b), 10))
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-// It handles both string and number inputs for flexibility.
+// UnmarshalJSON 实现 json.Unmarshaler 接口
+// 兼容字符串和数字两种输入格式
 func (b *BigInt) UnmarshalJSON(data []byte) error {
 	var v interface{}
 	if err := json.Unmarshal(data, &v); err != nil {
@@ -36,12 +36,12 @@ func (b *BigInt) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Value implements driver.Valuer
+// Value 实现 driver.Valuer 接口
 func (b BigInt) Value() (driver.Value, error) {
 	return int64(b), nil
 }
 
-// Scan implements sql.Scanner
+// Scan 实现 sql.Scanner 接口
 func (b *BigInt) Scan(value interface{}) error {
 	if value == nil {
 		*b = 0
@@ -62,7 +62,7 @@ func (b *BigInt) Scan(value interface{}) error {
 	return nil
 }
 
-// ToBigIntSlice converts []int64 to []BigInt
+// ToBigIntSlice []int64 转 []BigInt
 func ToBigIntSlice(ids []int64) []BigInt {
 	if ids == nil {
 		return nil
@@ -74,7 +74,7 @@ func ToBigIntSlice(ids []int64) []BigInt {
 	return res
 }
 
-// ToInt64Slice converts []BigInt to []int64
+// ToInt64Slice []BigInt 转 []int64
 func ToInt64Slice(ids []BigInt) []int64 {
 	if ids == nil {
 		return nil

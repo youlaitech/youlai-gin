@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 
 	"gorm.io/gorm"
 
@@ -317,4 +318,73 @@ func GetUserPermissions(userId int64) ([]string, error) {
 		return nil, errs.SystemError("查询用户权限失败")
 	}
 	return perms, nil
+}
+
+// AddMenuForCodegen
+func AddMenuForCodegen(parentMenuId int64, tableName, moduleName, businessName, entityName string) error {
+	//
+	parentMenu, err := repository.GetMenuByID(parentMenuId)
+	if err != nil {
+		return errs.NotFound("父菜单不存在")
+	}
+
+	// 获取父级菜单子菜单最大的排序
+	sort := 1
+	maxSortMenu, err := repository.GetMaxSortMenuByParentID(parentMenuId)
+	if err == nil && maxSortMenu != nil {
+		sort = int(maxSortMenu.Sort) + 1
+	}
+
+	//
+	entityKebab := toKebabCase(entityName)
+
+	menu := &model.Menu{
+		ParentID:   types.BigInt(parentMenuId),
+		Name:       businessName,
+		Type:       "M", //
+		RouteName:  entityName,
+		RoutePath:  entityKebab,
+		Component:  moduleName + "/" + entityKebab + "/index",
+		Sort:       sort,
+		Visible:    1,
+		TreePath:   fmt.Sprintf("%s,%d", parentMenu.TreePath, parentMenuId),
+	}
+
+	if err := repository.CreateMenu(menu); err != nil {
+		return errs.SystemError("创建菜单失败")
+	}
+
+	permPrefix := moduleName + ":" + strings.ReplaceAll(tableName, "_", "-") + ":"
+	actions := []string{"add", "edit", "delete", "detail", "export", "import"}
+	for i, action := range actions {
+		perm := action
+		button := &model.Menu{
+			ParentID: types.BigInt(menu.ID),
+			Type:     "B", //
+			Name:     action,
+			Perm:     permPrefix + perm,
+			Sort:     i + 1,
+			TreePath: fmt.Sprintf("%s,%d", menu.TreePath, menu.ID),
+		}
+		if err := repository.CreateMenu(button); err != nil {
+			log.Printf("创建按钮菜单失败: %v", err)
+		}
+	}
+
+	return nil
+}
+
+// toKebabCase
+func toKebabCase(s string) string {
+	if s == "" {
+		return ""
+	}
+	var result []rune
+	for i, r := range s {
+		if i > 0 && 'A' <= r && r <= 'Z' {
+			result = append(result, '-')
+		}
+		result = append(result, []rune(strings.ToLower(string(r)))...)
+	}
+	return string(result)
 }
