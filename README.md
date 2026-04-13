@@ -46,30 +46,30 @@
 ```text
 youlai-gin/
 ├─ api/                       # API 定义 (Swagger/OpenAPI)
-├─ build/                     # 构建和部署相关
-│  └─ docker/                 # Docker 配置
-├─ cmd/                       # 应用入口
-│  └─ server/                 # 主服务入口
+├─ build/                     # 构建输出
 ├─ configs/                   # 配置文件
 │  ├─ dev.yaml                # 开发环境配置
 │  ├─ prod.yaml               # 生产环境配置
 │  └─ test.yaml               # 测试环境配置
+├─ docker/                    # Docker 部署编排
 ├─ internal/                  # 私有应用代码
 │  ├─ auth/                   # 认证模块(登录/Token/会话)
 │  ├─ codegen/                # 代码生成模块
+│  ├─ common/                 # 公共模块(数据库/Redis/权限/工具等)
 │  ├─ file/                   # 文件管理模块
-│  ├─ health/                 # 健康检查
+│  ├─ message/                # SSE 消息推送
+│  ├─ middleware/             # 中间件(JWT/CORS/限流等)
 │  ├─ router/                 # 路由注册
-│  └─ system/                 # 系统模块(用户/角色/菜单等)
+│  └─ system/                 # 系统模块(用户/角色/菜单/部门等)
 ├─ pkg/                       # 可被外部使用的公共库
-│  ├─ middleware/             # 中间件(JWT/CORS/RequestID)
-│  ├─ response/               # 统一响应结构
-│  ├─ database/               # 数据库连接
-│  ├─ redis/                  # Redis 连接
-│  ├─ logger/                 # 日志
-│  └─ ...                     # 其他通用工具
+│  ├─ constant/               # 常量定义
+│  ├─ enums/                  # 枚举类型
+│  ├─ errs/                   # 统一错误类型
+│  ├─ model/                  # 通用模型(分页/选项/实体)
+│  └─ types/                  # 自定义类型(BigInt/LocalTime)
 ├─ sql/                       # 数据库脚本
 │  └─ mysql/                  # MySQL 脚本
+├─ main.go                    # 应用入口
 ├─ go.mod                     # 依赖管理
 ├─ go.sum                     # 依赖版本锁定
 └─ Dockerfile                 # Docker 镜像构建文件
