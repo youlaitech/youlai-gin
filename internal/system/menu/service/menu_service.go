@@ -355,14 +355,14 @@ func AddMenuForCodegen(parentMenuId int64, tableName, moduleName, businessName, 
 	}
 
 	permPrefix := moduleName + ":" + strings.ReplaceAll(tableName, "_", "-") + ":"
-	actions := []string{"add", "edit", "delete", "detail", "export", "import"}
-	for i, action := range actions {
-		perm := action
+	actions := []string{"查询", "新增", "修改", "删除"}
+	perms := []string{"list", "create", "update", "delete"}
+	for i := range actions {
 		button := &model.Menu{
 			ParentID: types.BigInt(menu.ID),
-			Type:     "B", //
-			Name:     action,
-			Perm:     permPrefix + perm,
+			Type:     "B",
+			Name:     actions[i],
+			Perm:     permPrefix + perms[i],
 			Sort:     i + 1,
 			TreePath: fmt.Sprintf("%s,%d", menu.TreePath, menu.ID),
 		}
