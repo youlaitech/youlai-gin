@@ -1,174 +1,182 @@
 <div align="center">
-  <img alt="logo" width="100" height="100" src="https://foruda.gitee.com/images/1733417239320800627/3c5290fe_716974.png">
-  <h2>youlai-gin</h2>
-  <img alt="Go" src="https://img.shields.io/badge/Go-1.25+-blue.svg"/>
-  <img alt="Gin" src="https://img.shields.io/badge/Gin-1.11.0-green.svg"/>
-  <a href="https://gitcode.com/youlai/youlai-gin" target="_blank">
-    <img alt="GitCode star" src="https://gitcode.com/youlai/youlai-gin/star/badge.svg"/>
-  </a>
-  <a href="https://gitee.com/youlaiorg/youlai-gin" target="_blank">
-    <img alt="Gitee star" src="https://gitee.com/youlaiorg/youlai-gin/badge/star.svg"/>
-  </a>
-  <a href="https://github.com/youlaitech/youlai-gin" target="_blank">
-    <img alt="Github star" src="https://img.shields.io/github/stars/youlaitech/youlai-gin.svg?style=social&label=Stars"/>
-  </a>
+
+<img alt="youlai-gin" width="80" src="./docs/images/logo/logo.png">
+
+# youlai-gin
+
+**Go/Gin 企业级权限管理系统后端**
+
+[![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)](https://go.dev/)
+[![Gin](https://img.shields.io/badge/Gin-1.11-green?logo=gin)](https://gin-gonic.com/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue?logo=apache)](LICENSE)
+[![Gitee Star](https://gitee.com/youlaiorg/youlai-gin/badge/star.svg)](https://gitee.com/youlaiorg/youlai-gin/stargazers)
+[![GitHub Star](https://img.shields.io/github/stars/youlaitech/youlai-gin?style=social)](https://github.com/youlaitech/youlai-gin)
+[![GitCode Star](https://gitcode.com/youlai/youlai-gin/star/badge.svg)](https://gitcode.com/youlai/youlai-gin/stargazers)
+
 </div>
 
-<p align="center">
-  <a target="_blank" href="https://vue.youlai.tech/">🖥️ 在线预览</a>
-  <span>&nbsp;|&nbsp;</span>
-  <a target="_blank" href="https://www.youlai.tech/youlai-gin">📑 阅读文档</a>
-  <span>&nbsp;|&nbsp;</span>
-  <a target="_blank" href="https://www.youlai.tech">🌐 官网</a>
-</p>
+![](https://foruda.gitee.com/images/1708618984641188532/a7cca095_716974.png "rainbow.png")
 
-## 📢 项目简介
+<div align="center">
 
-**[youlai-gin](https://gitee.com/youlaiorg/youlai-gin)** 是 **[vue3-element-admin](https://gitee.com/youlaiorg/vue3-element-admin)** 的 Go/Gin 后端实现，接口路径与返回结构完全对齐，可直接为前端提供后端服务。
+[🖥️ 在线预览](https://vue.youlai.tech) | [📲 移动端预览](https://app.youlai.tech) | [📖 文档](https://www.youlai.tech/docs/admin/backend/go/)
 
-- **🚀 技术栈**：Go 1.25+ + Gin + GORM，轻量高性能组合
-- **🔐 安全认证**：JWT 无状态认证 + Redis 会话管理，支持会话治理
-- **🔑 权限管理**：RBAC 权限模型，菜单/按钮/接口三级权限统一治理
-- **🛠️ 模块能力**：用户、角色、菜单、部门、字典、日志等核心模块开箱即用
+</div>
 
-## 🌈 项目源码
+## 简介
 
-| 项目 | Gitee | GitHub | GitCode |
-| --- | --- | --- | --- |
-| ✅ Go 后端 | [youlai-gin](https://gitee.com/youlaiorg/youlai-gin) | [youlai-gin](https://github.com/youlaitech/youlai-gin) | [youlai-gin](https://gitcode.com/youlai/youlai-gin) |
-| Vue3 管理端 | [vue3-element-admin](https://gitee.com/youlaiorg/vue3-element-admin) | [vue3-element-admin](https://github.com/youlaitech/vue3-element-admin) | [vue3-element-admin](https://gitcode.com/youlai/vue3-element-admin) |
-| uni-app 移动端 | [youlai-app](https://gitee.com/youlaiorg/youlai-app) | [youlai-app](https://github.com/youlaitech/youlai-app) | [youlai-app](https://gitcode.com/youlai/youlai-app) |
+**youlai-gin** 是一套基于 Go/Gin 的企业级权限管理系统后端，配套前端 [vue3-element-admin](https://gitee.com/youlaiorg/vue3-element-admin) 和移动端 [youlai-app](https://gitee.com/youlaiorg/youlai-app)，并提供 **6 种语言实现**（Java / Node.js / Go / Python / PHP / C#），共享同一套 API 规范与数据库结构。适用于企业中后台管理系统的学习参考与二次开发。
 
-## 📁 目录结构
+## 核心特性
 
-> 参考 [golang-standards/project-layout](https://github.com/golang-standards/project-layout) 规范
+- 🔐 **安全体系** — JWT + Redis Token 双会话模式、令牌续期、多端互斥
+- 🛡️ **细粒度权限** — RBAC 权限模型，菜单/按钮/接口统一治理
+- ⚡ **代码生成器** — 一键生成前后端 CRUD 代码
+- 📦 **模块齐全** — 用户、角色、菜单、部门、字典、文件、消息中心、操作日志
+- 🔌 **实时通信** — SSE 推送：在线用户数、字典同步、通知广播
 
-```text
+## 系统预览
+
+**PC 端**
+
+<table align="center">
+  <tr>
+    <td><img alt="PC预览1" width="400" src="./docs/images/preview/pc-01.png"></td>
+    <td><img alt="PC预览2" width="400" src="./docs/images/preview/pc-02.png"></td>
+  </tr>
+  <tr>
+    <td><img alt="PC预览3" width="400" src="./docs/images/preview/pc-03.png"></td>
+    <td><img alt="PC预览4" width="400" src="./docs/images/preview/pc-04.png"></td>
+  </tr>
+  <tr>
+    <td><img alt="PC预览5" width="400" src="./docs/images/preview/pc-05.png"></td>
+    <td><img alt="PC预览6" width="400" src="./docs/images/preview/pc-06.png"></td>
+  </tr>
+</table>
+
+**移动端**
+
+<table align="center">
+  <tr>
+    <td><img alt="APP预览1" width="200" src="./docs/images/preview/app-01.png"></td>
+    <td><img alt="APP预览2" width="200" src="./docs/images/preview/app-02.png"></td>
+    <td><img alt="APP预览3" width="200" src="./docs/images/preview/app-03.png"></td>
+    <td><img alt="APP预览4" width="200" src="./docs/images/preview/app-04.png"></td>
+  </tr>
+</table>
+
+## 快速开始
+
+**环境要求**：Go 1.25+ · MySQL 8.0+ · Redis 7.x+
+
+1. 克隆项目：`git clone https://gitee.com/youlaiorg/youlai-gin.git`
+2. 导入数据库：`sql/mysql/youlai_admin.sql`
+3. 修改配置（可选，默认已配置线上只读数据源）：`configs/dev.yaml`
+4. 安装依赖：`go mod tidy`
+5. 启动服务：`go run main.go`，访问 http://localhost:8000/swagger/index.html
+
+默认账号：`admin` / `123456`
+
+> 💡 **热重载**：推荐使用 `air` 工具，先 `go install github.com/cosmtrek/air@latest`，再 `air`
+
+详细指南：[部署文档](https://www.youlai.tech/docs/admin/backend/go/deploy)
+
+## 技术栈
+
+| 技术 | 版本 | 说明 |
+|:-----|:-----|:-----|
+| Go | 1.25+ | 核心语言 |
+| Gin | 1.11 | Web 框架 |
+| GORM | — | ORM 框架 |
+| MySQL | 5.7+ / 8.x | 数据库 |
+| Redis | 7.x+ | 缓存 · 会话 |
+| Swagger | — | API 文档 |
+
+## 目录结构
+
+```
 youlai-gin/
-├─ api/                       # API 定义 (Swagger/OpenAPI)
-├─ build/                     # 构建输出
-├─ configs/                   # 配置文件
-│  ├─ dev.yaml                # 开发环境配置
-│  ├─ prod.yaml               # 生产环境配置
-│  └─ test.yaml               # 测试环境配置
-├─ docker/                    # Docker 部署编排
-├─ internal/                  # 私有应用代码
-│  ├─ auth/                   # 认证模块(登录/Token/会话)
-│  ├─ codegen/                # 代码生成模块
-│  ├─ common/                 # 公共模块(数据库/Redis/权限/工具等)
-│  ├─ file/                   # 文件管理模块
-│  ├─ message/                # SSE 消息推送
-│  ├─ middleware/             # 中间件(JWT/CORS/限流等)
-│  ├─ router/                 # 路由注册
-│  └─ system/                 # 系统模块(用户/角色/菜单/部门等)
-├─ pkg/                       # 可被外部使用的公共库
-│  ├─ constant/               # 常量定义
-│  ├─ enums/                  # 枚举类型
-│  ├─ errs/                   # 统一错误类型
-│  ├─ model/                  # 通用模型(分页/选项/实体)
-│  └─ types/                  # 自定义类型(BigInt/LocalTime)
-├─ sql/                       # 数据库脚本
-│  └─ mysql/                  # MySQL 脚本
-├─ main.go                    # 应用入口
-├─ go.mod                     # 依赖管理
-├─ go.sum                     # 依赖版本锁定
-└─ Dockerfile                 # Docker 镜像构建文件
+├── internal/                       # 私有应用代码
+│   ├── auth/                       # 认证模块（登录/Token/会话）
+│   ├── codegen/                    # 代码生成模块
+│   ├── common/                     # 公共模块（数据库/Redis/权限/工具）
+│   ├── file/                       # 文件管理模块
+│   ├── message/                    # SSE 消息推送
+│   ├── middleware/                 # 中间件（JWT/CORS/限流）
+│   ├── router/                     # 路由注册
+│   └── system/                     # 系统模块（用户/角色/菜单/部门）
+├── pkg/                            # 可被外部使用的公共库
+│   ├── constant/                   # 常量定义
+│   ├── enums/                      # 枚举类型
+│   ├── errs/                       # 统一错误类型
+│   ├── model/                      # 通用模型（分页/选项/实体）
+│   └── types/                      # 自定义类型（BigInt/LocalTime）
+├── configs/                        # 配置文件（dev/prod/test）
+├── sql/                            # 数据库初始化脚本
+├── main.go                         # 应用入口
+└── Dockerfile                      # Docker 镜像构建文件
 ```
 
-## 🚀 快速启动
+## 生态矩阵
 
-### 1. 环境准备
+**前端**
 
-| 技术 | 版本/说明 | 安装文档 |
-| --- | --- | --- |
-| **Go** | `1.25` 或更高版本 | [官方下载](https://go.dev/dl/) |
-| **MySQL** | `5.7` 或 `8.x` | [Windows](https://youlai.blog.csdn.net/article/details/133272887) / [Linux](https://youlai.blog.csdn.net/article/details/130398179) |
-| **Redis** | `7.x` | [Windows](https://youlai.blog.csdn.net/article/details/133410293) / [Linux](https://youlai.blog.csdn.net/article/details/130439335) |
+| 项目 | 技术栈 | 说明 |
+|:-----|:-------|:-----|
+| [vue3-element-admin](https://gitee.com/youlaiorg/vue3-element-admin) | Vue 3 + Element Plus | PC 管理前端（主推） |
+| [youlai-app](https://gitee.com/youlaiorg/youlai-app) | Vue 3 + UniApp | 移动端 App |
 
-> 💡 **贴心小提示**：本地未配置 MySQL、Redis 不影响启动，项目默认会连接 [youlai](https://www.youlai.tech) 线上公共环境运行，方便您快速体验。
+**后端**
 
-### 2. 开发工具
+| 项目 | 技术栈 | 说明 |
+|:-----|:-------|:-----|
+| [youlai-boot](https://gitee.com/youlaiorg/youlai-boot) | Spring Boot 4 + MyBatis-Plus | Java（主推） |
+| [youlai-nest](https://gitee.com/youlaiorg/youlai-nest) | NestJS + TypeORM | Node.js |
+| [youlai-django](https://gitee.com/youlaiorg/youlai-django) | Django + DRF | Python |
+| [youlai-thinkphp](https://gitee.com/youlaiorg/youlai-thinkphp) | ThinkPHP 8 | PHP |
+| [youlai-aspnet](https://gitee.com/youlaiorg/youlai-aspnet) | ASP.NET Core | C# |
 
-**GoLand（推荐）**：
-
-- 直接使用 JetBrains GoLand 即可，首次打开项目时按提示下载/配置 Go SDK。
-
-**VS Code**：
-
-1. 安装 VS Code 扩展插件（扩展市场搜索安装）：
-
-   | 插件名称             | 作用                                    |
-   | -------------------- | --------------------------------------- |
-   | **Go**               | Go 语言支持（gopls/调试/格式化/测试）   |
-   | **Go Test Explorer** | 测试用例可视化运行（可选）              |
-   | **REST Client**      | 直接在 VS Code 内调试 HTTP 接口（可选） |
-
-2. 安装 Go 工具链（首次使用 Go 扩展通常会提示安装）：
-
-   在 VS Code 命令面板（`Ctrl+Shift+P`）中执行 `Go: Install/Update Tools`，建议至少安装：
-   - `gopls`（语言服务）
-   - `dlv`（Delve 调试器）
-   - `goimports`（自动整理 imports）
-
-### 3. 初始化数据库
-
-使用数据库客户端（如 Navicat、DBeaver）执行 `sql/mysql/youlai_admin.sql` 脚本，完成数据库和基础数据的初始化。
-
-### 4. 修改配置
-
-编辑 `configs/dev.yaml` 文件，根据实际情况修改 MySQL 和 Redis 的连接字符串。
-
-### 5. 启动项目
-
-```bash
-# 下载依赖
-go mod tidy
-
-# 生成 Swagger 文档 (可选)
-# swag init
-
-# 启动项目
-go run main.go
-```
-
-> 💡 **开发技巧：热重载** 推荐使用 `air` 工具实现热重载，提升开发效率。
+> **youlai-boot** 还提供以下变种和分支版本：[多租户](https://gitee.com/youlaiorg/youlai-boot-tenant)（Spring Boot 4）· [MyBatis-Flex](https://gitee.com/youlaiorg/youlai-boot-flex)（Spring Boot 4）· [Spring Boot 3](https://gitee.com/youlaiorg/youlai-boot/tree/spring-boot-3) · [PostgreSQL](https://gitee.com/youlaiorg/youlai-boot/tree/db-pg) · [多模块](https://gitee.com/youlaiorg/youlai-boot/tree/multi-module)
 >
-> ```bash
-> # 安装 air
-> go install github.com/cosmtrek/air@latest
->
-> # 启动 (代替 go run)
-> air
-> ```
+> 六种后端共享同一套 **RESTful API 规范** 和 **数据库结构**，前端可无缝切换。
 
-启动成功后，访问 [http://localhost:8000/swagger/index.html](http://localhost:8000/swagger/index.html) 验证项目是否成功。
+## 文档资源
 
-## 🐳 项目部署
+| 资源 | 地址 |
+|:-----|:-----|
+| 📖 完整文档站 | [www.youlai.tech/docs/admin](https://www.youlai.tech/docs/admin/) |
+| 🖥️ PC 端在线预览 | [vue.youlai.tech](https://vue.youlai.tech) |
+| 📱 移动端在线预览 | [app.youlai.tech](https://app.youlai.tech) |
+| 🔗 Apifox 接口文档 | [apifox.com](https://www.apifox.cn/apidoc/shared-195e783f-4d85-4235-a038-eec696de4ea5) |
+| 🔗 本地接口文档 | [localhost:8000/swagger/index.html](http://localhost:8000/swagger/index.html) |
 
-### 1. 编译部署
+## 参与贡献
 
-```bash
-# 编译适用于当前系统的二进制文件
-go build -o youlai-gin main.go
+欢迎提交 Issue 和 Pull Request！详见 [贡献指南](https://www.youlai.tech/docs/admin/faq/help)。
 
-# 运行
-./youlai-gin
-```
+## 开源协议
 
-> 💡 **提示**：为了让服务在后台持续运行，你可以使用 `nohup ./youlai-gin &` 命令，或使用 `Systemd` 进行进程守护。
+本项目基于 [Apache License 2.0](LICENSE) 开源，可免费用于商业项目。
 
-### 2. Docker 部署
+---
 
-```bash
-# 构建镜像
-docker build -t youlai-gin:latest .
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="./docs/images/qr/wechat-offical.png" height="180" alt="公众号「有来技术」"><br>
+      <sub>公众号「有来技术」</sub>
+    </td>
+    <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+    <td align="center">
+      <img src="./docs/images/qr/wechat-mp.jpg" height="180" alt="小程序「有来技术」"><br>
+      <sub>小程序「有来技术」</sub>
+    </td>
+    <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+    <td align="center">
+      <img src="./docs/images/qr/wechat-personal.png" height="180" alt="添加作者微信"><br>
+      <sub>添加作者微信</sub>
+    </td>
+  </tr>
+</table>
 
-# 运行容器
-docker run -d -p 8000:8000 --name youlai-gin youlai-gin:latest
-```
-
-## 💖 技术交流
-
-- **问题反馈**：[Gitee Issues](https://gitee.com/youlaiorg/youlai-gin/issues)
-- **技术交流**：关注公众号【有来技术】回复“交流群”，或加微信好友【haoxianrui】进微信群
-- **官网主页**：[https://www.youlai.tech](https://www.youlai.tech)
+<p align="center"><em>技术交流 · 问题反馈 · 商务合作</em></p>
