@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"strings"
 
 	"youlai-gin/internal/common/database"
@@ -62,19 +63,24 @@ func GetMenuOptions(onlyParent bool) ([]model.Menu, error) {
 // GetUserMenus 获取用户菜单（用于路由生成）
 func GetUserMenus(userId int64) ([]model.Menu, error) {
 	var menus []model.Menu
+	var roleCodes []string
+	database.DB.Table("sys_user_role ur").
+		Select("r.code").
+		Joins("INNER JOIN sys_role r ON r.id = ur.role_id").
+		Where("ur.user_id = ? AND r.status = 1 AND r.is_deleted = 0", userId).
+		Pluck("r.code", &roleCodes)
 
-	// 查询用户是否是超级管理员（ROOT）
-	var isAdmin int
-	database.DB.Raw(`
-		SELECT COUNT(DISTINCT r.id)
-		FROM sys_role r
-		INNER JOIN sys_user_role ur ON r.id = ur.role_id
-		WHERE ur.user_id = ? AND r.code = 'ROOT' AND r.status = 1
-	`, userId).Scan(&isAdmin)
+	fmt.Printf("[ROUTE-DEBUG] userId=%d roles=%v\n", userId, roleCodes)
 
-	// 超级管理员返回所有菜单
-		if isAdmin > 0 {
-		// 包含隐藏路由，确保前端路由即使菜单隐藏也能正常工作
+	var isROOT bool
+	for _, c := range roleCodes {
+		if c == "ROOT" {
+			isROOT = true
+			break
+		}
+	}
+
+	if isROOT {
 		err := database.DB.Raw(`
 			SELECT DISTINCT m.*
 			FROM sys_menu m

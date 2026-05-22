@@ -1,7 +1,7 @@
 package model
 
 import (
-	common "youlai-gin/pkg/model"
+	baseModel "youlai-gin/pkg/model"
 	"youlai-gin/pkg/types"
 )
 
@@ -20,5 +20,5 @@ type MenuForm struct {
 	Sort       int             `json:"sort"`
 	Icon       string          `json:"icon"`
 	Redirect   string          `json:"redirect"`
-	Params     []common.KeyValue `json:"params"`
+	Params     []baseModel.KeyValue `json:"params"`
 }

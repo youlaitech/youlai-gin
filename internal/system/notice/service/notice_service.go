@@ -58,13 +58,11 @@ func SaveNotice(form *model.NoticeForm) error {
 		notice.PublishTime = pt
 	}
 
-	// 转换目标用户列表为JSON
 	if len(form.TargetUsers) > 0 {
 		targetUsersJSON, _ := json.Marshal(form.TargetUsers)
 		notice.TargetUsers = string(targetUsersJSON)
 	}
 
-	// 如果没有设置发布时间，使用当前时间
 	if (time.Time(notice.PublishTime)).IsZero() && notice.Status == 1 {
 		notice.PublishTime = types.Now()
 	}
@@ -135,14 +133,12 @@ func pushNotice(notice *model.Notice, targetUsers []types.BigInt) {
 	}
 
 	if notice.TargetType == 1 {
-		// 广播给所有在线用户
 		onlineUsers := sseService.GetOnlineUsers()
 		for _, u := range onlineUsers {
 			sseService.SendToUser(u.Username, "notice", noticeData)
 		}
 	} else if len(targetUsers) > 0 {
-		// 发送给指定用户
-		// TODO: 需要将用户ID转换为用户名
+		// TODO: 将用户ID转换为用户名后推送
 	}
 }
 

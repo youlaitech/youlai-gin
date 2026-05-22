@@ -73,6 +73,8 @@ const swaggerIndexHTML = `<!DOCTYPE html>
 </html>
 `
 
+const Version = "0.1.0"
+
 func main() {
 	// 加载配置（APP_ENV 或默认 dev）
 	if err := config.Load(); err != nil {
@@ -92,6 +94,7 @@ func main() {
 	if err := redis.InitWithConfig(&config.Cfg.Redis); err != nil {
 		log.Fatalf("Redis 初始化失败: %v", err)
 	}
+	log.Printf("Redis 已连接: %s:%d (db=%d)", config.Cfg.Redis.Host, config.Cfg.Redis.Port, config.Cfg.Redis.Database)
 
 	// 初始化 SSE 服务
 	message.InitSseService()

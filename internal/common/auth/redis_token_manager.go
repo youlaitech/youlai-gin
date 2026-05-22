@@ -32,11 +32,7 @@ type RedisTokenConfig struct {
 }
 
 // RedisTokenManager Redis Token 管理器
-// 实现基于Redis的有状态认证，支持：
-// - Access Token + Refresh Token 双令牌机制
-// - 单设备/多设备登录控制
-// - 用户级会话失效
-// - 在线用户管理
+// 基于Redis的有状态认证，支持双令牌、会话失效和在线用户管理
 type RedisTokenManager struct {
 	config *RedisTokenConfig
 }
@@ -61,24 +57,20 @@ func (m *RedisTokenManager) GenerateToken(user *UserDetails) (*AuthenticationTok
 
 	ctx := context.Background()
 
-	// 1. 存储访问令牌 -> 用户会话信息
 	if err := m.storeUserSession(ctx, accessToken, userSession, m.config.AccessTokenTTL); err != nil {
 		return nil, err
 	}
 
-	// 2. 存储刷新令牌 -> 用户会话信息
 	refreshKey := RefreshTokenUserPrefix + refreshToken
 	if err := m.storeUserSession(ctx, refreshKey, userSession, m.config.RefreshTokenTTL); err != nil {
 		return nil, err
 	}
 
-	// 3. 存储用户ID -> 刷新令牌
 	userRefreshKey := fmt.Sprintf("%s%d", UserRefreshTokenPrefix, user.UserID)
 	if err := m.setWithTTL(ctx, userRefreshKey, refreshToken, m.config.RefreshTokenTTL); err != nil {
 		return nil, err
 	}
 
-	// 4. 单设备登录控制
 	if err := m.handleSingleDeviceLogin(ctx, user.UserID, accessToken); err != nil {
 		return nil, err
 	}
@@ -190,11 +182,9 @@ func (m *RedisTokenManager) InvalidateToken(token string) error {
 }
 
 // InvalidateUserSessions 使指定用户的所有会话失效
-// 适用场景：用户修改密码、管理员强制下线、账号封禁等
 func (m *RedisTokenManager) InvalidateUserSessions(userID int64) error {
 	ctx := context.Background()
 
-	// 1. 删除访问令牌
 	userAccessKey := fmt.Sprintf("%s%d", UserAccessTokenPrefix, userID)
 	accessToken, err := redisClient.Client.Get(ctx, userAccessKey).Result()
 	if err == nil {
@@ -203,7 +193,6 @@ func (m *RedisTokenManager) InvalidateUserSessions(userID int64) error {
 	}
 	redisClient.Client.Del(ctx, userAccessKey)
 
-	// 2. 删除刷新令牌
 	userRefreshKey := fmt.Sprintf("%s%d", UserRefreshTokenPrefix, userID)
 	refreshToken, err := redisClient.Client.Get(ctx, userRefreshKey).Result()
 	if err == nil {
@@ -215,8 +204,7 @@ func (m *RedisTokenManager) InvalidateUserSessions(userID int64) error {
 	return nil
 }
 
-// SetTokenValidAfter 设置用户 Token 生效时间点
-// 用于JWT模式下的会话失效控制，设置TTL防止Redis内存泄漏
+// SetTokenValidAfter 设置用户 Token 生效时间点，TTL 防止 Redis 内存泄漏
 func (m *RedisTokenManager) SetTokenValidAfter(userID int64) error {
 	ctx := context.Background()
 	key := fmt.Sprintf("%s%d", UserTokenValidAfterPrefix, userID)

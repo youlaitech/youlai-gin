@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"youlai-gin/internal/common/database"
-	commonContext "youlai-gin/internal/common/context"
+	appContext "youlai-gin/internal/common/context"
 	"youlai-gin/internal/common/logger"
 	"youlai-gin/pkg/enums"
 )
@@ -33,11 +33,10 @@ type OperationLogEntity struct {
 	Device        string     `gorm:"column:device;size:100" json:"device"`
 	OS            string     `gorm:"column:os;size:100" json:"os"`
 	Browser       string     `gorm:"column:browser;size:100" json:"browser"`
-	Status        int        `gorm:"column:status" json:"status"`
-	ErrorMsg      string     `gorm:"column:error_msg;size:255" json:"errorMsg"`
-	ExecutionTime int        `gorm:"column:execution_time" json:"executionTime"`
-	CreateBy      int64      `gorm:"column:create_by" json:"createBy"`
-	CreateTime    time.Time  `gorm:"column:create_time;autoCreateTime" json:"createTime"`
+	Status        int       `gorm:"column:status" json:"status"`
+	ErrorMsg      string    `gorm:"column:error_msg;size:255" json:"errorMsg"`
+	ExecutionTime int       `gorm:"column:execution_time" json:"executionTime"`
+	CreateTime    time.Time `gorm:"column:create_time;autoCreateTime" json:"createTime"`
 }
 
 func (OperationLogEntity) TableName() string {
@@ -78,9 +77,9 @@ func OperationLogWithConfig(config OperationLogConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 
-		userID, _ := commonContext.GetCurrentUserID(c)
+		userID, _ := appContext.GetCurrentUserID(c)
 		var username string
-		if user, err := commonContext.GetCurrentUser(c); err == nil {
+		if user, err := appContext.GetCurrentUser(c); err == nil {
 			username = user.Username
 		}
 
@@ -193,7 +192,7 @@ func OperationLogJSON(actionType string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 
-		userID, _ := commonContext.GetCurrentUserID(c)
+		userID, _ := appContext.GetCurrentUserID(c)
 
 		c.Next()
 

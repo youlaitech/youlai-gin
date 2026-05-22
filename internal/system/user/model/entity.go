@@ -17,7 +17,6 @@ type User struct {
 	Mobile   string       `gorm:"column:mobile" json:"mobile"`
 	Status   int          `gorm:"column:status;default:1" json:"status"` // 0-禁用 1-正常
 	Email    string       `gorm:"column:email" json:"email"`
-	Openid   string       `gorm:"column:openid" json:"openid"`
 	common.BaseEntity
 }
 

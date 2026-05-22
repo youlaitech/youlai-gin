@@ -79,7 +79,6 @@ func GetCaptcha() (*authModel.CaptchaVO, error) {
 
 // Login 账号密码登录
 func Login(req *authModel.LoginRequest) (*auth.AuthenticationToken, int64, error) {
-	// 1. 根据用户名查询用户
 	user, err := userRepo.GetUserByUsername(req.Username)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -88,17 +87,14 @@ func Login(req *authModel.LoginRequest) (*auth.AuthenticationToken, int64, error
 		return nil, 0, errs.SystemError("查询用户失败")
 	}
 
-	// 2. 验证密码
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		return nil, 0, errs.BadRequest("用户名或密码错误")
 	}
 
-	// 3. 检查用户状态
 	if user.Status != 1 {
 		return nil, 0, errs.BadRequest("用户已被禁用")
 	}
 
-	// 4. 获取用户角色
 	roles, err := userRepo.GetUserRoles(int64(user.ID))
 	if err != nil {
 		return nil, 0, errs.SystemError("查询用户角色失败")
@@ -109,7 +105,6 @@ func Login(req *authModel.LoginRequest) (*auth.AuthenticationToken, int64, error
 		return nil, 0, err
 	}
 
-	// 5. 生成 Token
 	userDetails := &auth.UserDetails{
 		UserID:    int64(user.ID),
 		Username:  user.Username,
@@ -169,7 +164,6 @@ func SendSmsLoginCode(mobile string) error {
 
 // LoginBySms 短信验证码登录
 func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, int64, error) {
-	// 1. 验证短信验证码
 	redisKey := fmt.Sprintf("captcha:sms:%s", req.Mobile)
 	ctx := context.Background()
 	cachedCode, err := redis.Client.Get(ctx, redisKey).Result()
@@ -181,7 +175,6 @@ func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, int6
 		return nil, 0, errs.BadRequest("验证码错误")
 	}
 
-	// 2. 根据手机号查询用户
 	user, err := userRepo.GetUserByMobile(req.Mobile)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -190,12 +183,10 @@ func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, int6
 		return nil, 0, errs.SystemError("查询用户失败")
 	}
 
-	// 3. 检查用户状态
 	if user.Status != 1 {
 		return nil, 0, errs.BadRequest("用户已被禁用")
 	}
 
-	// 4. 获取用户角色
 	roles, err := userRepo.GetUserRoles(int64(user.ID))
 	if err != nil {
 		return nil, 0, errs.SystemError("查询用户角色失败")
@@ -206,10 +197,8 @@ func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, int6
 		return nil, 0, err
 	}
 
-	// 5. 验证成功后删除验证码
 	redis.Client.Del(ctx, redisKey)
 
-	// 6. 生成 Token
 	userDetails := &auth.UserDetails{
 		UserID:    int64(user.ID),
 		Username:  user.Username,

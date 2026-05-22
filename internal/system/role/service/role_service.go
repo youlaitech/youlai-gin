@@ -75,7 +75,7 @@ func SaveRole(form *model.RoleForm) error {
 		return errs.SystemError("检查角色名称失败")
 	}
 	if exists {
-		return errs.BadRequest("角色名称已存在")
+		return errs.Business("角色名称已存在")
 	}
 
 	exists, err = repository.CheckRoleCodeExists(form.Code, int64(form.ID))
@@ -83,7 +83,7 @@ func SaveRole(form *model.RoleForm) error {
 		return errs.SystemError("检查角色编码失败")
 	}
 	if exists {
-		return errs.BadRequest("角色编码已存在")
+		return errs.Business("角色编码已存在")
 	}
 
 	role := &model.Role{
@@ -106,7 +106,7 @@ func SaveRole(form *model.RoleForm) error {
 		}
 	}
 
-	// 数据权限发生变化时，失效该角色关联用户的登录态（JWT tokenVersion）
+	// 数据权限变更时，失效该角色关联用户的登录态
 	if form.ID != 0 && oldDataScope != 0 && oldDataScope != form.DataScope {
 		userIds, err := userRepo.ListUserIDsByRoleID(int64(form.ID))
 		if err == nil && len(userIds) > 0 {
@@ -126,7 +126,7 @@ func SaveRole(form *model.RoleForm) error {
 		}
 	}
 
-	// 自定义数据权限：同步维护 sys_role_dept（并在变更时失效会话）
+	// 自定义数据权限：同步 sys_role_dept 并在变更时失效会话
 	roleId := int64(form.ID)
 	if form.DataScope == permService.DataScopeCustom {
 		deptIds := make([]int64, 0, len(form.DeptIds))

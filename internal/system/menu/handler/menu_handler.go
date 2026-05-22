@@ -5,7 +5,8 @@ import (
 
 	"youlai-gin/internal/system/menu/model"
 	"youlai-gin/internal/system/menu/service"
-	pkgContext "youlai-gin/internal/common/context"
+	"youlai-gin/internal/common/auth"
+	appContext "youlai-gin/internal/common/context"
 	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/internal/middleware"
@@ -20,10 +21,10 @@ func RegisterMenuRoutes(r *gin.RouterGroup) {
 		menus.GET("", GetMenuList)
 		menus.GET("/options", GetMenuOptions)
 		menus.GET("/routes", GetCurrentUserRoutes)
-		menus.POST("", middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeInsert), SaveMenu)
-		menus.GET("/:id/form", GetMenuForm)
-		menus.PUT("/:id", middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeUpdate), UpdateMenu)
-		menus.DELETE("/:id", middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeDelete), DeleteMenu)
+		menus.POST("", auth.RequirePermission("sys:menu:create"), middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeInsert), SaveMenu)
+		menus.GET("/:id/form", auth.RequirePermission("sys:menu:update"), GetMenuForm)
+		menus.PUT("/:id", auth.RequirePermission("sys:menu:update"), middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeUpdate), UpdateMenu)
+		menus.DELETE("/:id", auth.RequirePermission("sys:menu:delete"), middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeDelete), DeleteMenu)
 	}
 
 	// 用户权限接口
@@ -71,7 +72,11 @@ func GetMenuOptions(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/routes [get]
 func GetCurrentUserRoutes(c *gin.Context) {
-	userId := int64(1)
+	userId, err := appContext.GetUserIDMust(c)
+	if err != nil {
+		c.Error(errs.Unauthorized("未登录"))
+		return
+	}
 
 	routes, err := service.GetCurrentUserRoutes(userId)
 	if err != nil {
@@ -108,7 +113,7 @@ func SaveMenu(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/{id}/form [get]
 func GetMenuForm(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "菜单")
+	id, err := appContext.ParsePathParam(c, "id", "菜单")
 	if err != nil {
 		c.Error(err)
 		return
@@ -130,7 +135,7 @@ func GetMenuForm(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/{id} [put]
 func UpdateMenu(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "菜单")
+	id, err := appContext.ParsePathParam(c, "id", "菜单")
 	if err != nil {
 		c.Error(err)
 		return
@@ -157,7 +162,7 @@ func UpdateMenu(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/{id} [delete]
 func DeleteMenu(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "菜单")
+	id, err := appContext.ParsePathParam(c, "id", "菜单")
 	if err != nil {
 		c.Error(err)
 		return
@@ -176,7 +181,7 @@ func DeleteMenu(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/user/perms [get]
 func GetCurrentUserPermissions(c *gin.Context) {
-	userId, err := pkgContext.GetUserIDMust(c)
+	userId, err := appContext.GetUserIDMust(c)
 	if err != nil {
 		c.Error(errs.Unauthorized("未登录"))
 		return

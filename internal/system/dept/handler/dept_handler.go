@@ -5,7 +5,8 @@ import (
 
 	"youlai-gin/internal/system/dept/model"
 	"youlai-gin/internal/system/dept/service"
-	pkgContext "youlai-gin/internal/common/context"
+	appContext "youlai-gin/internal/common/context"
+	"youlai-gin/internal/common/auth"
 	"youlai-gin/pkg/enums"
 	"youlai-gin/internal/middleware"
 	response "youlai-gin/internal/common"
@@ -19,10 +20,10 @@ func RegisterDeptRoutes(r *gin.RouterGroup) {
 	{
 		depts.GET("", GetDeptList)
 		depts.GET("/options", GetDeptOptions)
-		depts.POST("", middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeInsert), SaveDept)
+		depts.POST("", auth.RequirePermission("sys:dept:create"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeInsert), SaveDept)
 		depts.GET("/:id/form", GetDeptForm)
-		depts.PUT("/:id", middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeUpdate), UpdateDept)
-		depts.DELETE("/:id", middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeDelete), DeleteDept)
+		depts.PUT("/:id", auth.RequirePermission("sys:dept:update"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeUpdate), UpdateDept)
+		depts.DELETE("/:id", auth.RequirePermission("sys:dept:delete"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeDelete), DeleteDept)
 	}
 }
 
@@ -37,7 +38,7 @@ func GetDeptList(c *gin.Context) {
 		return
 	}
 
-	currentUser, err := pkgContext.GetCurrentUser(c)
+	currentUser, err := appContext.GetCurrentUser(c)
 	if err != nil {
 		c.Error(err)
 		return
@@ -57,7 +58,7 @@ func GetDeptList(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/depts/options [get]
 func GetDeptOptions(c *gin.Context) {
-	currentUser, err := pkgContext.GetCurrentUser(c)
+	currentUser, err := appContext.GetCurrentUser(c)
 	if err != nil {
 		c.Error(err)
 		return
@@ -98,7 +99,7 @@ func SaveDept(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/depts/{id}/form [get]
 func GetDeptForm(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "部门")
+	id, err := appContext.ParsePathParam(c, "id", "部门")
 	if err != nil {
 		c.Error(err)
 		return
@@ -120,7 +121,7 @@ func GetDeptForm(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/depts/{id} [put]
 func UpdateDept(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "部门")
+	id, err := appContext.ParsePathParam(c, "id", "部门")
 	if err != nil {
 		c.Error(err)
 		return
@@ -147,7 +148,7 @@ func UpdateDept(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/depts/{id} [delete]
 func DeleteDept(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "部门")
+	id, err := appContext.ParsePathParam(c, "id", "部门")
 	if err != nil {
 		c.Error(err)
 		return

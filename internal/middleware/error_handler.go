@@ -10,8 +10,7 @@ import (
 	response "youlai-gin/internal/common"
 )
 
-// ErrorHandler 统一错误处理中间件，类似 Java Spring 的 @ControllerAdvice + @ExceptionHandler
-// 处理 c.Error(err) 注册的错误，配合 Recovery() 处理 panic
+// ErrorHandler 统一错误处理中间件，捕获 c.Error() 并转换为结构化的 HTTP 响应
 func ErrorHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()

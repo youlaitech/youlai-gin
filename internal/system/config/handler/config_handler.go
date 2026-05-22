@@ -5,7 +5,7 @@ import (
 
 	"youlai-gin/internal/system/config/model"
 	"youlai-gin/internal/system/config/service"
-	pkgContext "youlai-gin/internal/common/context"
+	appContext "youlai-gin/internal/common/context"
 	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/internal/middleware"
@@ -56,7 +56,7 @@ func GetConfigPage(c *gin.Context) {
 // @Param id path int true "配置ID"
 // @Router /api/v1/configs/{id}/form [get]
 func GetConfigForm(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "配置")
+	id, err := appContext.ParsePathParam(c, "id", "配置")
 	if err != nil {
 		c.Error(err)
 		return
@@ -77,7 +77,7 @@ func GetConfigForm(c *gin.Context) {
 // @Param id path int true "配置ID"
 // @Router /api/v1/configs/{id} [get]
 func GetConfigByID(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "配置")
+	id, err := appContext.ParsePathParam(c, "id", "配置")
 	if err != nil {
 		c.Error(err)
 		return
@@ -138,7 +138,7 @@ func SaveConfig(c *gin.Context) {
 // @Param id path int true "配置ID"
 // @Router /api/v1/configs/{id} [put]
 func UpdateConfig(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "配置")
+	id, err := appContext.ParsePathParam(c, "id", "配置")
 	if err != nil {
 		c.Error(err)
 		return
@@ -166,7 +166,7 @@ func UpdateConfig(c *gin.Context) {
 // @Router /api/v1/configs/{ids} [delete]
 func DeleteConfigs(c *gin.Context) {
 	idsStr := c.Param("ids")
-	ids, err := pkgContext.ParseIntList(idsStr, "配置")
+	ids, err := appContext.ParseIntList(idsStr, "配置")
 	if err != nil {
 		c.Error(err)
 		return

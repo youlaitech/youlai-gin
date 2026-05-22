@@ -173,7 +173,6 @@ func SaveMenu(form *model.MenuForm) error {
 		menu.TreePath = fmt.Sprintf("%s,%d", parent.TreePath, parent.ID)
 	}
 
-	// 保存菜单
 	var menuID int64
 	isUpdate := form.ID > 0
 
@@ -189,7 +188,7 @@ func SaveMenu(form *model.MenuForm) error {
 		menuID = int64(menu.ID)
 	}
 
-	// 刷新受影响角色的权限缓存
+	// 按钮类菜单：刷新受影响角色的权限缓存
 	if menu.Type == "B" && menu.Perm != "" {
 		if err := refreshAffectedRolesCache([]int64{menuID}); err != nil {
 			log.Printf("刷新角色权限缓存失败: %v", err)
@@ -286,24 +285,20 @@ func DeleteMenu(id int64) error {
 	return nil
 }
 
-// refreshAffectedRolesCache 刷新受菜单影响的角色权限缓存（内部辅助函数）
 func refreshAffectedRolesCache(menuIds []int64) error {
 	if len(menuIds) == 0 {
 		return nil
 	}
 
-	// 查询受影响的角色
 	roleCodes, err := roleRepo.GetRolesAffectedByMenus(menuIds)
 	if err != nil {
 		return fmt.Errorf("查询受影响的角色失败: %w", err)
 	}
 
 	if len(roleCodes) == 0 {
-		// 没有角色受影响，无需刷新
 		return nil
 	}
 
-	// 批量刷新这些角色的权限缓存
 	if err := roleService.RefreshRolePermsCacheByCodes(roleCodes); err != nil {
 		return fmt.Errorf("批量刷新角色权限缓存失败: %w", err)
 	}
@@ -322,26 +317,23 @@ func GetUserPermissions(userId int64) ([]string, error) {
 
 // AddMenuForCodegen
 func AddMenuForCodegen(parentMenuId int64, tableName, moduleName, businessName, entityName string) error {
-	//
 	parentMenu, err := repository.GetMenuByID(parentMenuId)
 	if err != nil {
 		return errs.NotFound("父菜单不存在")
 	}
 
-	// 获取父级菜单子菜单最大的排序
 	sort := 1
 	maxSortMenu, err := repository.GetMaxSortMenuByParentID(parentMenuId)
 	if err == nil && maxSortMenu != nil {
 		sort = int(maxSortMenu.Sort) + 1
 	}
 
-	//
 	entityKebab := toKebabCase(entityName)
 
 	menu := &model.Menu{
 		ParentID:   types.BigInt(parentMenuId),
 		Name:       businessName,
-		Type:       "M", //
+		Type:       "M",
 		RouteName:  entityName,
 		RoutePath:  entityKebab,
 		Component:  moduleName + "/" + entityKebab + "/index",

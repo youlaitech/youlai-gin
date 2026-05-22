@@ -25,7 +25,7 @@ func InitWithConfig(cfg *Config) {
 
 	var cores []zapcore.Core
 
-	// 1. 控制台输出
+	// 控制台输出
 	if cfg.Console.Enabled {
 		consoleEncoder := buildEncoder(encoderCfg, cfg.Console.Format, cfg.Console.Color)
 		consoleCore := zapcore.NewCore(
@@ -36,7 +36,7 @@ func InitWithConfig(cfg *Config) {
 		cores = append(cores, consoleCore)
 	}
 
-	// 2. 文件输出（所有日志）
+	// 文件输出（所有日志）
 	if cfg.File.Enabled && cfg.File.Path != "" {
 		// 确保目录存在
 		dir := filepath.Dir(cfg.File.Path)
@@ -58,7 +58,7 @@ func InitWithConfig(cfg *Config) {
 		cores = append(cores, fileCore)
 	}
 
-	// 3. 错误日志单独文件（可选）
+	// 错误日志单独文件（可选）
 	if cfg.File.Enabled && cfg.File.ErrorPath != "" {
 		dir := filepath.Dir(cfg.File.ErrorPath)
 		_ = os.MkdirAll(dir, 0755)

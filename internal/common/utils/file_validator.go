@@ -44,15 +44,12 @@ var ExcelValidator = &FileValidator{
 
 // Validate 验证文件
 func (v *FileValidator) Validate(file *multipart.FileHeader) error {
-	// 1. 检查文件大小
 	if v.MaxSize > 0 && file.Size > v.MaxSize {
 		return errs.BadRequest(fmt.Sprintf("文件大小超过限制，最大允许 %s", formatFileSize(v.MaxSize)))
 	}
 
-	// 2. 检查文件扩展名
 	ext := strings.ToLower(filepath.Ext(file.Filename))
 
-	// 2.1 检查是否在禁止列表中
 	if len(v.ForbiddenExts) > 0 {
 		for _, forbidden := range v.ForbiddenExts {
 			if ext == strings.ToLower(forbidden) {
@@ -61,7 +58,6 @@ func (v *FileValidator) Validate(file *multipart.FileHeader) error {
 		}
 	}
 
-	// 2.2 检查是否在允许列表中
 	if len(v.AllowedExts) > 0 {
 		allowed := false
 		for _, allowedExt := range v.AllowedExts {
@@ -75,7 +71,6 @@ func (v *FileValidator) Validate(file *multipart.FileHeader) error {
 		}
 	}
 
-	// 3. 检查 MIME 类型
 	if len(v.AllowedMimes) > 0 {
 		contentType := strings.TrimSpace(file.Header.Get("Content-Type"))
 		if contentType == "" {
@@ -96,7 +91,6 @@ func (v *FileValidator) Validate(file *multipart.FileHeader) error {
 		}
 	}
 
-	// 4. 检查文件名安全性
 	if err := validateFilename(file.Filename); err != nil {
 		return err
 	}

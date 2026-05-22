@@ -2,6 +2,7 @@ package validator
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +20,6 @@ func init() {
 
 // BindJSON 参数绑定和校验
 func BindJSON(c *gin.Context, dst any) error {
-	// 1. 绑定 JSON
 	if err := c.ShouldBindJSON(dst); err != nil {
 		return errs.Wrap(
 			errs.BadRequest("JSON 格式错误"),
@@ -27,22 +27,26 @@ func BindJSON(c *gin.Context, dst any) error {
 		)
 	}
 
-	// 2. 执行 validate 校验
-	if err := validate.Struct(dst); err != nil {
-		if validationErrors, ok := err.(validator.ValidationErrors); ok {
-			// 提取所有字段错误
-			var messages []string
-			for _, fieldError := range validationErrors {
-				messages = append(messages, translateFieldError(fieldError))
+	rv := reflect.ValueOf(dst)
+	if rv.Kind() == reflect.Ptr {
+		rv = rv.Elem()
+	}
+	if rv.Kind() == reflect.Struct {
+		if err := validate.Struct(dst); err != nil {
+			if validationErrors, ok := err.(validator.ValidationErrors); ok {
+				var messages []string
+				for _, fieldError := range validationErrors {
+					messages = append(messages, translateFieldError(fieldError))
+				}
+				msg := strings.Join(messages, "；")
+				return errs.New(
+					constant.CodeInvalidUserInput,
+					msg,
+					400,
+				)
 			}
-			msg := strings.Join(messages, "；")
-			return errs.New(
-				constant.CodeInvalidUserInput,
-				msg,
-				400,
-			)
+			return errs.BadRequest(err.Error())
 		}
-		return errs.BadRequest(err.Error())
 	}
 
 	return nil
@@ -50,7 +54,6 @@ func BindJSON(c *gin.Context, dst any) error {
 
 // BindQuery Query 参数绑定和校验
 func BindQuery(c *gin.Context, dst any) error {
-	// 1. 绑定 Query 参数
 	if err := c.ShouldBindQuery(dst); err != nil {
 		return errs.Wrap(
 			errs.BadRequest("查询参数错误"),
@@ -58,7 +61,6 @@ func BindQuery(c *gin.Context, dst any) error {
 		)
 	}
 
-	// 2. 执行 validate 校验
 	if err := validate.Struct(dst); err != nil {
 		if validationErrors, ok := err.(validator.ValidationErrors); ok {
 			var messages []string
@@ -80,7 +82,6 @@ func BindQuery(c *gin.Context, dst any) error {
 
 // BindURI URI 参数绑定和校验
 func BindURI(c *gin.Context, dst any) error {
-	// 1. 绑定 URI 参数
 	if err := c.ShouldBindUri(dst); err != nil {
 		return errs.Wrap(
 			errs.BadRequest("路径参数错误"),
@@ -88,7 +89,6 @@ func BindURI(c *gin.Context, dst any) error {
 		)
 	}
 
-	// 2. 执行 validate 校验
 	if err := validate.Struct(dst); err != nil {
 		if validationErrors, ok := err.(validator.ValidationErrors); ok {
 			var messages []string

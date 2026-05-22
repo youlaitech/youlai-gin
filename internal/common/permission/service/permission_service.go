@@ -8,7 +8,6 @@ import (
 
 	deptModel "youlai-gin/internal/system/dept/model"
 	permModel "youlai-gin/internal/common/permission/model"
-	"youlai-gin/internal/common/auth"
 	"youlai-gin/internal/common/database"
 	"youlai-gin/pkg/constant"
 	"youlai-gin/pkg/errs"
@@ -35,16 +34,14 @@ func getUserDeptID(userID int64) (int64, error) {
 	return deptID, err
 }
 
-// 角色/菜单变更时调用刷新方法更新缓存
 var rolePermsKey = constant.RedisKeyRolePerms
 
-// 数据权限范围常量
 const (
-	DataScopeAll             = 1 // 全部数据
-	DataScopeDeptAndChildren = 2 // 部门及子部门
-	DataScopeDept            = 3 // 本部门
-	DataScopeSelf            = 4 // 仅本人
-	DataScopeCustom          = 5 // 自定义
+	DataScopeAll             = 1
+	DataScopeDeptAndChildren = 2
+	DataScopeDept            = 3
+	DataScopeSelf            = 4
+	DataScopeCustom          = 5
 )
 
 // GetUserPermissions 获取用户权限信息
@@ -96,17 +93,17 @@ func getRolePermsByCodes(roleCodes []string) ([]rolePermsRow, error) {
 		Select("r.code as role_code, p.perm").
 		Joins("INNER JOIN sys_role_menu rm ON rm.role_id = r.id").
 		Joins("INNER JOIN sys_menu p ON p.id = rm.menu_id").
-		Where("r.code IN ? AND r.status = 1 AND r.is_deleted = 0 AND p.is_deleted = 0 AND p.status = 1", roleCodes).
+		Where("r.code IN ? AND r.status = 1 AND r.is_deleted = 0 AND p.perm IS NOT NULL AND p.perm != ''", roleCodes).
 		Scan(&rows).Error
 	return rows, err
 }
 
 // GetUserDataScopes 获取用户所有角色的数据权限列表（多角色并集策略）
-func GetUserDataScopes(userID int64, roleCodes []string, deptID int64) ([]auth.RoleDataScope, error) {
+func GetUserDataScopes(userID int64, roleCodes []string, deptID int64) ([]permModel.RoleDataScope, error) {
 	// ROOT 角色直接返回全部权限
 	for _, r := range roleCodes {
 		if r == constant.RoleCodeRoot {
-			return []auth.RoleDataScope{auth.NewRoleDataScopeAll(constant.RoleCodeRoot)}, nil
+			return []permModel.RoleDataScope{permModel.NewRoleDataScopeAll(constant.RoleCodeRoot)}, nil
 		}
 	}
 
@@ -126,7 +123,7 @@ func GetUserDataScopes(userID int64, roleCodes []string, deptID int64) ([]auth.R
 	}
 
 	if len(rows) == 0 {
-		return []auth.RoleDataScope{auth.NewRoleDataScopeSelf("DEFAULT")}, nil
+		return []permModel.RoleDataScope{permModel.NewRoleDataScopeSelf("DEFAULT")}, nil
 	}
 
 	// 收集需要查询自定义部门的角色
@@ -158,15 +155,15 @@ func GetUserDataScopes(userID int64, roleCodes []string, deptID int64) ([]auth.R
 	}
 
 	// 构建 RoleDataScope 列表
-	result := make([]auth.RoleDataScope, 0, len(rows))
+	result := make([]permModel.RoleDataScope, 0, len(rows))
 	for _, row := range rows {
 		switch row.DataScope {
 		case DataScopeAll:
-			result = append(result, auth.NewRoleDataScopeAll(row.Code))
+			result = append(result, permModel.NewRoleDataScopeAll(row.Code))
 		case DataScopeDeptAndChildren:
 			deptIDs := getDeptAndChildrenIDs(deptID)
 			if len(deptIDs) > 0 {
-				result = append(result, auth.RoleDataScope{
+				result = append(result, permModel.RoleDataScope{
 					RoleCode:      row.Code,
 					DataScope:     DataScopeDeptAndChildren,
 					CustomDeptIDs: deptIDs,
@@ -174,23 +171,23 @@ func GetUserDataScopes(userID int64, roleCodes []string, deptID int64) ([]auth.R
 			}
 		case DataScopeDept:
 			if deptID > 0 {
-				result = append(result, auth.RoleDataScope{
+				result = append(result, permModel.RoleDataScope{
 					RoleCode:      row.Code,
 					DataScope:     DataScopeDept,
 					CustomDeptIDs: []int64{deptID},
 				})
 			}
 		case DataScopeSelf:
-			result = append(result, auth.NewRoleDataScopeSelf(row.Code))
+			result = append(result, permModel.NewRoleDataScopeSelf(row.Code))
 		case DataScopeCustom:
 			if deptIDs, ok := customDeptMap[row.Code]; ok && len(deptIDs) > 0 {
-				result = append(result, auth.NewRoleDataScopeCustom(row.Code, deptIDs))
+				result = append(result, permModel.NewRoleDataScopeCustom(row.Code, deptIDs))
 			}
 		}
 	}
 
 	if len(result) == 0 {
-		return []auth.RoleDataScope{auth.NewRoleDataScopeSelf("DEFAULT")}, nil
+		return []permModel.RoleDataScope{permModel.NewRoleDataScopeSelf("DEFAULT")}, nil
 	}
 
 	return result, nil
@@ -227,7 +224,7 @@ func getDeptAndChildrenIDs(deptID int64) []int64 {
 }
 
 // HasAllDataScope 判断是否有全部数据权限
-func HasAllDataScope(dataScopes []auth.RoleDataScope) bool {
+func HasAllDataScope(dataScopes []permModel.RoleDataScope) bool {
 	for _, ds := range dataScopes {
 		if ds.DataScope == DataScopeAll {
 			return true
@@ -335,7 +332,7 @@ func CheckAnyRole(userID int64, roleCodes []string) (bool, error) {
 }
 
 // getUserPermsByRoles 获取角色权限集合（Read-Through 缓存策略）
-// 缓存结构: Redis Hash, key=system:role:perms, field=roleCode, value=权限JSON数组
+// Redis Hash: system:role:perms -> {roleCode -> JSON array}
 func getUserPermsByRoles(roleCodes []string) ([]string, error) {
 	if len(roleCodes) == 0 {
 		return []string{}, nil
@@ -373,7 +370,6 @@ func getUserPermsByRoles(roleCodes []string) ([]string, error) {
 	if len(missingRoles) > 0 {
 		rolePermsList, err := getRolePermsByCodes(missingRoles)
 		if err == nil {
-			// 按角色分组
 			rolePermsMap := make(map[string][]string)
 			for _, rp := range rolePermsList {
 				p := strings.TrimSpace(rp.Perm)
@@ -382,7 +378,6 @@ func getUserPermsByRoles(roleCodes []string) ([]string, error) {
 					permsSet[p] = struct{}{}
 				}
 			}
-			// 回写缓存，空权限也要写，防止缓存穿透
 			for _, roleCode := range missingRoles {
 				perms := rolePermsMap[roleCode]
 				if perms == nil {

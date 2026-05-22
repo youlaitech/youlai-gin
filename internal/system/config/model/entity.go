@@ -8,9 +8,7 @@ type Config struct {
 	ConfigKey   string `gorm:"column:config_key;size:100;uniqueIndex;not null" json:"configKey"`
 	ConfigValue string `gorm:"column:config_value;type:text" json:"configValue"`
 	ConfigName  string `gorm:"column:config_name;size:100" json:"configName"`
-	ConfigType  string `gorm:"column:config_type;size:20;default:text" json:"configType"` // text, number, boolean, json
-	Description string `gorm:"column:description;size:500" json:"description"`
-	Sort        int    `gorm:"column:sort;default:0" json:"sort"`
+	Remark      string `gorm:"column:remark;size:500" json:"remark"`
 	common.BaseEntity
 }
 

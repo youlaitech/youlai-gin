@@ -197,7 +197,6 @@ func saveLoginLog(c *gin.Context, userID int64, requestURI string) {
 		OS:            middleware.ParseOS(c.Request.UserAgent()),
 		Browser:       middleware.ParseBrowser(c.Request.UserAgent()),
 		Status:        1,
-		CreateBy:      userID,
 	}
 
 	middleware.SaveOperationLog(logEntry)

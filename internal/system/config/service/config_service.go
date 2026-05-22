@@ -119,9 +119,7 @@ func GetConfigFormData(id int64) (*model.ConfigForm, error) {
 		ConfigKey:   config.ConfigKey,
 		ConfigValue: config.ConfigValue,
 		ConfigName:  config.ConfigName,
-		ConfigType:  config.ConfigType,
-		Description: config.Description,
-		Sort:        config.Sort,
+		Remark:      config.Remark,
 	}, nil
 }
 
@@ -132,9 +130,7 @@ func SaveConfig(form *model.ConfigForm) error {
 		ConfigKey:   form.ConfigKey,
 		ConfigValue: form.ConfigValue,
 		ConfigName:  form.ConfigName,
-		ConfigType:  form.ConfigType,
-		Description: form.Description,
-		Sort:        form.Sort,
+		Remark:      form.Remark,
 	}
 
 	var err error
@@ -145,7 +141,7 @@ func SaveConfig(form *model.ConfigForm) error {
 		// 新增 - 检查Key是否已存在
 		existing, _ := repository.GetConfigByKey(config.ConfigKey)
 		if existing != nil && existing.ID > 0 {
-			return errs.BadRequest(fmt.Sprintf("配置Key [%s] 已存在", config.ConfigKey))
+			return errs.Business(fmt.Sprintf("配置Key [%s] 已存在", config.ConfigKey))
 		}
 		err = repository.CreateConfig(config)
 	}

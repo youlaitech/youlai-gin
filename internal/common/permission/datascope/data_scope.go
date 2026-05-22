@@ -7,6 +7,7 @@ import (
 
 	"gorm.io/gorm"
 
+	permModel "youlai-gin/internal/common/permission/model"
 	permService "youlai-gin/internal/common/permission/service"
 	"youlai-gin/internal/common/auth"
 	"youlai-gin/pkg/constant"
@@ -113,7 +114,7 @@ func ApplyDataScope(db *gorm.DB, user *auth.UserDetails, config DataPermissionCo
 	return buildUnionCondition(db, dataScopes, deptColumn, userColumn, user.UserID)
 }
 
-func buildUnionCondition(db *gorm.DB, dataScopes []auth.RoleDataScope, deptColumn, userColumn string, userID int64) *gorm.DB {
+func buildUnionCondition(db *gorm.DB, dataScopes []permModel.RoleDataScope, deptColumn, userColumn string, userID int64) *gorm.DB {
 	var orConditions []string
 	var args []interface{}
 
@@ -141,7 +142,7 @@ func buildUnionCondition(db *gorm.DB, dataScopes []auth.RoleDataScope, deptColum
 	return db.Where(unionCond, args...)
 }
 
-func buildRoleCondition(ds auth.RoleDataScope, deptColumn, userColumn string, userID int64) (string, []interface{}) {
+func buildRoleCondition(ds permModel.RoleDataScope, deptColumn, userColumn string, userID int64) (string, []interface{}) {
 	switch ds.DataScope {
 	case DataScopeAll:
 		return "", nil

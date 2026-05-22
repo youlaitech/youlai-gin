@@ -1,7 +1,6 @@
 package auth
 
-// TokenManager Token 管理器接口
-// 用于生成、解析、校验、刷新 Token
+// TokenManager Token 生命周期管理接口
 type TokenManager interface {
 	// GenerateToken 生成认证 Token
 	GenerateToken(user *UserDetails) (*AuthenticationToken, error)

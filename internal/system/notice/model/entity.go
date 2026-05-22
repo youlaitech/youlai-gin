@@ -17,7 +17,6 @@ type Notice struct {
 	TargetType  int          `gorm:"column:target_type;default:1" json:"targetType"`              // 1:全部 2:指定用户
 	TargetUsers string       `gorm:"column:target_user_ids;type:varchar(255)" json:"targetUsers"` // 目标用户ID集合（逗号分隔）
 	PublisherID types.BigInt `gorm:"column:publisher_id" json:"publisherId"`                      // 发布人ID
-	PublisherName string     `gorm:"column:publisher_name;->" json:"publisherName"`
 	RevokeTime  *types.LocalTime `gorm:"column:revoke_time" json:"revokeTime"`                        // 撤回时间
 	common.BaseEntity
 }

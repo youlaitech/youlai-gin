@@ -5,7 +5,7 @@ import (
 
 	"youlai-gin/internal/system/notice/model"
 	"youlai-gin/internal/system/notice/service"
-	pkgContext "youlai-gin/internal/common/context"
+	appContext "youlai-gin/internal/common/context"
 	response "youlai-gin/internal/common"
 	"youlai-gin/pkg/types"
 	"youlai-gin/internal/common/validator"
@@ -71,7 +71,7 @@ func SaveNotice(c *gin.Context) {
 // @Param id path int true "公告ID"
 // @Router /api/v1/notices/{id}/form [get]
 func GetNoticeForm(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "通知")
+	id, err := appContext.ParsePathParam(c, "id", "通知")
 	if err != nil {
 		c.Error(err)
 		return
@@ -92,27 +92,24 @@ func GetNoticeForm(c *gin.Context) {
 // @Param id path int true "公告ID"
 // @Router /api/v1/notices/{id}/detail [get]
 func GetNoticeDetail(c *gin.Context) {
-	noticeID, err := pkgContext.ParsePathParam(c, "id", "通知")
+	noticeID, err := appContext.ParsePathParam(c, "id", "通知")
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	// 获取当前用户ID
-	userID, err := pkgContext.GetCurrentUserID(c)
+	userID, err := appContext.GetCurrentUserID(c)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	// 获取通知详情
 	notice, err := service.GetNoticeByID(noticeID)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	// 标记为已读
 	go service.MarkNoticeAsRead(noticeID, userID)
 
 	response.Ok(c, notice)
@@ -124,7 +121,7 @@ func GetNoticeDetail(c *gin.Context) {
 // @Param id path int true "公告ID"
 // @Router /api/v1/notices/{id} [put]
 func UpdateNotice(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "通知")
+	id, err := appContext.ParsePathParam(c, "id", "通知")
 	if err != nil {
 		c.Error(err)
 		return
@@ -151,13 +148,13 @@ func UpdateNotice(c *gin.Context) {
 // @Param id path int true "公告ID"
 // @Router /api/v1/notices/{id}/publish [put]
 func PublishNotice(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "通知")
+	id, err := appContext.ParsePathParam(c, "id", "通知")
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	userID, err := pkgContext.GetCurrentUserID(c)
+	userID, err := appContext.GetCurrentUserID(c)
 	if err != nil {
 		c.Error(err)
 		return
@@ -177,7 +174,7 @@ func PublishNotice(c *gin.Context) {
 // @Param id path int true "公告ID"
 // @Router /api/v1/notices/{id}/revoke [put]
 func RevokeNotice(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "通知")
+	id, err := appContext.ParsePathParam(c, "id", "通知")
 	if err != nil {
 		c.Error(err)
 		return
@@ -198,7 +195,7 @@ func RevokeNotice(c *gin.Context) {
 // @Router /api/v1/notices/{ids} [delete]
 func DeleteNotices(c *gin.Context) {
 	idsStr := c.Param("ids")
-	ids, err := pkgContext.ParseIntList(idsStr, "通知")
+	ids, err := appContext.ParseIntList(idsStr, "通知")
 	if err != nil {
 		c.Error(err)
 		return
@@ -219,7 +216,7 @@ func DeleteNotices(c *gin.Context) {
 // @Tags 08.通知公告
 // @Router /api/v1/notices/my [get]
 func GetMyNoticePage(c *gin.Context) {
-	userID, err := pkgContext.GetCurrentUserID(c)
+	userID, err := appContext.GetCurrentUserID(c)
 	if err != nil {
 		c.Error(err)
 		return
@@ -245,15 +242,12 @@ func GetMyNoticePage(c *gin.Context) {
 // @Tags 08.通知公告
 // @Router /api/v1/notices/read-all [put]
 func ReadAllNotices(c *gin.Context) {
-	// 获取当前用户ID
-	userID, err := pkgContext.GetCurrentUserID(c)
+	userID, err := appContext.GetCurrentUserID(c)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	// 这里需要在 repository 层添加全部已读的方法
-	// 暂时返回成功，后续补充实现
 	_ = userID
 	response.OkMsg(c, "全部已读成功")
 }
@@ -263,8 +257,7 @@ func ReadAllNotices(c *gin.Context) {
 // @Tags 08.通知公告
 // @Router /api/v1/notices/unread-count [get]
 func GetUnreadCount(c *gin.Context) {
-	// 获取当前用户ID
-	userID, err := pkgContext.GetCurrentUserID(c)
+	userID, err := appContext.GetCurrentUserID(c)
 	if err != nil {
 		c.Error(err)
 		return

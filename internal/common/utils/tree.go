@@ -11,21 +11,18 @@ func BuildTreeSimple[T any](
 		return []T{}
 	}
 
-	// 1. 构建 ID -> item 的映射
 	itemMap := make(map[int64]*T)
 	for i := range items {
 		id := getID(items[i])
 		itemMap[id] = &items[i]
 	}
 
-	// 2. 构建父子关系映射
 	childrenMap := make(map[int64][]T)
 	for i := range items {
 		parentID := getParentID(items[i])
 		childrenMap[parentID] = append(childrenMap[parentID], items[i])
 	}
 
-	// 3. 递归设置 children
 	var setChildrenRecursive func(*T)
 	setChildrenRecursive = func(node *T) {
 		id := getID(*node)
@@ -38,7 +35,6 @@ func BuildTreeSimple[T any](
 		}
 	}
 
-	// 4. 找出根节点并设置 children
 	var roots []T
 	for i := range items {
 		if getParentID(items[i]) == 0 {

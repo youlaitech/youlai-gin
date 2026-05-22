@@ -96,7 +96,7 @@ func SaveDept(form *model.DeptForm) error {
 		return errs.SystemError("检查部门编号失败")
 	}
 	if exists {
-		return errs.BadRequest("部门编号已存在")
+		return errs.Business("部门编号已存在")
 	}
 
 	dept := &model.Dept{

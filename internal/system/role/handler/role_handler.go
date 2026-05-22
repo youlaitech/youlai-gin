@@ -5,7 +5,8 @@ import (
 
 	"youlai-gin/internal/system/role/model"
 	"youlai-gin/internal/system/role/service"
-	pkgContext "youlai-gin/internal/common/context"
+	"youlai-gin/internal/common/auth"
+	appContext "youlai-gin/internal/common/context"
 	"youlai-gin/pkg/enums"
 	"youlai-gin/internal/middleware"
 	response "youlai-gin/internal/common"
@@ -18,11 +19,11 @@ func RegisterRoleRoutes(r *gin.RouterGroup) {
 	{
 		roles.GET("", middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeList), GetRolePage)
 		roles.GET("/options", GetRoleOptions)
-		roles.POST("", middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeInsert), SaveRole)
-		roles.GET("/:id/form", GetRoleForm)
-		roles.PUT("/:id", middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeUpdate), UpdateRole)
-		roles.DELETE("/:id", middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeDelete), DeleteRole)
-		roles.GET("/:id/menu-ids", GetRoleMenuIds)
+		roles.POST("", auth.RequirePermission("sys:role:create"), middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeInsert), SaveRole)
+		roles.GET("/:id/form", auth.RequirePermission("sys:role:update"), GetRoleForm)
+		roles.PUT("/:id", auth.RequirePermission("sys:role:update"), middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeUpdate), UpdateRole)
+		roles.DELETE("/:id", auth.RequirePermission("sys:role:delete"), middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeDelete), DeleteRole)
+		roles.GET("/:id/menu-ids", auth.RequirePermission("sys:role:update"), GetRoleMenuIds)
 		roles.PUT("/:id/menus", middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeGrant), UpdateRoleMenus)
 		roles.GET("/:id/dept-ids", GetRoleDeptIds)
 		roles.PUT("/:id/depts", middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeGrant), UpdateRoleDepts)
@@ -92,7 +93,7 @@ func SaveRole(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles/{id}/form [get]
 func GetRoleForm(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "角色")
+	id, err := appContext.ParsePathParam(c, "id", "角色")
 	if err != nil {
 		c.Error(err)
 		return
@@ -114,7 +115,7 @@ func GetRoleForm(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles/{id} [put]
 func UpdateRole(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "角色")
+	id, err := appContext.ParsePathParam(c, "id", "角色")
 	if err != nil {
 		c.Error(err)
 		return
@@ -141,7 +142,7 @@ func UpdateRole(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles/{id} [delete]
 func DeleteRole(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "角色")
+	id, err := appContext.ParsePathParam(c, "id", "角色")
 	if err != nil {
 		c.Error(err)
 		return
@@ -161,7 +162,7 @@ func DeleteRole(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles/{id}/menu-ids [get]
 func GetRoleMenuIds(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "角色")
+	id, err := appContext.ParsePathParam(c, "id", "角色")
 	if err != nil {
 		c.Error(err)
 		return
@@ -183,7 +184,7 @@ func GetRoleMenuIds(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles/{id}/menus [put]
 func UpdateRoleMenus(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "角色")
+	id, err := appContext.ParsePathParam(c, "id", "角色")
 	if err != nil {
 		c.Error(err)
 		return
@@ -209,7 +210,7 @@ func UpdateRoleMenus(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles/{id}/dept-ids [get]
 func GetRoleDeptIds(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "角色")
+	id, err := appContext.ParsePathParam(c, "id", "角色")
 	if err != nil {
 		c.Error(err)
 		return
@@ -231,7 +232,7 @@ func GetRoleDeptIds(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/roles/{id}/depts [put]
 func UpdateRoleDepts(c *gin.Context) {
-	id, err := pkgContext.ParsePathParam(c, "id", "角色")
+	id, err := appContext.ParsePathParam(c, "id", "角色")
 	if err != nil {
 		c.Error(err)
 		return

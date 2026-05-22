@@ -1,4 +1,4 @@
-﻿package service
+package service
 
 import (
 	"errors"
@@ -7,14 +7,14 @@ import (
 
 	"youlai-gin/internal/system/dict/model"
 	"youlai-gin/internal/system/dict/repository"
-	common "youlai-gin/pkg/model"
+	baseModel "youlai-gin/pkg/model"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/internal/message"
 	"youlai-gin/pkg/types"
 )
 
 // GetDictPage 字典分页列表
-func GetDictPage(query *model.DictQuery) (*common.PagedData, error) {
+func GetDictPage(query *model.DictQuery) (*baseModel.PagedData, error) {
 	dicts, total, err := repository.GetDictPage(query)
 	if err != nil {
 		return nil, errs.SystemError("查询字典列表失败")
@@ -33,19 +33,19 @@ func GetDictPage(query *model.DictQuery) (*common.PagedData, error) {
 		}
 	}
 
-	return &common.PagedData{List: voList, Total: total}, nil
+	return &baseModel.PagedData{List: voList, Total: total}, nil
 }
 
 // GetDictList 获取字典下拉选项
-func GetDictList() ([]common.Option[string], error) {
+func GetDictList() ([]baseModel.Option[string], error) {
 	dicts, err := repository.GetDictList()
 	if err != nil {
 		return nil, errs.SystemError("查询字典列表失败")
 	}
 
-	options := make([]common.Option[string], len(dicts))
+	options := make([]baseModel.Option[string], len(dicts))
 	for i, dict := range dicts {
-		options[i] = common.Option[string]{
+		options[i] = baseModel.Option[string]{
 			Value: dict.DictCode,
 			Label: dict.Name,
 		}
@@ -61,7 +61,7 @@ func SaveDict(form *model.DictForm) error {
 		return errs.SystemError("检查字典编码失败")
 	}
 	if exists {
-		return errs.BadRequest("字典编码已存在")
+		return errs.Business("字典编码已存在")
 	}
 
 	dict := &model.Dict{
@@ -176,7 +176,7 @@ func GetDictItems(dictCode string) ([]model.DictItemVO, error) {
 }
 
 // GetDictItemPage 字典项分页列表
-func GetDictItemPage(query *model.DictItemQuery) (*common.PagedData, error) {
+func GetDictItemPage(query *model.DictItemQuery) (*baseModel.PagedData, error) {
 	items, total, err := repository.GetDictItemPage(query)
 	if err != nil {
 		return nil, errs.SystemError("查询字典项列表失败")
@@ -195,7 +195,7 @@ func GetDictItemPage(query *model.DictItemQuery) (*common.PagedData, error) {
 		}
 	}
 
-	return &common.PagedData{List: voList, Total: total}, nil
+	return &baseModel.PagedData{List: voList, Total: total}, nil
 }
 
 // SaveDictItem 保存字典项（新增或更新）

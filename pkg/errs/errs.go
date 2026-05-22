@@ -189,6 +189,16 @@ func Forbidden(msg string) *AppError {
 	}
 }
 
+// Business 通用业务错误（B0001，仅 toast 提示，无需前端特殊处理）
+// 适用于：用户名已存在、手机号已绑定、编码重复等
+func Business(msg string) *AppError {
+	return &AppError{
+		Code:       constant.CodeSystemError,
+		Msg:        msg,
+		HTTPStatus: http.StatusOK,
+	}
+}
+
 // SystemError 系统执行出错（B0001）
 func SystemError(msg string) *AppError {
 	if msg == "" {

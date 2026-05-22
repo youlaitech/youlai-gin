@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	permModel "youlai-gin/internal/common/permission/model"
 	redisClient "youlai-gin/internal/common/redis"
 	"youlai-gin/pkg/types"
 )
@@ -30,7 +31,7 @@ type CustomClaims struct {
 	UserID         int64        `json:"userId"`
 	Username       string       `json:"username"`
 	DeptID         types.BigInt `json:"deptId"`
-	DataScopes     []RoleDataScope `json:"dataScopes"`
+	DataScopes     []permModel.RoleDataScope `json:"dataScopes"`
 	Roles          []string     `json:"roles"`
 	IsRefreshToken bool         `json:"isRefreshToken"` // 是否为刷新令牌
 	TokenVersion   int          `json:"tokenVersion"`   // Token 版本号

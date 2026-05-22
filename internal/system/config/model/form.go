@@ -6,7 +6,5 @@ type ConfigForm struct {
 	ConfigKey   string `json:"configKey" binding:"required"`
 	ConfigValue string `json:"configValue"`
 	ConfigName  string `json:"configName" binding:"required"`
-	ConfigType  string `json:"configType"`
-	Description string `json:"description"`
-	Sort        int    `json:"sort"`
+	Remark      string `json:"remark"`
 }

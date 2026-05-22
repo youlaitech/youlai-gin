@@ -12,7 +12,8 @@ import (
 	userService "youlai-gin/internal/system/user/service"
 	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
-	pkgContext "youlai-gin/internal/common/context"
+	"youlai-gin/internal/common/auth"
+	appContext "youlai-gin/internal/common/context"
 	"youlai-gin/internal/middleware"
 	response "youlai-gin/internal/common"
 	"youlai-gin/pkg/types"
@@ -22,16 +23,25 @@ import (
 
 // RegisterUserRoutes 注册用户路由
 func RegisterUserRoutes(r *gin.RouterGroup) {
+	// 写操作 - 需要权限
+	r.POST("/users", auth.RequirePermission("sys:user:create"), middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeInsert), SaveUser)
+	r.PUT("/users/:userId", auth.RequirePermission("sys:user:update"), middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeUpdate), UpdateUser)
+	r.DELETE("/users/:ids", auth.RequirePermission("sys:user:delete"), middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeDelete), DeleteUsers)
+	r.PATCH("/users/:userId/status", auth.RequirePermission("sys:user:update"), middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeUpdate), UpdateUserStatus)
+	r.PUT("/users/:userId/password/reset", auth.RequirePermission("sys:user:reset-password"), middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeResetPassword), ResetUserPassword)
+	r.POST("/users/import", auth.RequirePermission("sys:user:import"), middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeImport), ImportUsers)
+
+	// 读操作 - 无需权限
 	r.GET("/users", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeList), GetUserList)
-	r.POST("/users", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeInsert), SaveUser)
-	r.GET("/users/:userId/form", GetUserForm)
-	r.PUT("/users/:userId", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeUpdate), UpdateUser)
-	r.DELETE("/users/:ids", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeDelete), DeleteUsers)
-	r.PATCH("/users/:userId/status", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeUpdate), UpdateUserStatus)
+	r.GET("/users/:userId/form", auth.RequirePermission("sys:user:update"), GetUserForm)
+	r.GET("/users/export", auth.RequirePermission("sys:user:export"), ExportUsers)
+	r.GET("/users/template", DownloadUserTemplate)
+	r.GET("/users/options", GetUserOptions)
+
+	// 个人操作 - 无需权限
 	r.GET("/users/me", GetCurrentUser)
 	r.GET("/users/profile", GetUserProfile)
 	r.PUT("/users/profile", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeUpdate), UpdateUserProfile)
-	r.PUT("/users/:userId/password/reset", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeResetPassword), ResetUserPassword)
 	r.PUT("/users/password", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeChangePassword), ChangeCurrentUserPassword)
 	r.POST("/users/mobile/code", SendMobileCode)
 	r.PUT("/users/mobile", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeUpdate), BindOrChangeMobile)
@@ -39,12 +49,6 @@ func RegisterUserRoutes(r *gin.RouterGroup) {
 	r.POST("/users/email/code", SendEmailCode)
 	r.PUT("/users/email", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeUpdate), BindOrChangeEmail)
 	r.DELETE("/users/email", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeUpdate), UnbindEmail)
-
-	// Excel 导入导出
-	r.GET("/users/export", ExportUsers)
-	r.GET("/users/template", DownloadUserTemplate)
-	r.POST("/users/import", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeImport), ImportUsers)
-	r.GET("/users/options", GetUserOptions)
 }
 
 // GetUserList 用户分页列表
@@ -58,7 +62,7 @@ func GetUserList(c *gin.Context) {
 		return
 	}
 
-	currentUser, err := pkgContext.GetCurrentUser(c)
+	currentUser, err := appContext.GetCurrentUser(c)
 	if err != nil {
 		c.Error(err)
 		return
@@ -98,7 +102,7 @@ func SaveUser(c *gin.Context) {
 // @Param userId path int true "用户ID"
 // @Router /api/v1/users/{userId}/form [get]
 func GetUserForm(c *gin.Context) {
-	userId, err := pkgContext.ParsePathParam(c, "userId", "用户")
+	userId, err := appContext.ParsePathParam(c, "userId", "用户")
 	if err != nil {
 		c.Error(err)
 		return
@@ -119,7 +123,7 @@ func GetUserForm(c *gin.Context) {
 // @Param userId path int true "用户ID"
 // @Router /api/v1/users/{userId} [put]
 func UpdateUser(c *gin.Context) {
-	userId, err := pkgContext.ParsePathParam(c, "userId", "用户")
+	userId, err := appContext.ParsePathParam(c, "userId", "用户")
 	if err != nil {
 		c.Error(err)
 		return
@@ -162,7 +166,7 @@ func DeleteUsers(c *gin.Context) {
 // @Param userId path int true "用户ID"
 // @Router /api/v1/users/{userId}/status [patch]
 func UpdateUserStatus(c *gin.Context) {
-	userId, err := pkgContext.ParsePathParam(c, "userId", "用户")
+	userId, err := appContext.ParsePathParam(c, "userId", "用户")
 	if err != nil {
 		c.Error(err)
 		return
@@ -193,7 +197,7 @@ func UpdateUserStatus(c *gin.Context) {
 // @Router /api/v1/users/me [get]
 func GetCurrentUser(c *gin.Context) {
 	// 从token中获取用户详情（包含角色信息）
-	userDetails, err := pkgContext.GetCurrentUser(c)
+	userDetails, err := appContext.GetCurrentUser(c)
 	if err != nil {
 		c.Error(err)
 		return
@@ -214,7 +218,7 @@ func GetCurrentUser(c *gin.Context) {
 // @Tags 02.用户接口
 // @Router /api/v1/users/profile [get]
 func GetUserProfile(c *gin.Context) {
-	userId, err := pkgContext.GetCurrentUserID(c)
+	userId, err := appContext.GetCurrentUserID(c)
 	if err != nil {
 		c.Error(err)
 		return
@@ -234,7 +238,7 @@ func GetUserProfile(c *gin.Context) {
 // @Tags 02.用户接口
 // @Router /api/v1/users/profile [put]
 func UpdateUserProfile(c *gin.Context) {
-	userId, err := pkgContext.GetCurrentUserID(c)
+	userId, err := appContext.GetCurrentUserID(c)
 	if err != nil {
 		c.Error(err)
 		return
@@ -259,7 +263,7 @@ func UpdateUserProfile(c *gin.Context) {
 // @Param userId path int true "用户ID"
 // @Router /api/v1/users/{userId}/password/reset [put]
 func ResetUserPassword(c *gin.Context) {
-	userId, err := pkgContext.ParsePathParam(c, "userId", "用户")
+	userId, err := appContext.ParsePathParam(c, "userId", "用户")
 	if err != nil {
 		c.Error(err)
 		return
@@ -280,7 +284,7 @@ func ResetUserPassword(c *gin.Context) {
 // @Tags 02.用户接口
 // @Router /api/v1/users/password [put]
 func ChangeCurrentUserPassword(c *gin.Context) {
-	userId, err := pkgContext.GetCurrentUserID(c)
+	userId, err := appContext.GetCurrentUserID(c)
 	if err != nil {
 		c.Error(err)
 		return
@@ -322,7 +326,7 @@ func SendMobileCode(c *gin.Context) {
 // @Tags 02.用户接口
 // @Router /api/v1/users/mobile [put]
 func BindOrChangeMobile(c *gin.Context) {
-	userId, err := pkgContext.GetCurrentUserID(c)
+	userId, err := appContext.GetCurrentUserID(c)
 	if err != nil {
 		c.Error(err)
 		return
@@ -346,7 +350,7 @@ func BindOrChangeMobile(c *gin.Context) {
 // @Tags 02.用户接口
 // @Router /api/v1/users/mobile [delete]
 func UnbindMobile(c *gin.Context) {
-	userId, err := pkgContext.GetCurrentUserID(c)
+	userId, err := appContext.GetCurrentUserID(c)
 	if err != nil {
 		c.Error(err)
 		return
@@ -389,7 +393,7 @@ func SendEmailCode(c *gin.Context) {
 // @Tags 02.用户接口
 // @Router /api/v1/users/email [put]
 func BindOrChangeEmail(c *gin.Context) {
-	userId, err := pkgContext.GetCurrentUserID(c)
+	userId, err := appContext.GetCurrentUserID(c)
 	if err != nil {
 		c.Error(err)
 		return
@@ -413,7 +417,7 @@ func BindOrChangeEmail(c *gin.Context) {
 // @Tags 02.用户接口
 // @Router /api/v1/users/email [delete]
 func UnbindEmail(c *gin.Context) {
-	userId, err := pkgContext.GetCurrentUserID(c)
+	userId, err := appContext.GetCurrentUserID(c)
 	if err != nil {
 		c.Error(err)
 		return
@@ -458,13 +462,12 @@ func ExportUsers(c *gin.Context) {
 		return
 	}
 
-	currentUser, err := pkgContext.GetCurrentUser(c)
+	currentUser, err := appContext.GetCurrentUser(c)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	// 导出用户数据
 	exporter, err := userService.ExportUsersToExcel(&query, currentUser)
 	if err != nil {
 		c.Error(err)
@@ -472,14 +475,12 @@ func ExportUsers(c *gin.Context) {
 	}
 	defer exporter.Close()
 
-	// 设置响应头
 	filename := fmt.Sprintf("用户列表_%s.xlsx", time.Now().Format("20060102150405"))
 	encodedFilename := url.QueryEscape(filename)
 	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", encodedFilename))
 	c.Header("Content-Transfer-Encoding", "binary")
 
-	// 输出文件
 	if err := exporter.Write(c.Writer); err != nil {
 		c.Error(errs.SystemError("导出文件失败"))
 		return
@@ -498,14 +499,12 @@ func DownloadUserTemplate(c *gin.Context) {
 	}
 	defer exporter.Close()
 
-	// 设置响应头
 	filename := "用户导入模板.xlsx"
 	encodedFilename := url.QueryEscape(filename)
 	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", encodedFilename))
 	c.Header("Content-Transfer-Encoding", "binary")
 
-	// 输出文件
 	if err := exporter.Write(c.Writer); err != nil {
 		c.Error(errs.SystemError("生成模板失败"))
 		return
