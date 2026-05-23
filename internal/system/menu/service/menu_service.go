@@ -306,15 +306,6 @@ func refreshAffectedRolesCache(menuIds []int64) error {
 	return nil
 }
 
-// GetUserPermissions 获取用户按钮权限
-func GetUserPermissions(userId int64) ([]string, error) {
-	perms, err := repository.GetUserButtonPerms(userId)
-	if err != nil {
-		return nil, errs.SystemError("查询用户权限失败")
-	}
-	return perms, nil
-}
-
 // AddMenuForCodegen
 func AddMenuForCodegen(parentMenuId int64, tableName, moduleName, businessName, entityName string) error {
 	parentMenu, err := repository.GetMenuByID(parentMenuId)
