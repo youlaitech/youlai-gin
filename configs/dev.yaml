@@ -23,7 +23,7 @@ redis:
   host: www.youlai.tech # Redis 主机（开发用本地）
   port: 6379 # Redis 端口
   password: 123456 # Redis 密码（本地开发通常无密码）
-  database: 15 # Redis 数据库编号（0-15）
+  database: 0 # Redis 数据库编号（0-15）
 
   # 连接池配置
   pool:

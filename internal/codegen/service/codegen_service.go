@@ -80,10 +80,7 @@ var codegenConfig = struct {
 	defaultRemoveTablePrefix: "sys_",
 }
 
-// 模板配置说明：
-// - backend/ 下是 Go 后端代码模板
-// - frontend/ 下按 ts/、js/ 分包
-// - 这里的 templatePath 作为“默认值”，实际使用时会再结合 frontendType 做一次路径解析
+// 代码模板：backend/（Go 后端）、frontend/ts/（TS 前端）、frontend/js/（JS 前端）
 var templateConfigs = map[templateName]templateConfig{
 	tplAPI:        {templatePath: "frontend/ts/api.ts.velty", subpackageName: "api", extension: ".ts"},
 	tplAPITypes:   {templatePath: "frontend/ts/api-types.ts.velty", subpackageName: "types", extension: ".ts"},
@@ -98,10 +95,7 @@ var templateConfigs = map[templateName]templateConfig{
 	tplRouter:     {templatePath: "backend/router.go.velty", subpackageName: "", extension: ".go"},
 }
 
-// resolveFrontendTemplatePath 解析前端模板路径
 func resolveFrontendTemplatePath(name templateName, tc templateConfig, frontendType string) string {
-	// 约定：TS 作为默认前端类型；选择 JS 时只替换少数模板（API、VIEW）。
-	// 其它模板仍然走 tc.templatePath（避免后续新增模板时忘记维护这里）。
 	if frontendType == "js" {
 		switch name {
 		case tplAPI:
