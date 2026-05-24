@@ -19,7 +19,7 @@
 
 <div align="center">
 
-[🖥️ 在线预览](https://vue.youlai.tech) | [📲 移动端预览](https://app.youlai.tech) | [📖 文档](https://www.youlai.tech/docs/admin/backend/go/)
+[🖥️ 在线预览](https://vue.youlai.tech) | [📲 移动端预览](https://app.youlai.tech) | [📖 文档](https://www.youlai.tech/docs/server/gin/)
 
 </div>
 
@@ -79,7 +79,7 @@
 
 > 💡 **热重载**：推荐使用 `air` 工具，先 `go install github.com/cosmtrek/air@latest`，再 `air`
 
-详细指南：[部署文档](https://www.youlai.tech/docs/admin/backend/go/deploy)
+详细指南：[部署文档](https://www.youlai.tech/docs/server/gin/deploy)
 
 ## 技术栈
 
@@ -144,7 +144,7 @@ youlai-gin/
 
 | 资源 | 地址 |
 |:-----|:-----|
-| 📖 完整文档站 | [www.youlai.tech/docs/admin](https://www.youlai.tech/docs/admin/) |
+| 📖 完整文档站 | [www.youlai.tech](https://www.youlai.tech/) |
 | 🖥️ PC 端在线预览 | [vue.youlai.tech](https://vue.youlai.tech) |
 | 📱 移动端在线预览 | [app.youlai.tech](https://app.youlai.tech) |
 | 🔗 Apifox 接口文档 | [apifox.com](https://www.apifox.cn/apidoc/shared-195e783f-4d85-4235-a038-eec696de4ea5) |
@@ -152,7 +152,7 @@ youlai-gin/
 
 ## 参与贡献
 
-欢迎提交 Issue 和 Pull Request！详见 [贡献指南](https://www.youlai.tech/docs/admin/faq/help)。
+欢迎提交 Issue 和 Pull Request！详见 [贡献指南](https://www.youlai.tech/faq/help)。
 
 ## 开源协议
 
