@@ -24,9 +24,9 @@ func RegisterRoleRoutes(r *gin.RouterGroup) {
 		roles.PUT("/:id", auth.RequirePermission("sys:role:update"), middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeUpdate), UpdateRole)
 		roles.DELETE("/:id", auth.RequirePermission("sys:role:delete"), middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeDelete), DeleteRole)
 		roles.GET("/:id/menu-ids", auth.RequirePermission("sys:role:update"), GetRoleMenuIds)
-		roles.PUT("/:id/menus", middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeGrant), UpdateRoleMenus)
+		roles.PUT("/:id/menus", auth.RequirePermission("sys:role:assign"), middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeGrant), UpdateRoleMenus)
 		roles.GET("/:id/dept-ids", GetRoleDeptIds)
-		roles.PUT("/:id/depts", middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeGrant), UpdateRoleDepts)
+		roles.PUT("/:id/depts", auth.RequirePermission("sys:role:update"), middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeGrant), UpdateRoleDepts)
 	}
 }
 
