@@ -6,6 +6,7 @@ import (
 	"youlai-gin/internal/system/config/model"
 	"youlai-gin/internal/system/config/service"
 	appContext "youlai-gin/internal/common/context"
+	"youlai-gin/internal/common/auth"
 	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/internal/middleware"
@@ -18,15 +19,15 @@ func RegisterRoutes(r *gin.RouterGroup) {
 	// 使用复数形式
 	config := r.Group("/configs")
 	{
-		config.GET("", middleware.OperationLog(enums.LogModuleConfig, enums.ActionTypeList), GetConfigPage)
+		config.GET("", auth.RequirePermission("sys:config:list"), middleware.OperationLog(enums.LogModuleConfig, enums.ActionTypeList), GetConfigPage)
 		config.GET("/:id/form", GetConfigForm)
 		config.GET("/:id", GetConfigByID)
 		config.GET("/key/:key", GetConfigByKey)
-		config.POST("", middleware.OperationLog(enums.LogModuleConfig, enums.ActionTypeInsert), SaveConfig)
-		config.PUT("/:id", middleware.OperationLog(enums.LogModuleConfig, enums.ActionTypeUpdate), UpdateConfig)
-		config.DELETE("/:ids", middleware.OperationLog(enums.LogModuleConfig, enums.ActionTypeDelete), DeleteConfigs)
-		config.POST("/refresh/:key", RefreshConfigCache)
-		config.POST("/refresh", RefreshAllConfigCache)
+		config.POST("", auth.RequirePermission("sys:config:create"), middleware.OperationLog(enums.LogModuleConfig, enums.ActionTypeInsert), SaveConfig)
+		config.PUT("/:id", auth.RequirePermission("sys:config:update"), middleware.OperationLog(enums.LogModuleConfig, enums.ActionTypeUpdate), UpdateConfig)
+		config.DELETE("/:ids", auth.RequirePermission("sys:config:delete"), middleware.OperationLog(enums.LogModuleConfig, enums.ActionTypeDelete), DeleteConfigs)
+		config.POST("/refresh/:key", auth.RequirePermission("sys:config:refresh"), RefreshConfigCache)
+		config.POST("/refresh", auth.RequirePermission("sys:config:refresh"), RefreshAllConfigCache)
 	}
 }
 

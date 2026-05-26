@@ -6,6 +6,7 @@ import (
 	"youlai-gin/internal/system/dict/model"
 	"youlai-gin/internal/system/dict/service"
 	appContext "youlai-gin/internal/common/context"
+	"youlai-gin/internal/common/auth"
 	"youlai-gin/pkg/enums"
 	"youlai-gin/internal/middleware"
 	response "youlai-gin/internal/common"
@@ -21,20 +22,20 @@ func RegisterDictRoutes(r *gin.RouterGroup) {
 		dicts.GET("", middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeList), GetDictPage)
 		// 字典下拉列表
 		dicts.GET("/options", GetDictList)
-		dicts.POST("", middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeInsert), SaveDict)
+		dicts.POST("", auth.RequirePermission("sys:dict:create"), middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeInsert), SaveDict)
 
 		// 字典项路由
 		dicts.GET("/:id/items", GetDictItemPageByCode)
 		dicts.GET("/:id/items/options", GetDictItemsByCode)
-		dicts.POST("/:id/items", middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeInsert), SaveDictItemByCode)
+		dicts.POST("/:id/items", auth.RequirePermission("sys:dict-item:create"), middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeInsert), SaveDictItemByCode)
 		dicts.GET("/:id/items/:itemId/form", GetDictItemFormByCode)
-		dicts.PUT("/:id/items/:itemId", middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeUpdate), UpdateDictItemByCode)
-		dicts.DELETE("/:id/items/:itemIds", middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeDelete), DeleteDictItemsByCode)
+		dicts.PUT("/:id/items/:itemId", auth.RequirePermission("sys:dict-item:update"), middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeUpdate), UpdateDictItemByCode)
+		dicts.DELETE("/:id/items/:itemIds", auth.RequirePermission("sys:dict-item:delete"), middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeDelete), DeleteDictItemsByCode)
 
 		// 字典操作
 		dicts.GET("/:id/form", GetDictForm)
-		dicts.PUT("/:id", middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeUpdate), UpdateDict)
-		dicts.DELETE("/:id", middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeDelete), DeleteDict)
+		dicts.PUT("/:id", auth.RequirePermission("sys:dict:update"), middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeUpdate), UpdateDict)
+		dicts.DELETE("/:id", auth.RequirePermission("sys:dict:delete"), middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeDelete), DeleteDict)
 	}
 }
 
