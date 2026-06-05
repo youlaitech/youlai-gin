@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -101,7 +102,7 @@ func resolveFrontendTemplatePath(name templateName, tc templateConfig, frontendT
 		case tplAPI:
 			return "frontend/js/api.js.velty"
 		case tplView:
-			return "frontend/js/index.js.vue.velty"
+			return "frontend/js/index.vue.velty"
 		default:
 			return tc.templatePath
 		}
@@ -586,9 +587,7 @@ func renderTemplate(
 ) (string, error) {
 	effectivePath := templatePath
 	if name == tplView && pageType == "curd" {
-		if strings.HasSuffix(effectivePath, "index.js.vue.velty") {
-			effectivePath = strings.Replace(effectivePath, "index.js.vue.velty", "index.curd.js.vue.velty", 1)
-		} else if strings.HasSuffix(effectivePath, "index.vue.velty") {
+		if strings.HasSuffix(effectivePath, "index.vue.velty") {
 			effectivePath = strings.Replace(effectivePath, "index.vue.velty", "index.curd.vue.velty", 1)
 		}
 	}
@@ -599,8 +598,10 @@ func renderTemplate(
 		return "", errs.SystemError("读取模板失败: " + absPath)
 	}
 
+	log.Printf("[CODEGEN] 编译模板: %s (%d bytes)", absPath, len(content))
 	planner := velty.New()
 	_ = planner.RegisterFunction("trim", strings.TrimSpace)
+	_ = planner.RegisterFunction("contains", strings.Contains)
 
 	_ = planner.DefineVariable("packageName", "")
 	_ = planner.DefineVariable("moduleName", "")
@@ -622,7 +623,8 @@ func renderTemplate(
 
 	exec, newState, err := planner.Compile(content)
 	if err != nil {
-		return "", errs.SystemError("编译模板失败: " + err.Error())
+		log.Printf("[CODEGEN] 编译失败: %s, 错误: %s", absPath, err.Error())
+		return "", errs.SystemError("编译模板失败[" + effectivePath + "]: " + err.Error())
 	}
 
 	state := newState()
@@ -690,9 +692,12 @@ func renderTemplate(
 
 	exec.Exec(state)
 	if !state.IsValid() {
-		return "", errs.SystemError("渲染模板失败")
+		log.Printf("[CODEGEN] 渲染失败: %s, state=%v", absPath, state.IsValid())
+		return "", errs.SystemError("渲染模板失败: " + absPath)
 	}
-	return state.Buffer.String(), nil
+	result := state.Buffer.String()
+	log.Printf("[CODEGEN] 渲染成功: %s, 输出=%d bytes", absPath, len(result))
+	return result, nil
 }
 
 func resolveBootTemplatePath(templatePath string) string {

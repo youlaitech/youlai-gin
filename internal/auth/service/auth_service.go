@@ -82,13 +82,13 @@ func Login(req *authModel.LoginRequest) (*auth.AuthenticationToken, int64, error
 	user, err := userRepo.GetUserByUsername(req.Username)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, 0, errs.BadRequest("用户名或密码错误")
+			return nil, 0, errs.UserPasswordError()
 		}
 		return nil, 0, errs.SystemError("查询用户失败")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
-		return nil, 0, errs.BadRequest("用户名或密码错误")
+		return nil, 0, errs.UserPasswordError()
 	}
 
 	if user.Status != 1 {

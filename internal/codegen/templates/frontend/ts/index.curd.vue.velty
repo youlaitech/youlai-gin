@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-container h-full flex flex-1 flex-col">
     <!-- 搜索 -->
     <PageSearch
@@ -154,17 +154,10 @@ const contentConfig: IContentConfig<${entityName}QueryParams> = reactive({
   },
   // 主键
   pk: "id",
-  // 列表查询接口
+  // 列表查询接口（拦截器已解包，直接返回 PageResult）
   indexAction: ${entityName}API.getPage,
   // 删除接口
   deleteAction: ${entityName}API.deleteByIds,
-  // 数据解析函数
-  parseData(res: any) {
-    return {
-      total: res?.page?.total ?? 0,
-      list: res?.data ?? [],
-    };
-  },
   // 分页配置
   pagination: {
     background: true,
@@ -219,7 +212,7 @@ const addModalConfig: IModalConfig<${entityName}Form> = reactive({
   formItems: [
 #foreach($fieldConfig in $fieldConfigsInForm)
 #if($fieldConfig.formType != "HIDDEN")
-#if($fieldConfig.dictType and $fieldConfig.dictType.trim() != "")
+#if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
     {
       type: "custom",
       label: "$fieldConfig.fieldComment",

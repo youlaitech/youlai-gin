@@ -65,7 +65,7 @@ security:
 
   # JWT 配置（无状态会话）
   jwt:
-    secretKey: "youlai-gin-dev-secret-key-change-in-production" # JWT 签名密钥（⚠️ 生产环境必须修改）
+    secretKey: "youlai-gin-dev-secret-key-change-in-production" # JWT 签名密钥（生产环境必须修改）
     accessTokenTTL: 7200 # 访问令牌有效期（秒，2小时）
     refreshTokenTTL: 2592000 # 刷新令牌有效期（秒，30天）
     enableSecurityVersion: true # 是否启用安全版本号（密码修改后使旧 Token 失效）

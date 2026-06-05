@@ -12,28 +12,32 @@ import (
 
 var DB *gorm.DB
 
-// InitWithConfig 使用配置初始化数据库
-func InitWithConfig(cfg *Config) error {
+// NewDB Wire Provider：返回数据库实例
+func NewDB(cfg *Config) (*gorm.DB, error) {
 	dsn := cfg.DSN()
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
-			SingularTable: true, // 使用单数表名
+			SingularTable: true,
 		},
-		// 禁用自动更新时间戳，使用数据库触发器
 		NowFunc: func() time.Time {
 			return time.Now().Local()
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("连接数据库失败: %w", err)
+		return nil, fmt.Errorf("连接数据库失败: %w", err)
 	}
 
-	// 应用连接池配置
 	if err := cfg.ApplyConnectionPool(db); err != nil {
-		return fmt.Errorf("配置连接池失败: %w", err)
+		return nil, fmt.Errorf("配置连接池失败: %w", err)
 	}
 
 	DB = db
 	log.Println("✓ 数据库连接成功")
-	return nil
+	return db, nil
+}
+
+// InitWithConfig 使用配置初始化数据库（main.go 启动调用）
+func InitWithConfig(cfg *Config) error {
+	_, err := NewDB(cfg)
+	return err
 }

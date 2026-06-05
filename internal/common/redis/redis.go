@@ -3,11 +3,9 @@ package redis
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"gopkg.in/yaml.v3"
 )
 
 // Config Redis 配置
@@ -37,24 +35,9 @@ type TimeoutConfig struct {
 
 var Client *redis.Client
 
-// InitFromYAML 从 YAML 文件初始化 Redis
-func InitFromYAML(configPath string) error {
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return fmt.Errorf("读取 Redis 配置文件失败: %w", err)
-	}
-
-	var cfg Config
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return fmt.Errorf("解析 Redis 配置失败: %w", err)
-	}
-
-	return InitWithConfig(&cfg)
-}
-
-// InitWithConfig 使用配置初始化 Redis
-func InitWithConfig(cfg *Config) error {
-	Client = redis.NewClient(&redis.Options{
+// NewClient Wire Provider：返回 Redis 客户端
+func NewClient(cfg *Config) *redis.Client {
+	client := redis.NewClient(&redis.Options{
 		Addr:         fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
 		Password:     cfg.Password,
 		DB:           cfg.Database,
@@ -66,11 +49,19 @@ func InitWithConfig(cfg *Config) error {
 		PoolTimeout:  time.Duration(cfg.Timeout.Pool) * time.Second,
 	})
 
+	Client = client
+	return client
+}
+
+// InitWithConfig 使用配置初始化 Redis（main.go 启动调用）
+func InitWithConfig(cfg *Config) error {
+	client := NewClient(cfg)
+
 	// 测试连接
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if err := Client.Ping(ctx).Err(); err != nil {
+	if err := client.Ping(ctx).Err(); err != nil {
 		return fmt.Errorf("Redis 连接失败: %w", err)
 	}
 

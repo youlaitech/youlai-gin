@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	"strings"
 
 	"youlai-gin/internal/common/database"
@@ -69,8 +68,6 @@ func GetUserMenus(userId int64) ([]model.Menu, error) {
 		Joins("INNER JOIN sys_role r ON r.id = ur.role_id").
 		Where("ur.user_id = ? AND r.status = 1 AND r.is_deleted = 0", userId).
 		Pluck("r.code", &roleCodes)
-
-	fmt.Printf("[ROUTE-DEBUG] userId=%d roles=%v\n", userId, roleCodes)
 
 	var isROOT bool
 	for _, c := range roleCodes {

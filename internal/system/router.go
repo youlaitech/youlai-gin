@@ -3,8 +3,12 @@ package system
 import (
 	"github.com/gin-gonic/gin"
 
+	"youlai-gin/internal/common/database"
+
 	configHandler "youlai-gin/internal/system/config/handler"
 	deptHandler "youlai-gin/internal/system/dept/handler"
+	deptRepo "youlai-gin/internal/system/dept/repository"
+	deptService "youlai-gin/internal/system/dept/service"
 	dictHandler "youlai-gin/internal/system/dict/handler"
 	logHandler "youlai-gin/internal/system/log/handler"
 	menuHandler "youlai-gin/internal/system/menu/handler"
@@ -15,12 +19,19 @@ import (
 
 // RegisterRoutes 注册系统管理模块所有路由
 func RegisterRoutes(r *gin.RouterGroup) {
-	userHandler.RegisterUserRoutes(r)    // 用户管理
-	roleHandler.RegisterRoleRoutes(r)     // 角色管理
-	menuHandler.RegisterMenuRoutes(r)     // 菜单管理
-	deptHandler.RegisterDeptRoutes(r)     // 部门管理
-	dictHandler.RegisterDictRoutes(r)    // 字典管理
-	configHandler.RegisterRoutes(r)       // 配置管理
-	noticeHandler.RegisterRoutes(r)       // 通知公告
-	logHandler.RegisterRoutes(r)         // 日志管理
+	userHandler.RegisterUserRoutes(r)
+	roleHandler.RegisterRoleRoutes(r)
+	menuHandler.RegisterMenuRoutes(r)
+	initDeptHandler().RegisterRoutes(r)
+	dictHandler.RegisterDictRoutes(r)
+	configHandler.RegisterRoutes(r)
+	noticeHandler.RegisterRoutes(r)
+	logHandler.RegisterRoutes(r)
+}
+
+// initDeptHandler 手动组装部门模块依赖（后续迁移到 wire）
+func initDeptHandler() *deptHandler.Handler {
+	repo := deptRepo.NewRepository(database.DB)
+	svc := deptService.NewService(repo)
+	return deptHandler.NewHandler(svc)
 }

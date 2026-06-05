@@ -5,33 +5,40 @@ import (
 
 	"youlai-gin/internal/system/dept/model"
 	"youlai-gin/internal/system/dept/service"
-	appContext "youlai-gin/internal/common/context"
 	"youlai-gin/internal/common/auth"
-	"youlai-gin/pkg/enums"
+	appContext "youlai-gin/internal/common/context"
 	"youlai-gin/internal/middleware"
 	response "youlai-gin/internal/common"
+	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/types"
 	"youlai-gin/internal/common/validator"
 )
 
-func RegisterDeptRoutes(r *gin.RouterGroup) {
-	// 使用复数形式
+// Handler 部门接口层
+type Handler struct {
+	svc *service.Service
+}
+
+// NewHandler Wire Provider
+func NewHandler(svc *service.Service) *Handler {
+	return &Handler{svc: svc}
+}
+
+// RegisterRoutes 注册部门路由
+func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 	depts := r.Group("/depts")
 	{
-		depts.GET("", GetDeptList)
-		depts.GET("/options", GetDeptOptions)
-		depts.POST("", auth.RequirePermission("sys:dept:create"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeInsert), SaveDept)
-		depts.GET("/:id/form", GetDeptForm)
-		depts.PUT("/:id", auth.RequirePermission("sys:dept:update"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeUpdate), UpdateDept)
-		depts.DELETE("/:id", auth.RequirePermission("sys:dept:delete"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeDelete), DeleteDept)
+		depts.GET("", h.GetDeptList)
+		depts.GET("/options", h.GetDeptOptions)
+		depts.POST("", auth.RequirePermission("sys:dept:create"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeInsert), h.SaveDept)
+		depts.GET("/:id/form", h.GetDeptForm)
+		depts.PUT("/:id", auth.RequirePermission("sys:dept:update"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeUpdate), h.UpdateDept)
+		depts.DELETE("/:id", auth.RequirePermission("sys:dept:delete"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeDelete), h.DeleteDept)
 	}
 }
 
-// @Summary 部门列表
-// @Tags 05.部门接口
-// @Success 200 {object} map[string]interface{}
-// @Router /api/v1/depts [get]
-func GetDeptList(c *gin.Context) {
+// GetDeptList 部门列表
+func (h *Handler) GetDeptList(c *gin.Context) {
 	var query model.DeptQuery
 	if err := validator.BindQuery(c, &query); err != nil {
 		c.Error(err)
@@ -44,7 +51,7 @@ func GetDeptList(c *gin.Context) {
 		return
 	}
 
-	list, err := service.GetDeptList(&query, currentUser)
+	list, err := h.svc.GetDeptList(&query, currentUser)
 	if err != nil {
 		c.Error(err)
 		return
@@ -53,18 +60,15 @@ func GetDeptList(c *gin.Context) {
 	response.Ok(c, list)
 }
 
-// @Summary 部门下拉列表
-// @Tags 05.部门接口
-// @Success 200 {object} map[string]interface{}
-// @Router /api/v1/depts/options [get]
-func GetDeptOptions(c *gin.Context) {
+// GetDeptOptions 部门下拉列表
+func (h *Handler) GetDeptOptions(c *gin.Context) {
 	currentUser, err := appContext.GetCurrentUser(c)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	options, err := service.GetDeptOptions(currentUser)
+	options, err := h.svc.GetDeptOptions(currentUser)
 	if err != nil {
 		c.Error(err)
 		return
@@ -73,19 +77,15 @@ func GetDeptOptions(c *gin.Context) {
 	response.Ok(c, options)
 }
 
-// @Summary 新增部门
-// @Tags 05.部门接口
-// @Param body body model.DeptForm true "部门信息"
-// @Success 200 {object} map[string]interface{}
-// @Router /api/v1/depts [post]
-func SaveDept(c *gin.Context) {
+// SaveDept 新增部门
+func (h *Handler) SaveDept(c *gin.Context) {
 	var form model.DeptForm
 	if err := validator.BindJSON(c, &form); err != nil {
 		c.Error(err)
 		return
 	}
 
-	if err := service.SaveDept(&form); err != nil {
+	if err := h.svc.SaveDept(&form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -93,19 +93,15 @@ func SaveDept(c *gin.Context) {
 	response.OkMsg(c, "保存成功")
 }
 
-// @Summary 获取部门表单数据
-// @Tags 05.部门接口
-// @Param id path int true "部门ID"
-// @Success 200 {object} map[string]interface{}
-// @Router /api/v1/depts/{id}/form [get]
-func GetDeptForm(c *gin.Context) {
+// GetDeptForm 获取部门表单数据
+func (h *Handler) GetDeptForm(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "部门")
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	form, err := service.GetDeptForm(id)
+	form, err := h.svc.GetDeptForm(id)
 	if err != nil {
 		c.Error(err)
 		return
@@ -114,13 +110,8 @@ func GetDeptForm(c *gin.Context) {
 	response.Ok(c, form)
 }
 
-// @Summary 更新部门
-// @Tags 05.部门接口
-// @Param id path int true "部门ID"
-// @Param body body model.DeptForm true "部门信息"
-// @Success 200 {object} map[string]interface{}
-// @Router /api/v1/depts/{id} [put]
-func UpdateDept(c *gin.Context) {
+// UpdateDept 更新部门
+func (h *Handler) UpdateDept(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "部门")
 	if err != nil {
 		c.Error(err)
@@ -134,7 +125,7 @@ func UpdateDept(c *gin.Context) {
 	}
 
 	form.ID = types.BigInt(id)
-	if err := service.SaveDept(&form); err != nil {
+	if err := h.svc.SaveDept(&form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -142,19 +133,15 @@ func UpdateDept(c *gin.Context) {
 	response.OkMsg(c, "更新成功")
 }
 
-// @Summary 删除部门
-// @Tags 05.部门接口
-// @Param id path int true "部门ID"
-// @Success 200 {object} map[string]interface{}
-// @Router /api/v1/depts/{id} [delete]
-func DeleteDept(c *gin.Context) {
+// DeleteDept 删除部门
+func (h *Handler) DeleteDept(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "部门")
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	if err := service.DeleteDept(id); err != nil {
+	if err := h.svc.DeleteDept(id); err != nil {
 		c.Error(err)
 		return
 	}

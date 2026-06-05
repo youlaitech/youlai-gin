@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-container h-full flex flex-1 flex-col">
     <!-- 搜索 -->
     <PageSearch
@@ -14,7 +14,7 @@
 #end#end
     </PageSearch>
 
-    <!-- 列表 -->中
+    <!-- 列表 -->
     <PageContent
       ref="contentRef"
       :content-config="contentConfig"
@@ -132,17 +132,10 @@ const contentConfig = reactive({
   },
   // 主键
   pk: "id",
-  // 列表查询接口
+  // 列表查询接口（拦截器已解包，直接返回 PageResult）
   indexAction: ${entityName}API.getPage,
   // 删除接口
   deleteAction: ${entityName}API.deleteByIds,
-  // 数据解析函数
-  parseData(res) {
-    return {
-      total: res?.page?.total ?? 0,
-      list: res?.data ?? [],
-    };
-  },
   // 分页配置
   pagination: {
     background: true,
@@ -196,7 +189,7 @@ const addModalConfig = reactive({
   // 表单项配置
   formItems: [
 #foreach($fieldConfig in $fieldConfigsInForm)#if($fieldConfig.formType != "HIDDEN")
-#if($fieldConfig.dictType and $fieldConfig.dictType.trim() != "")
+#if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
     {
       type: "custom",
       label: "$fieldConfig.fieldComment",
@@ -254,7 +247,6 @@ const addModalConfig = reactive({
       },
 #if($fieldConfig.isRequired == 1)
       rules: [{ required: true, message: "$fieldConfig.fieldComment不能为空", trigger: "blur" }],
-#end
 #end
 #elseif($fieldConfig.javaType == "Integer" or $fieldConfig.javaType == "Long")
       type: "input-number",

@@ -18,6 +18,7 @@ import (
 	"youlai-gin/internal/system/user/model"
 	"youlai-gin/internal/system/user/repository"
 	"youlai-gin/internal/common/auth"
+	"youlai-gin/internal/common/database"
 	baseModel "youlai-gin/pkg/model"
 	"youlai-gin/pkg/constant"
 	"youlai-gin/pkg/errs"
@@ -601,7 +602,7 @@ func ImportUsersFromExcel(file io.Reader) (map[string]interface{}, error) {
 		}
 	}
 
-	depts, err := deptRepo.GetAllDeptsForImport()
+	depts, err := deptRepo.NewRepository(database.DB).GetAllDeptsForImport()
 	if err != nil {
 		return nil, errs.SystemError("查询部门数据失败")
 	}

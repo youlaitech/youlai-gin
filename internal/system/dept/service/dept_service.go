@@ -7,16 +7,38 @@ import (
 	"gorm.io/gorm"
 
 	"youlai-gin/internal/system/dept/model"
-	"youlai-gin/internal/system/dept/repository"
 	"youlai-gin/internal/common/auth"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/types"
 	"youlai-gin/internal/common/utils"
 )
 
+// Repository 部门数据访问接口（依赖倒置：Service 定义接口）
+type Repository interface {
+	GetDeptList(query *model.DeptQuery, currentUser *auth.UserDetails) ([]model.Dept, error)
+	GetDeptByID(id int64) (*model.Dept, error)
+	CreateDept(dept *model.Dept) error
+	UpdateDept(dept *model.Dept) error
+	DeleteDept(id int64) error
+	GetDeptOptions(currentUser *auth.UserDetails) ([]model.Dept, error)
+	CheckDeptNameExists(name string, parentId int64, excludeId int64) (bool, error)
+	CheckDeptCodeExists(code string, excludeId int64) (bool, error)
+	GetChildrenCount(parentId int64) (int64, error)
+}
+
+// Service 部门业务逻辑层
+type Service struct {
+	repo Repository
+}
+
+// NewService Wire Provider
+func NewService(repo Repository) *Service {
+	return &Service{repo: repo}
+}
+
 // GetDeptList 部门列表（树形结构）
-func GetDeptList(query *model.DeptQuery, currentUser *auth.UserDetails) ([]*model.DeptVO, error) {
-	depts, err := repository.GetDeptList(query, currentUser)
+func (s *Service) GetDeptList(query *model.DeptQuery, currentUser *auth.UserDetails) ([]*model.DeptVO, error) {
+	depts, err := s.repo.GetDeptList(query, currentUser)
 	if err != nil {
 		return nil, errs.SystemError("查询部门列表失败")
 	}
@@ -49,8 +71,8 @@ func GetDeptList(query *model.DeptQuery, currentUser *auth.UserDetails) ([]*mode
 }
 
 // GetDeptOptions 部门下拉选项
-func GetDeptOptions(currentUser *auth.UserDetails) ([]model.DeptOption, error) {
-	depts, err := repository.GetDeptOptions(currentUser)
+func (s *Service) GetDeptOptions(currentUser *auth.UserDetails) ([]model.DeptOption, error) {
+	depts, err := s.repo.GetDeptOptions(currentUser)
 	if err != nil {
 		return nil, errs.SystemError("查询部门下拉失败")
 	}
@@ -82,8 +104,8 @@ func GetDeptOptions(currentUser *auth.UserDetails) ([]model.DeptOption, error) {
 }
 
 // SaveDept 保存部门（新增或更新）
-func SaveDept(form *model.DeptForm) error {
-	exists, err := repository.CheckDeptNameExists(form.Name, int64(form.ParentID), int64(form.ID))
+func (s *Service) SaveDept(form *model.DeptForm) error {
+	exists, err := s.repo.CheckDeptNameExists(form.Name, int64(form.ParentID), int64(form.ID))
 	if err != nil {
 		return errs.SystemError("检查部门名称失败")
 	}
@@ -91,7 +113,7 @@ func SaveDept(form *model.DeptForm) error {
 		return errs.BadRequest("同级部门名称已存在")
 	}
 
-	exists, err = repository.CheckDeptCodeExists(form.Code, int64(form.ID))
+	exists, err = s.repo.CheckDeptCodeExists(form.Code, int64(form.ID))
 	if err != nil {
 		return errs.SystemError("检查部门编号失败")
 	}
@@ -111,7 +133,7 @@ func SaveDept(form *model.DeptForm) error {
 	if form.ParentID == 0 {
 		dept.TreePath = "0"
 	} else {
-		parent, err := repository.GetDeptByID(int64(form.ParentID))
+		parent, err := s.repo.GetDeptByID(int64(form.ParentID))
 		if err != nil {
 			return errs.SystemError("查询父部门失败")
 		}
@@ -119,11 +141,11 @@ func SaveDept(form *model.DeptForm) error {
 	}
 
 	if form.ID == 0 {
-		if err := repository.CreateDept(dept); err != nil {
+		if err := s.repo.CreateDept(dept); err != nil {
 			return errs.SystemError("创建部门失败")
 		}
 	} else {
-		if err := repository.UpdateDept(dept); err != nil {
+		if err := s.repo.UpdateDept(dept); err != nil {
 			return errs.SystemError("更新部门失败")
 		}
 	}
@@ -132,8 +154,8 @@ func SaveDept(form *model.DeptForm) error {
 }
 
 // GetDeptForm 获取部门表单数据
-func GetDeptForm(id int64) (*model.DeptForm, error) {
-	dept, err := repository.GetDeptByID(id)
+func (s *Service) GetDeptForm(id int64) (*model.DeptForm, error) {
+	dept, err := s.repo.GetDeptByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errs.NotFound("部门不存在")
@@ -152,8 +174,8 @@ func GetDeptForm(id int64) (*model.DeptForm, error) {
 }
 
 // DeleteDept 删除部门
-func DeleteDept(id int64) error {
-	_, err := repository.GetDeptByID(id)
+func (s *Service) DeleteDept(id int64) error {
+	_, err := s.repo.GetDeptByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errs.NotFound("部门不存在")
@@ -161,7 +183,7 @@ func DeleteDept(id int64) error {
 		return errs.SystemError("查询部门失败")
 	}
 
-	count, err := repository.GetChildrenCount(id)
+	count, err := s.repo.GetChildrenCount(id)
 	if err != nil {
 		return errs.SystemError("查询子部门失败")
 	}
@@ -169,7 +191,7 @@ func DeleteDept(id int64) error {
 		return errs.BadRequest("请先删除子部门")
 	}
 
-	if err := repository.DeleteDept(id); err != nil {
+	if err := s.repo.DeleteDept(id); err != nil {
 		return errs.SystemError("删除部门失败")
 	}
 
