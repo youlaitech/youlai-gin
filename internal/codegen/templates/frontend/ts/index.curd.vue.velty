@@ -333,6 +333,7 @@ const addModalConfig: IModalConfig<${entityName}Form> = reactive({
     },
 #end
 #end
+#end
   ],
   // 提交函数
   formAction: (data: ${entityName}Form) => {
