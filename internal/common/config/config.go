@@ -15,8 +15,14 @@ type WechatConfig struct {
 	} `mapstructure:"miniapp"`
 }
 
+// ServerConfig 服务配置
+type ServerConfig struct {
+	Port int `mapstructure:"port"`
+}
+
 // Config 全局配置
 type Config struct {
+	Server   ServerConfig        `mapstructure:"server"`
 	Database database.Config     `mapstructure:"database"`
 	Logger   logger.Config       `mapstructure:"logger"`
 	Redis    redisConfig.Config  `mapstructure:"redis"`

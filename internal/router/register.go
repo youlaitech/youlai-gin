@@ -9,15 +9,11 @@ import (
 	"youlai-gin/internal/system"
 	pkgAuth "youlai-gin/internal/common/auth"
 	"youlai-gin/internal/message"
-	"youlai-gin/internal/middleware"
 )
 
 // Register 注册所有业务路由
 func Register(r *gin.Engine, tokenManager pkgAuth.TokenManager) {
 	api := r.Group("/api/v1")
-
-	// IP 限流中间件 (全局, 10 req/s per IP)
-	api.Use(middleware.RateLimitByIP())
 
 	// 认证模块（无需认证）
 	auth.RegisterRoutes(api, tokenManager)

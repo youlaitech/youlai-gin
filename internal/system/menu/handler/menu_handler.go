@@ -15,31 +15,43 @@ import (
 	"youlai-gin/internal/common/validator"
 )
 
-func RegisterMenuRoutes(r *gin.RouterGroup) {
+// Handler 菜单接口层
+type Handler struct {
+	svc *service.Service
+}
+
+// NewHandler 创建 Handler 实例
+func NewHandler(svc *service.Service) *Handler { return &Handler{svc: svc} }
+
+// RegisterRoutes 注册菜单路由
+func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 	menus := r.Group("/menus")
 	{
-		menus.GET("", GetMenuList)
-		menus.GET("/options", GetMenuOptions)
-		menus.GET("/routes", GetCurrentUserRoutes)
-		menus.POST("", auth.RequirePermission("sys:menu:create"), middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeInsert), SaveMenu)
-		menus.GET("/:id/form", auth.RequirePermission("sys:menu:update"), GetMenuForm)
-		menus.PUT("/:id", auth.RequirePermission("sys:menu:update"), middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeUpdate), UpdateMenu)
-		menus.DELETE("/:id", auth.RequirePermission("sys:menu:delete"), middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeDelete), DeleteMenu)
+		menus.GET("", h.GetMenuList)
+		menus.GET("/options", h.GetMenuOptions)
+		menus.GET("/routes", h.GetCurrentUserRoutes)
+		menus.POST("", auth.RequirePermission("sys:menu:create"), middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeInsert), h.SaveMenu)
+		menus.GET("/:id/form", auth.RequirePermission("sys:menu:update"), h.GetMenuForm)
+		menus.PUT("/:id", auth.RequirePermission("sys:menu:update"), middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeUpdate), h.UpdateMenu)
+		menus.DELETE("/:id", auth.RequirePermission("sys:menu:delete"), middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeDelete), h.DeleteMenu)
 	}
 }
+
+// @Summary 菜单列表
+
 
 // @Summary 菜单列表
 // @Tags 04.菜单接口
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus [get]
-func GetMenuList(c *gin.Context) {
+func (h *Handler) GetMenuList(c *gin.Context) {
 	var query model.MenuQuery
 	if err := validator.BindQuery(c, &query); err != nil {
 		c.Error(err)
 		return
 	}
 
-	list, err := service.GetMenuList(&query)
+	list, err := h.svc.GetMenuList(&query)
 	if err != nil {
 		c.Error(err)
 		return
@@ -52,10 +64,10 @@ func GetMenuList(c *gin.Context) {
 // @Tags 04.菜单接口
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/options [get]
-func GetMenuOptions(c *gin.Context) {
+func (h *Handler) GetMenuOptions(c *gin.Context) {
 	onlyParent := c.Query("onlyParent") == "true"
 
-	options, err := service.GetMenuOptions(onlyParent)
+	options, err := h.svc.GetMenuOptions(onlyParent)
 	if err != nil {
 		c.Error(err)
 		return
@@ -68,14 +80,14 @@ func GetMenuOptions(c *gin.Context) {
 // @Tags 04.菜单接口
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/routes [get]
-func GetCurrentUserRoutes(c *gin.Context) {
+func (h *Handler) GetCurrentUserRoutes(c *gin.Context) {
 	userId, err := appContext.GetUserIDMust(c)
 	if err != nil {
 		c.Error(errs.Unauthorized("未登录"))
 		return
 	}
 
-	routes, err := service.GetCurrentUserRoutes(userId)
+	routes, err := h.svc.GetCurrentUserRoutes(userId)
 	if err != nil {
 		c.Error(err)
 		return
@@ -89,14 +101,14 @@ func GetCurrentUserRoutes(c *gin.Context) {
 // @Param body body model.MenuForm true "菜单信息"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus [post]
-func SaveMenu(c *gin.Context) {
+func (h *Handler) SaveMenu(c *gin.Context) {
 	var form model.MenuForm
 	if err := validator.BindJSON(c, &form); err != nil {
 		c.Error(err)
 		return
 	}
 
-	if err := service.SaveMenu(&form); err != nil {
+	if err := h.svc.SaveMenu(&form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -109,14 +121,14 @@ func SaveMenu(c *gin.Context) {
 // @Param id path int true "菜单ID"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/{id}/form [get]
-func GetMenuForm(c *gin.Context) {
+func (h *Handler) GetMenuForm(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "菜单")
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	form, err := service.GetMenuForm(id)
+	form, err := h.svc.GetMenuForm(id)
 	if err != nil {
 		c.Error(err)
 		return
@@ -131,7 +143,7 @@ func GetMenuForm(c *gin.Context) {
 // @Param body body model.MenuForm true "菜单信息"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/{id} [put]
-func UpdateMenu(c *gin.Context) {
+func (h *Handler) UpdateMenu(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "菜单")
 	if err != nil {
 		c.Error(err)
@@ -145,7 +157,7 @@ func UpdateMenu(c *gin.Context) {
 	}
 
 	form.ID = types.BigInt(id)
-	if err := service.SaveMenu(&form); err != nil {
+	if err := h.svc.SaveMenu(&form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -158,14 +170,14 @@ func UpdateMenu(c *gin.Context) {
 // @Param id path int true "菜单ID"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/{id} [delete]
-func DeleteMenu(c *gin.Context) {
+func (h *Handler) DeleteMenu(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "菜单")
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	if err := service.DeleteMenu(id); err != nil {
+	if err := h.svc.DeleteMenu(id); err != nil {
 		c.Error(err)
 		return
 	}

@@ -2,17 +2,18 @@ package database
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
+
+	"youlai-gin/internal/common/logger"
 )
 
 var DB *gorm.DB
 
-// NewDB Wire Provider：返回数据库实例
+// NewDB 创建数据库连接
 func NewDB(cfg *Config) (*gorm.DB, error) {
 	dsn := cfg.DSN()
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
@@ -32,7 +33,7 @@ func NewDB(cfg *Config) (*gorm.DB, error) {
 	}
 
 	DB = db
-	log.Println("✓ 数据库连接成功")
+	logger.Log.Sugar().Info("数据库连接成功")
 	return db, nil
 }
 

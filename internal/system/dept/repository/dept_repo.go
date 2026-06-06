@@ -13,7 +13,7 @@ type Repository struct {
 	db *gorm.DB
 }
 
-// NewRepository Wire Provider
+// NewRepository 创建 Repository 实例
 func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }

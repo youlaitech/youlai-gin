@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -12,6 +11,8 @@ import (
 	"time"
 
 	"github.com/viant/velty"
+
+	"youlai-gin/internal/common/logger"
 
 	"youlai-gin/internal/common/database"
 	"youlai-gin/internal/codegen/model"
@@ -424,7 +425,7 @@ func SaveGenConfig(tableName string, body *model.GenConfigForm) error {
 
 		if body.ParentMenuId != nil && *body.ParentMenuId > 0 {
 			if err := menuService.AddMenuForCodegen(*body.ParentMenuId, tableName, moduleName, businessName, entityName); err != nil {
-				fmt.Printf("添加菜单失败: %v\n", err)
+				logger.Log.Sugar().Errorf("添加菜单失败: %v", err)
 			}
 		}
 
@@ -487,7 +488,7 @@ func SaveGenConfig(tableName string, body *model.GenConfigForm) error {
 
 	if body.ParentMenuId != nil && *body.ParentMenuId > 0 {
 		if err := menuService.AddMenuForCodegen(*body.ParentMenuId, tableName, moduleName, businessName, entityName); err != nil {
-			fmt.Printf("添加菜单失败: %v\n", err)
+			logger.Log.Sugar().Errorf("添加菜单失败: %v", err)
 		}
 	}
 
@@ -598,7 +599,7 @@ func renderTemplate(
 		return "", errs.SystemError("读取模板失败: " + absPath)
 	}
 
-	log.Printf("[CODEGEN] 编译模板: %s (%d bytes)", absPath, len(content))
+	logger.Log.Sugar().Debugf("编译模板: %s (%d bytes)", absPath, len(content))
 	planner := velty.New()
 	_ = planner.RegisterFunction("trim", strings.TrimSpace)
 	_ = planner.RegisterFunction("contains", strings.Contains)
@@ -623,7 +624,7 @@ func renderTemplate(
 
 	exec, newState, err := planner.Compile(content)
 	if err != nil {
-		log.Printf("[CODEGEN] 编译失败: %s, 错误: %s", absPath, err.Error())
+		logger.Log.Sugar().Errorf("编译失败: %s, 错误: %s", absPath, err.Error())
 		return "", errs.SystemError("编译模板失败[" + effectivePath + "]: " + err.Error())
 	}
 
@@ -692,11 +693,11 @@ func renderTemplate(
 
 	exec.Exec(state)
 	if !state.IsValid() {
-		log.Printf("[CODEGEN] 渲染失败: %s, state=%v", absPath, state.IsValid())
+		logger.Log.Sugar().Errorf("渲染失败: %s, state=%v", absPath, state.IsValid())
 		return "", errs.SystemError("渲染模板失败: " + absPath)
 	}
 	result := state.Buffer.String()
-	log.Printf("[CODEGEN] 渲染成功: %s, 输出=%d bytes", absPath, len(result))
+	logger.Log.Sugar().Debugf("渲染成功: %s, 输出=%d bytes", absPath, len(result))
 	return result, nil
 }
 

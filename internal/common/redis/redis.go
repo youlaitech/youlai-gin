@@ -10,32 +10,32 @@ import (
 
 // Config Redis 配置
 type Config struct {
-	Host     string        `yaml:"host"`
-	Port     int           `yaml:"port"`
-	Password string        `yaml:"password"`
-	Database int           `yaml:"database"`
-	Pool     PoolConfig    `yaml:"pool"`
-	Timeout  TimeoutConfig `yaml:"timeout"`
+	Host     string        `mapstructure:"host"`
+	Port     int           `mapstructure:"port"`
+	Password string        `mapstructure:"password"`
+	Database int           `mapstructure:"database"`
+	Pool     PoolConfig    `mapstructure:"pool"`
+	Timeout  TimeoutConfig `mapstructure:"timeout"`
 }
 
 // PoolConfig 连接池配置
 type PoolConfig struct {
-	MaxIdle   int `yaml:"maxIdle"`
-	MaxActive int `yaml:"maxActive"`
-	MinIdle   int `yaml:"minIdle"`
+	MaxIdle   int `mapstructure:"maxIdle"`
+	MaxActive int `mapstructure:"maxActive"`
+	MinIdle   int `mapstructure:"minIdle"`
 }
 
 // TimeoutConfig 超时配置
 type TimeoutConfig struct {
-	Dial  int `yaml:"dial"`
-	Read  int `yaml:"read"`
-	Write int `yaml:"write"`
-	Pool  int `yaml:"pool"`
+	Dial  int `mapstructure:"dial"`
+	Read  int `mapstructure:"read"`
+	Write int `mapstructure:"write"`
+	Pool  int `mapstructure:"pool"`
 }
 
 var Client *redis.Client
 
-// NewClient Wire Provider：返回 Redis 客户端
+// NewClient 创建 Redis 客户端
 func NewClient(cfg *Config) *redis.Client {
 	client := redis.NewClient(&redis.Options{
 		Addr:         fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),

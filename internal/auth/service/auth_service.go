@@ -14,10 +14,10 @@ import (
 
 	authModel "youlai-gin/internal/auth/model"
 	permService "youlai-gin/internal/common/permission/service"
+	"youlai-gin/internal/common/redis"
 	userRepo "youlai-gin/internal/system/user/repository"
 	"youlai-gin/internal/common/auth"
 	"youlai-gin/pkg/errs"
-	"youlai-gin/internal/common/redis"
 )
 
 // tokenManager 全局 TokenManager 实例

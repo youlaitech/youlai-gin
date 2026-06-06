@@ -14,6 +14,7 @@ import (
 	"youlai-gin/internal/common/validator"
 )
 
+// RegisterRoleRoutes
 func RegisterRoleRoutes(r *gin.RouterGroup) {
 	roles := r.Group("/roles")
 	{

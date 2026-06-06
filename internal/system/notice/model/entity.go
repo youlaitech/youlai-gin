@@ -7,7 +7,7 @@ import (
 
 // Notice 通知公告实体
 type Notice struct {
-	ID          types.BigInt `gorm:"primaryKey;autoIncrement" json:"id"`
+	ID          types.BigInt `gorm:"primaryKey;autoIncrement" json:"id"` // 主键
 	Title       string       `gorm:"column:title;size:200;not null" json:"title"`
 	Content     string       `gorm:"column:content;type:text" json:"content"`
 	Type        int          `gorm:"column:type;default:1" json:"type"`             // 1:通知 2:公告
@@ -27,13 +27,13 @@ func (Notice) TableName() string {
 
 // UserNotice 用户通知记录
 type UserNotice struct {
-	ID         types.BigInt `gorm:"primaryKey;autoIncrement" json:"id"`
+	ID         types.BigInt `gorm:"primaryKey;autoIncrement" json:"id"` // 主键
 	NoticeID   types.BigInt `gorm:"column:notice_id;not null" json:"noticeId"`
 	UserID     types.BigInt `gorm:"column:user_id;not null" json:"userId"`
 	IsRead     int          `gorm:"column:is_read;default:0" json:"isRead"` // 0:未读 1:已读
 	ReadTime   string       `gorm:"column:read_time" json:"readTime"`
-	CreateTime string       `gorm:"column:create_time" json:"createTime"`
-	UpdateTime string       `gorm:"column:update_time" json:"updateTime"`
+	CreateTime string       `gorm:"column:create_time" json:"createTime"` // 创建时间
+	UpdateTime string       `gorm:"column:update_time" json:"updateTime"` // 更新时间
 	IsDeleted  int          `gorm:"column:is_deleted;default:0" json:"isDeleted"`
 }
 

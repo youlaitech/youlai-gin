@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -94,7 +95,7 @@ func main() {
 	if err := redis.InitWithConfig(&config.Cfg.Redis); err != nil {
 		log.Fatalf("Redis 初始化失败: %v", err)
 	}
-	log.Printf("Redis 已连接: %s:%d (db=%d)", config.Cfg.Redis.Host, config.Cfg.Redis.Port, config.Cfg.Redis.Database)
+	logger.Log.Sugar().Infof("Redis 已连接: %s:%d (db=%d)", config.Cfg.Redis.Host, config.Cfg.Redis.Port, config.Cfg.Redis.Database)
 
 	// 初始化 SSE 服务
 	message.InitSseService()
@@ -133,17 +134,18 @@ func main() {
 		swaggerHandler(c)
 	})
 
-	logger.Log.Sugar().Infof("服务启动在 :8000 [环境: %s]", config.GetEnv())
+	addr := fmt.Sprintf(":%d", config.Cfg.Server.Port)
+	logger.Log.Sugar().Infof("服务启动在 %s [环境: %s]", addr, config.GetEnv())
 
 	srv := &http.Server{
-		Addr:    ":8000",
+		Addr:    addr,
 		Handler: r,
 	}
 
 	// 优雅关闭
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("failed to start server: %v", err)
+			log.Fatalf("服务启动失败: %v", err)
 		}
 	}()
 
@@ -159,7 +161,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("服务器关闭失败: %v", err)
+		log.Fatalf("服务关闭失败: %v", err)
 	}
 	logger.Log.Sugar().Info("服务器已关闭")
 }

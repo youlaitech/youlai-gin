@@ -7,12 +7,12 @@ import (
 
 // Role 角色实体
 type Role struct {
-	ID        types.BigInt `gorm:"primaryKey;autoIncrement" json:"id"`
-	Name      string       `gorm:"column:name;not null" json:"name"`
-	Code      string       `gorm:"column:code;not null;uniqueIndex:uk_code" json:"code"`
-	Sort      int          `gorm:"column:sort" json:"sort"`
-	Status    int          `gorm:"column:status;default:1" json:"status"`
-	DataScope int          `gorm:"column:data_scope" json:"dataScope"`
+	ID        types.BigInt `gorm:"primaryKey;autoIncrement" json:"id"` // 主键
+	Name      string       `gorm:"column:name;not null" json:"name"` // 名称
+	Code      string       `gorm:"column:code;not null;uniqueIndex:uk_code" json:"code"` // 编码
+	Sort      int          `gorm:"column:sort" json:"sort"` // 排序
+	Status    int          `gorm:"column:status;default:1" json:"status"` // 状态(1启用0禁用)
+	DataScope int          `gorm:"column:data_scope" json:"dataScope"` // 数据权限范围
 	common.BaseEntity
 }
 

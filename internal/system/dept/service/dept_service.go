@@ -31,7 +31,7 @@ type Service struct {
 	repo Repository
 }
 
-// NewService Wire Provider
+// NewService 创建 Service 实例
 func NewService(repo Repository) *Service {
 	return &Service{repo: repo}
 }

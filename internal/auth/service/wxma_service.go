@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
+	"youlai-gin/internal/common/logger"
 	"net/http"
 	"time"
 
@@ -34,7 +34,7 @@ var wechatCfg wechatConfig
 // InitWechatConfig 初始化微信配置
 func InitWechatConfig() {
 	if config.Cfg == nil {
-		slog.Error("配置未初始化，无法获取微信配置")
+		logger.Log.Sugar().Errorw("配置未初始化，无法获取微信配置")
 		return
 	}
 
@@ -43,7 +43,7 @@ func InitWechatConfig() {
 		AppSecret: config.Cfg.Wechat.Miniapp.AppSecret,
 	}
 
-	slog.Info("微信配置初始化完成", "appId", wechatCfg.AppID)
+	logger.Log.Sugar().Infow("微信配置初始化完成", "appId", wechatCfg.AppID)
 }
 
 // WechatSessionResponse 微信会话响应
@@ -104,12 +104,12 @@ func SilentLogin(code string) (*authModel.WxMaLoginResult, error) {
 	}
 
 	if err != gorm.ErrRecordNotFound {
-		slog.Error("查询用户绑定失败", "error", err)
+		logger.Log.Sugar().Errorw("查询用户绑定失败", "error", err)
 		return nil, errs.SystemError("查询用户绑定失败")
 	}
 
 	// 未绑定用户，返回需要绑定手机号
-	slog.Info("微信小程序静默登录：用户未绑定手机号", "openId", openID)
+	logger.Log.Sugar().Infow("微信小程序静默登录：用户未绑定手机号", "openId", openID)
 	return &authModel.WxMaLoginResult{
 		NeedBindMobile: true,
 		OpenID:         openID,
@@ -130,7 +130,7 @@ func PhoneLogin(loginCode, phoneCode string) (*auth.AuthenticationToken, error) 
 		return nil, err
 	}
 
-	slog.Info("微信小程序手机号快捷登录", "openId", session.OpenID, "mobile", mobile)
+	logger.Log.Sugar().Infow("微信小程序手机号快捷登录", "openId", session.OpenID, "mobile", mobile)
 
 	// 查询或创建用户
 	user, err := findOrCreateUser(mobile)
@@ -161,7 +161,7 @@ func BindMobile(openID, mobile, smsCode string) (*auth.AuthenticationToken, erro
 	// 绑定微信 openid
 	bindWechatOpenID(int64(user.ID), openID, "", "")
 
-	slog.Info("微信小程序绑定手机号成功", "mobile", mobile, "openId", openID)
+	logger.Log.Sugar().Infow("微信小程序绑定手机号成功", "mobile", mobile, "openId", openID)
 
 	// 生成认证令牌
 	return generateTokenByUser(user)
@@ -174,7 +174,7 @@ func getJsCodeSession(code string) (*WechatSessionResponse, error) {
 
 	resp, err := http.Get(url)
 	if err != nil {
-		slog.Error("获取微信会话信息失败", "code", code, "error", err)
+		logger.Log.Sugar().Errorw("获取微信会话信息失败", "code", code, "error", err)
 		return nil, errs.BadRequest("微信登录失败，请稍后重试")
 	}
 	defer resp.Body.Close()
@@ -185,7 +185,7 @@ func getJsCodeSession(code string) (*WechatSessionResponse, error) {
 	}
 
 	if result.ErrCode != 0 {
-		slog.Error("获取微信会话信息失败", "code", code, "errcode", result.ErrCode, "errmsg", result.ErrMsg)
+		logger.Log.Sugar().Errorw("获取微信会话信息失败", "code", code, "errcode", result.ErrCode, "errmsg", result.ErrMsg)
 		return nil, errs.BadRequest("微信登录失败，请稍后重试")
 	}
 
@@ -203,7 +203,7 @@ func getPhoneNumber(phoneCode string) (string, error) {
 
 	resp, err := http.Get(url)
 	if err != nil {
-		slog.Error("获取微信手机号失败", "phoneCode", phoneCode, "error", err)
+		logger.Log.Sugar().Errorw("获取微信手机号失败", "phoneCode", phoneCode, "error", err)
 		return "", errs.BadRequest("获取手机号失败，请稍后重试")
 	}
 	defer resp.Body.Close()
@@ -214,7 +214,7 @@ func getPhoneNumber(phoneCode string) (string, error) {
 	}
 
 	if result.ErrCode != 0 {
-		slog.Error("获取微信手机号失败", "phoneCode", phoneCode, "errcode", result.ErrCode, "errmsg", result.ErrMsg)
+		logger.Log.Sugar().Errorw("获取微信手机号失败", "phoneCode", phoneCode, "errcode", result.ErrCode, "errmsg", result.ErrMsg)
 		return "", errs.BadRequest("获取手机号失败，请稍后重试")
 	}
 
@@ -289,7 +289,7 @@ func findOrCreateUser(mobile string) (*model.User, error) {
 	}
 
 	tx.Commit()
-	slog.Info("微信小程序登录：创建新用户", "mobile", mobile, "userId", user.ID)
+	logger.Log.Sugar().Infow("微信小程序登录：创建新用户", "mobile", mobile, "userId", user.ID)
 	return user, nil
 }
 

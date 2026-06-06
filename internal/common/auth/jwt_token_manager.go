@@ -15,10 +15,10 @@ import (
 
 // JwtConfig JWT 配置
 type JwtConfig struct {
-	SecretKey              string // 密钥
-	AccessTokenTTL         int    // 访问令牌过期时间（秒）
-	RefreshTokenTTL        int    // 刷新令牌过期时间（秒）
-	EnableSecurityVersion  bool   // 是否启用安全版本号
+	SecretKey             string `mapstructure:"secretKey"`             // 密钥
+	AccessTokenTTL        int    `mapstructure:"accessTokenTTL"`        // 访问令牌过期时间（秒）
+	RefreshTokenTTL       int    `mapstructure:"refreshTokenTTL"`       // 刷新令牌过期时间（秒）
+	EnableSecurityVersion bool   `mapstructure:"enableSecurityVersion"` // 是否启用安全版本号
 }
 
 // JwtTokenManager JWT Token 管理器
@@ -125,7 +125,7 @@ func (m *JwtTokenManager) ParseToken(tokenString string) (*UserDetails, error) {
 		}, nil
 	}
 
-	return nil, errors.New("invalid token")
+	return nil, errors.New("无效的Token")
 }
 
 // ValidateToken 校验 Token 是否有效
@@ -182,7 +182,7 @@ func (m *JwtTokenManager) validateToken(tokenString string, isRefreshToken bool)
 // RefreshToken 刷新 Token
 func (m *JwtTokenManager) RefreshToken(refreshToken string) (*AuthenticationToken, error) {
 	if !m.ValidateRefreshToken(refreshToken) {
-		return nil, errors.New("invalid refresh token")
+		return nil, errors.New("无效的刷新Token")
 	}
 
 	user, err := m.ParseToken(refreshToken)
@@ -216,7 +216,7 @@ func (m *JwtTokenManager) InvalidateToken(tokenString string) error {
 
 	claims, ok := token.Claims.(*CustomClaims)
 	if !ok {
-		return errors.New("invalid token claims")
+		return errors.New("无效的Token声明")
 	}
 
 	// 计算剩余过期时间
@@ -233,7 +233,7 @@ func (m *JwtTokenManager) InvalidateToken(tokenString string) error {
 // InvalidateUserSessions 使指定用户的所有会话失效
 func (m *JwtTokenManager) InvalidateUserSessions(userID int64) error {
 	if !m.config.EnableSecurityVersion {
-		return errors.New("security version not enabled")
+		return errors.New("安全版本号未启用")
 	}
 
 	ctx := context.Background()

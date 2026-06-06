@@ -8,7 +8,7 @@ import (
 
 // Log 操作日志实体（对应 sys_log 表）
 type Log struct {
-	ID            types.BigInt `gorm:"primaryKey;autoIncrement" json:"id"`
+	ID            types.BigInt `gorm:"primaryKey;autoIncrement" json:"id"` // 主键
 	Module        int         `gorm:"column:module" json:"module"`
 	ActionType    int         `gorm:"column:action_type" json:"actionType"`
 	Title         string      `gorm:"column:title;size:100" json:"title"`
@@ -23,10 +23,10 @@ type Log struct {
 	Device        string      `gorm:"column:device;size:100" json:"device"`
 	OS            string      `gorm:"column:os;size:100" json:"os"`
 	Browser       string      `gorm:"column:browser;size:100" json:"browser"`
-	Status        int         `gorm:"column:status" json:"status"`
+	Status        int         `gorm:"column:status" json:"status"` // 状态(1启用0禁用)
 	ErrorMsg      string      `gorm:"column:error_msg;size:255" json:"errorMsg"`
 	ExecutionTime int         `gorm:"column:execution_time" json:"executionTime"`
-	CreateTime    time.Time   `gorm:"column:create_time;autoCreateTime" json:"createTime"`
+	CreateTime    time.Time   `gorm:"column:create_time;autoCreateTime" json:"createTime"` // 创建时间
 }
 
 func (Log) TableName() string {

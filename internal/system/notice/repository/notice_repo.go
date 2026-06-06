@@ -63,6 +63,7 @@ func UpdateNotice(notice *model.Notice) error {
 	return database.DB.Model(notice).Updates(notice).Error
 }
 
+// UpdateNoticeFields
 func UpdateNoticeFields(id int64, fields map[string]interface{}) error {
 	if id <= 0 {
 		return nil

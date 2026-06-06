@@ -19,7 +19,7 @@ type Handler struct {
 	svc *service.Service
 }
 
-// NewHandler Wire Provider
+// NewHandler 创建 Handler 实例
 func NewHandler(svc *service.Service) *Handler {
 	return &Handler{svc: svc}
 }

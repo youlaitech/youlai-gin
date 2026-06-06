@@ -26,9 +26,9 @@ const TokenValidAfterTTLSeconds = 7 * 24 * 60 * 60
 
 // RedisTokenConfig Redis Token 配置
 type RedisTokenConfig struct {
-	AccessTokenTTL  int  // 访问令牌过期时间（秒）
-	RefreshTokenTTL int  // 刷新令牌过期时间（秒）
-	AllowMultiLogin bool // 是否允许多设备登录
+	AccessTokenTTL  int  `mapstructure:"accessTokenTTL"`  // 访问令牌过期时间（秒）
+	RefreshTokenTTL int  `mapstructure:"refreshTokenTTL"` // 刷新令牌过期时间（秒）
+	AllowMultiLogin bool `mapstructure:"allowMultiLogin"` // 是否允许多设备登录
 }
 
 // RedisTokenManager Redis Token 管理器
@@ -90,7 +90,7 @@ func (m *RedisTokenManager) ParseToken(token string) (*UserDetails, error) {
 
 	data, err := redisClient.Client.Get(ctx, key).Result()
 	if err != nil {
-		return nil, errors.New("token not found or expired")
+		return nil, errors.New("Token不存在或已过期")
 	}
 
 	var userSession UserSession
@@ -120,7 +120,7 @@ func (m *RedisTokenManager) ValidateRefreshToken(refreshToken string) bool {
 // RefreshToken 刷新 Token
 func (m *RedisTokenManager) RefreshToken(refreshToken string) (*AuthenticationToken, error) {
 	if !m.ValidateRefreshToken(refreshToken) {
-		return nil, errors.New("invalid refresh token")
+		return nil, errors.New("无效的刷新Token")
 	}
 
 	ctx := context.Background()
@@ -128,7 +128,7 @@ func (m *RedisTokenManager) RefreshToken(refreshToken string) (*AuthenticationTo
 
 	data, err := redisClient.Client.Get(ctx, refreshKey).Result()
 	if err != nil {
-		return nil, errors.New("refresh token expired")
+		return nil, errors.New("刷新Token已过期")
 	}
 
 	var userSession UserSession
