@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"image/color"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,10 +14,10 @@ import (
 	"gorm.io/gorm"
 
 	authModel "youlai-gin/internal/auth/model"
+	"youlai-gin/internal/common/auth"
 	permService "youlai-gin/internal/common/permission/service"
 	"youlai-gin/internal/common/redis"
 	userRepo "youlai-gin/internal/system/user/repository"
-	"youlai-gin/internal/common/auth"
 	"youlai-gin/pkg/errs"
 )
 
@@ -36,14 +37,14 @@ func GetCaptcha() (*authModel.CaptchaVO, error) {
 	// 清新亮色验证码配置（浅色背景 + 无干扰线/噪点）
 	bgColor := &color.RGBA{R: 240, G: 248, B: 255, A: 255}
 	driver := base64Captcha.NewDriverString(
-		44,           // 高度 44px
-		140,          // 宽度 140px
-		0,            // 噪点数量 0（清爽）
-		0,            // 无干扰线
-		4,            // 验证码长度 4位
-		"23456789",   // 只使用清晰数字
-		bgColor,      // 浅色背景
-		nil,          // 默认字体
+		44,         // 高度 44px
+		140,        // 宽度 140px
+		0,          // 噪点数量 0（清爽）
+		0,          // 无干扰线
+		4,          // 验证码长度 4位
+		"23456789", // 只使用清晰数字
+		bgColor,    // 浅色背景
+		nil,        // 默认字体
 	)
 
 	// 生成验证码
@@ -56,29 +57,33 @@ func GetCaptcha() (*authModel.CaptchaVO, error) {
 	// 获取验证码答案
 	answer := captchaStore.Get(id, false)
 
-	// 生成验证码 Key
-	captchaKey := uuid.New().String()
+	// 生成验证码 ID
+	captchaID := uuid.New().String()
 
 	// 将验证码存储到 Redis（5分钟过期）
-	redisKey := fmt.Sprintf("captcha:image:%s", captchaKey)
+	redisKey := fmt.Sprintf("captcha:image:%s", captchaID)
 	ctx := context.Background()
 	err = redis.Client.Set(ctx, redisKey, answer, 5*time.Minute).Err()
 	if err != nil {
 		// Redis 失败回退到内存存储
-		captchaStore.Set(captchaKey, answer)
+		captchaStore.Set(captchaID, answer)
 	}
 
 	// 清理内存中的验证码ID（我们使用自己的key）
 	captchaStore.Set(id, "")
 
 	return &authModel.CaptchaVO{
-		CaptchaKey:    captchaKey,
+		CaptchaID:     captchaID,
 		CaptchaBase64: b64s,
 	}, nil
 }
 
 // Login 账号密码登录
 func Login(req *authModel.LoginRequest) (*auth.AuthenticationToken, int64, error) {
+	if err := validateImageCaptcha(req.CaptchaID, req.CaptchaCode); err != nil {
+		return nil, 0, err
+	}
+
 	user, err := userRepo.GetUserByUsername(req.Username)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -106,11 +111,11 @@ func Login(req *authModel.LoginRequest) (*auth.AuthenticationToken, int64, error
 	}
 
 	userDetails := &auth.UserDetails{
-		UserID:    int64(user.ID),
-		Username:  user.Username,
-		DeptID:    user.DeptID,
+		UserID:     int64(user.ID),
+		Username:   user.Username,
+		DeptID:     user.DeptID,
 		DataScopes: dataScopes,
-		Roles:     roles,
+		Roles:      roles,
 	}
 
 	token, err := tokenManager.GenerateToken(userDetails)
@@ -119,6 +124,32 @@ func Login(req *authModel.LoginRequest) (*auth.AuthenticationToken, int64, error
 	}
 
 	return token, int64(user.ID), nil
+}
+
+func validateImageCaptcha(captchaID, captchaCode string) error {
+	if captchaID == "" || captchaCode == "" {
+		return errs.BadRequest("验证码不能为空")
+	}
+
+	ctx := context.Background()
+	redisKey := fmt.Sprintf("captcha:image:%s", captchaID)
+	answer, err := redis.Client.Get(ctx, redisKey).Result()
+	if err == nil {
+		redis.Client.Del(ctx, redisKey)
+		if strings.EqualFold(answer, captchaCode) {
+			return nil
+		}
+		return errs.BadRequest("验证码错误")
+	}
+
+	answer = captchaStore.Get(captchaID, true)
+	if answer == "" {
+		return errs.BadRequest("验证码已过期")
+	}
+	if !strings.EqualFold(answer, captchaCode) {
+		return errs.BadRequest("验证码错误")
+	}
+	return nil
 }
 
 // Logout 退出登录
@@ -200,11 +231,11 @@ func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, int6
 	redis.Client.Del(ctx, redisKey)
 
 	userDetails := &auth.UserDetails{
-		UserID:    int64(user.ID),
-		Username:  user.Username,
-		DeptID:    user.DeptID,
+		UserID:     int64(user.ID),
+		Username:   user.Username,
+		DeptID:     user.DeptID,
 		DataScopes: dataScopes,
-		Roles:     roles,
+		Roles:      roles,
 	}
 
 	token, err := tokenManager.GenerateToken(userDetails)

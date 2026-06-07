@@ -11,7 +11,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "01.认证接口"
+                    "01.认证中心"
                 ],
                 "summary": "获取验证码",
                 "responses": {
@@ -35,7 +35,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "01.认证接口"
+                    "01.认证中心"
                 ],
                 "summary": "账号密码登录",
                 "parameters": [
@@ -70,7 +70,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "01.认证接口"
+                    "01.认证中心"
                 ],
                 "summary": "短信验证码登录",
                 "parameters": [
@@ -110,7 +110,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "01.认证接口"
+                    "01.认证中心"
                 ],
                 "summary": "退出登录",
                 "responses": {
@@ -128,27 +128,22 @@
             "post": {
                 "description": "使用刷新令牌获取新的访问令牌",
                 "consumes": [
-                    "application/json"
+                    "application/x-www-form-urlencoded"
                 ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "01.认证接口"
+                    "01.认证中心"
                 ],
                 "summary": "刷新令牌",
                 "parameters": [
                     {
-                        "description": "刷新令牌信息 {\\",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
+                        "type": "string",
+                        "description": "刷新令牌",
+                        "name": "refreshToken",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -172,7 +167,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "01.认证接口"
+                    "01.认证中心"
                 ],
                 "summary": "发送登录短信验证码",
                 "parameters": [
@@ -426,463 +421,6 @@
                 "responses": {}
             }
         },
-        "/api/v1/depts": {
-            "get": {
-                "tags": [
-                    "05.部门接口"
-                ],
-                "summary": "部门列表",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "05.部门接口"
-                ],
-                "summary": "新增部门",
-                "parameters": [
-                    {
-                        "description": "部门信息",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.DeptForm"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/depts/options": {
-            "get": {
-                "tags": [
-                    "05.部门接口"
-                ],
-                "summary": "部门下拉列表",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/depts/{id}": {
-            "put": {
-                "tags": [
-                    "05.部门接口"
-                ],
-                "summary": "更新部门",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "部门ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "部门信息",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.DeptForm"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "05.部门接口"
-                ],
-                "summary": "删除部门",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "部门ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/depts/{id}/form": {
-            "get": {
-                "tags": [
-                    "05.部门接口"
-                ],
-                "summary": "获取部门表单数据",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "部门ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/dicts": {
-            "get": {
-                "tags": [
-                    "06.字典接口"
-                ],
-                "summary": "字典分页列表",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "06.字典接口"
-                ],
-                "summary": "新增字典",
-                "parameters": [
-                    {
-                        "description": "字典信息",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.DictForm"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/dicts/options": {
-            "get": {
-                "tags": [
-                    "06.字典接口"
-                ],
-                "summary": "字典下拉列表",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/dicts/{id}": {
-            "put": {
-                "tags": [
-                    "06.字典接口"
-                ],
-                "summary": "更新字典",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "字典ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "字典信息",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.DictForm"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "06.字典接口"
-                ],
-                "summary": "删除字典",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "字典ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/dicts/{id}/form": {
-            "get": {
-                "tags": [
-                    "06.字典接口"
-                ],
-                "summary": "获取字典表单数据",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "字典ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/dicts/{id}/items": {
-            "get": {
-                "tags": [
-                    "06.字典接口"
-                ],
-                "summary": "字典项列表",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "字典编码",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "06.字典接口"
-                ],
-                "summary": "新增字典项",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "字典编码",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "字典项信息",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.DictItemForm"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/dicts/{id}/items/{itemIds}": {
-            "delete": {
-                "tags": [
-                    "06.字典接口"
-                ],
-                "summary": "删除字典项",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "字典编码",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "字典项ID（多个用逗号分隔）",
-                        "name": "itemIds",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/dicts/{id}/items/{itemId}": {
-            "put": {
-                "tags": [
-                    "06.字典接口"
-                ],
-                "summary": "修改字典项",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "字典编码",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "字典项ID",
-                        "name": "itemId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "字典项信息",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.DictItemForm"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/dicts/{id}/items/{itemId}/form": {
-            "get": {
-                "tags": [
-                    "06.字典接口"
-                ],
-                "summary": "字典项表单数据",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "字典编码",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "字典项ID",
-                        "name": "itemId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/files": {
             "post": {
                 "consumes": [
@@ -916,7 +454,7 @@
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/response.Result"
+                                    "$ref": "#/definitions/common.Result"
                                 },
                                 {
                                     "type": "object",
@@ -952,7 +490,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.Result"
+                            "$ref": "#/definitions/common.Result"
                         }
                     }
                 }
@@ -991,7 +529,7 @@
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/response.Result"
+                                    "$ref": "#/definitions/common.Result"
                                 },
                                 {
                                     "type": "object",
@@ -1037,7 +575,7 @@
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/response.Result"
+                                    "$ref": "#/definitions/common.Result"
                                 },
                                 {
                                     "type": "object",
@@ -1053,25 +591,6 @@
                 }
             }
         },
-        "/api/v1/health": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "98.基础能力"
-                ],
-                "summary": "健康检查",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/health.HealthResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/logs": {
             "get": {
                 "tags": [
@@ -1081,16 +600,16 @@
                 "responses": {}
             }
         },
-        "/api/v1/logs/visits/overview": {
+        "/api/v1/logs/analytics/overview": {
             "get": {
                 "tags": [
                     "09.日志接口"
                 ],
-                "summary": "访问概览",
+                "summary": "访问统计概览",
                 "responses": {}
             }
         },
-        "/api/v1/logs/visits/trend": {
+        "/api/v1/logs/analytics/trend": {
             "get": {
                 "tags": [
                     "09.日志接口"
@@ -1714,7 +1233,7 @@
                     "text/event-stream"
                 ],
                 "tags": [
-                    "14.SSE连接"
+                    "13.SSE连接"
                 ],
                 "summary": "建立SSE连接",
                 "parameters": [
@@ -1744,31 +1263,14 @@
                     "application/json"
                 ],
                 "tags": [
-                    "14.SSE连接"
+                    "13.SSE连接"
                 ],
                 "summary": "获取在线用户数",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.Result"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/user/perms": {
-            "get": {
-                "tags": [
-                    "04.菜单接口"
-                ],
-                "summary": "获取当前用户权限（按钮权限）",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/common.Result"
                         }
                     }
                 }
@@ -1821,6 +1323,15 @@
                     "02.用户接口"
                 ],
                 "summary": "导出用户",
+                "responses": {}
+            }
+        },
+        "/api/v1/users/import": {
+            "post": {
+                "tags": [
+                    "02.用户接口"
+                ],
+                "summary": "导入用户",
                 "responses": {}
             }
         },
@@ -1991,7 +1502,7 @@
                 "responses": {}
             }
         },
-        "/api/v1/wechat/miniapp/auth/bind-mobile": {
+        "/api/v1/wxma/auth/bind-mobile": {
             "post": {
                 "description": "微信小程序绑定手机号",
                 "consumes": [
@@ -2001,7 +1512,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "13.微信小程序认证"
+                    "12.微信小程序认证"
                 ],
                 "summary": "绑定手机号",
                 "parameters": [
@@ -2011,7 +1522,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.WechatBindMobileRequest"
+                            "$ref": "#/definitions/model.WxMaBindMobileRequest"
                         }
                     }
                 ],
@@ -2026,7 +1537,7 @@
                 }
             }
         },
-        "/api/v1/wechat/miniapp/auth/phone-login": {
+        "/api/v1/wxma/auth/phone-login": {
             "post": {
                 "description": "微信小程序手机号快捷登录",
                 "consumes": [
@@ -2036,7 +1547,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "13.微信小程序认证"
+                    "12.微信小程序认证"
                 ],
                 "summary": "手机号快捷登录",
                 "parameters": [
@@ -2046,7 +1557,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.WechatPhoneLoginRequest"
+                            "$ref": "#/definitions/model.WxMaPhoneLoginRequest"
                         }
                     }
                 ],
@@ -2061,7 +1572,7 @@
                 }
             }
         },
-        "/api/v1/wechat/miniapp/auth/silent-login": {
+        "/api/v1/wxma/auth/silent-login": {
             "post": {
                 "description": "微信小程序静默登录",
                 "consumes": [
@@ -2071,7 +1582,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "13.微信小程序认证"
+                    "12.微信小程序认证"
                 ],
                 "summary": "静默登录",
                 "parameters": [
@@ -2081,7 +1592,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.WechatSilentLoginRequest"
+                            "$ref": "#/definitions/model.WxMaSilentLoginRequest"
                         }
                     }
                 ],
@@ -2098,13 +1609,14 @@
         }
     },
     "definitions": {
-        "common.KeyValue": {
+        "common.Result": {
             "type": "object",
             "properties": {
-                "key": {
+                "code": {
                     "type": "string"
                 },
-                "value": {
+                "data": {},
+                "msg": {
                     "type": "string"
                 }
             }
@@ -2130,120 +1642,10 @@
                 }
             }
         },
-        "health.HealthResponse": {
+        "model.KeyValue": {
             "type": "object",
             "properties": {
-                "services": {
-                    "description": "服务状态",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "status": {
-                    "description": "状态：healthy, unhealthy",
-                    "type": "string"
-                },
-                "timestamp": {
-                    "description": "时间戳",
-                    "type": "integer"
-                },
-                "version": {
-                    "description": "版本号",
-                    "type": "string"
-                }
-            }
-        },
-        "model.DeptForm": {
-            "type": "object",
-            "required": [
-                "code",
-                "name"
-            ],
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "parentId": {
-                    "type": "integer"
-                },
-                "sort": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "integer",
-                    "enum": [
-                        0,
-                        1
-                    ]
-                }
-            }
-        },
-        "model.DictForm": {
-            "type": "object",
-            "required": [
-                "dictCode",
-                "name"
-            ],
-            "properties": {
-                "dictCode": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "remark": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "integer",
-                    "enum": [
-                        0,
-                        1
-                    ]
-                }
-            }
-        },
-        "model.DictItemForm": {
-            "type": "object",
-            "required": [
-                "dictCode",
-                "label",
-                "value"
-            ],
-            "properties": {
-                "dictCode": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "label": {
-                    "type": "string"
-                },
-                "remark": {
-                    "type": "string"
-                },
-                "sort": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "integer",
-                    "enum": [
-                        0,
-                        1
-                    ]
-                },
-                "tagType": {
+                "key": {
                     "type": "string"
                 },
                 "value": {
@@ -2254,10 +1656,22 @@
         "model.LoginRequest": {
             "type": "object",
             "required": [
+                "captchaCode",
+                "captchaId",
                 "password",
                 "username"
             ],
             "properties": {
+                "captchaCode": {
+                    "description": "验证码",
+                    "type": "string",
+                    "example": "1234"
+                },
+                "captchaId": {
+                    "description": "验证码缓存 ID",
+                    "type": "string",
+                    "example": "captcha_id_123"
+                },
                 "password": {
                     "description": "密码",
                     "type": "string",
@@ -2278,48 +1692,62 @@
             ],
             "properties": {
                 "alwaysShow": {
+                    "description": "始终显示",
                     "type": "integer"
                 },
                 "component": {
+                    "description": "前端组件",
                     "type": "string"
                 },
                 "icon": {
+                    "description": "图标",
                     "type": "string"
                 },
                 "id": {
+                    "description": "主键",
                     "type": "integer"
                 },
                 "keepAlive": {
+                    "description": "页面缓存",
                     "type": "integer"
                 },
                 "name": {
+                    "description": "名称",
                     "type": "string"
                 },
                 "params": {
+                    "description": "路由参数",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.KeyValue"
+                        "$ref": "#/definitions/model.KeyValue"
                     }
                 },
                 "parentId": {
+                    "description": "父级ID",
                     "type": "integer"
                 },
                 "perm": {
+                    "description": "权限标识",
                     "type": "string"
                 },
                 "redirect": {
+                    "description": "重定向",
                     "type": "string"
                 },
                 "routeName": {
+                    "description": "路由名称",
                     "type": "string"
                 },
                 "routePath": {
+                    "description": "路由路径",
                     "type": "string"
                 },
                 "sort": {
+                    "description": "排序",
                     "type": "integer"
                 },
                 "type": {
+                    "description": "类型(C目录/M菜单/B按钮)",
                     "type": "string",
                     "enum": [
                         "C",
@@ -2328,6 +1756,7 @@
                     ]
                 },
                 "visible": {
+                    "description": "是否可见",
                     "type": "integer",
                     "enum": [
                         0,
@@ -2344,9 +1773,11 @@
             ],
             "properties": {
                 "code": {
+                    "description": "编码",
                     "type": "string"
                 },
                 "dataScope": {
+                    "description": "数据权限范围",
                     "type": "integer",
                     "enum": [
                         1,
@@ -2357,21 +1788,26 @@
                     ]
                 },
                 "deptIds": {
+                    "description": "部门ID列表",
                     "type": "array",
                     "items": {
                         "type": "integer"
                     }
                 },
                 "id": {
+                    "description": "主键",
                     "type": "integer"
                 },
                 "name": {
+                    "description": "名称",
                     "type": "string"
                 },
                 "sort": {
+                    "description": "排序",
                     "type": "integer"
                 },
                 "status": {
+                    "description": "状态(1启用0禁用)",
                     "type": "integer",
                     "enum": [
                         0,
@@ -2395,11 +1831,11 @@
                 "mobile": {
                     "description": "手机号",
                     "type": "string",
-                    "example": "18812345678"
+                    "example": "18888888888"
                 }
             }
         },
-        "model.WechatBindMobileRequest": {
+        "model.WxMaBindMobileRequest": {
             "type": "object",
             "required": [
                 "mobile",
@@ -2410,7 +1846,7 @@
                 "mobile": {
                     "description": "手机号",
                     "type": "string",
-                    "example": "18812345678"
+                    "example": "18888888888"
                 },
                 "openId": {
                     "description": "微信openid",
@@ -2424,7 +1860,7 @@
                 }
             }
         },
-        "model.WechatPhoneLoginRequest": {
+        "model.WxMaPhoneLoginRequest": {
             "type": "object",
             "required": [
                 "loginCode",
@@ -2443,7 +1879,7 @@
                 }
             }
         },
-        "model.WechatSilentLoginRequest": {
+        "model.WxMaSilentLoginRequest": {
             "type": "object",
             "required": [
                 "code"
@@ -2453,18 +1889,6 @@
                     "description": "微信登录code",
                     "type": "string",
                     "example": "xxx"
-                }
-            }
-        },
-        "response.Result": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "data": {},
-                "msg": {
-                    "type": "string"
                 }
             }
         }

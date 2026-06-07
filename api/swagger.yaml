@@ -1,9 +1,10 @@
 definitions:
-  common.KeyValue:
+  common.Result:
     properties:
-      key:
+      code:
         type: string
-      value:
+      data: {}
+      msg:
         type: string
     type: object
   handler.UploadResult:
@@ -21,91 +22,23 @@ definitions:
         description: 访问URL
         type: string
     type: object
-  health.HealthResponse:
+  model.KeyValue:
     properties:
-      services:
-        additionalProperties:
-          type: string
-        description: 服务状态
-        type: object
-      status:
-        description: 状态：healthy, unhealthy
-        type: string
-      timestamp:
-        description: 时间戳
-        type: integer
-      version:
-        description: 版本号
-        type: string
-    type: object
-  model.DeptForm:
-    properties:
-      code:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      parentId:
-        type: integer
-      sort:
-        type: integer
-      status:
-        enum:
-        - 0
-        - 1
-        type: integer
-    required:
-    - code
-    - name
-    type: object
-  model.DictForm:
-    properties:
-      dictCode:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      remark:
-        type: string
-      status:
-        enum:
-        - 0
-        - 1
-        type: integer
-    required:
-    - dictCode
-    - name
-    type: object
-  model.DictItemForm:
-    properties:
-      dictCode:
-        type: string
-      id:
-        type: integer
-      label:
-        type: string
-      remark:
-        type: string
-      sort:
-        type: integer
-      status:
-        enum:
-        - 0
-        - 1
-        type: integer
-      tagType:
+      key:
         type: string
       value:
         type: string
-    required:
-    - dictCode
-    - label
-    - value
     type: object
   model.LoginRequest:
     properties:
+      captchaCode:
+        description: 验证码
+        example: "1234"
+        type: string
+      captchaId:
+        description: 验证码缓存 ID
+        example: captcha_id_123
+        type: string
       password:
         description: 密码
         example: "123456"
@@ -115,46 +48,63 @@ definitions:
         example: admin
         type: string
     required:
+    - captchaCode
+    - captchaId
     - password
     - username
     type: object
   model.MenuForm:
     properties:
       alwaysShow:
+        description: 始终显示
         type: integer
       component:
+        description: 前端组件
         type: string
       icon:
+        description: 图标
         type: string
       id:
+        description: 主键
         type: integer
       keepAlive:
+        description: 页面缓存
         type: integer
       name:
+        description: 名称
         type: string
       params:
+        description: 路由参数
         items:
-          $ref: '#/definitions/common.KeyValue'
+          $ref: '#/definitions/model.KeyValue'
         type: array
       parentId:
+        description: 父级ID
         type: integer
       perm:
+        description: 权限标识
         type: string
       redirect:
+        description: 重定向
         type: string
       routeName:
+        description: 路由名称
         type: string
       routePath:
+        description: 路由路径
         type: string
       sort:
+        description: 排序
         type: integer
       type:
+        description: 类型(C目录/M菜单/B按钮)
         enum:
         - C
         - M
         - B
         type: string
       visible:
+        description: 是否可见
         enum:
         - 0
         - 1
@@ -166,8 +116,10 @@ definitions:
   model.RoleForm:
     properties:
       code:
+        description: 编码
         type: string
       dataScope:
+        description: 数据权限范围
         enum:
         - 1
         - 2
@@ -176,16 +128,21 @@ definitions:
         - 5
         type: integer
       deptIds:
+        description: 部门ID列表
         items:
           type: integer
         type: array
       id:
+        description: 主键
         type: integer
       name:
+        description: 名称
         type: string
       sort:
+        description: 排序
         type: integer
       status:
+        description: 状态(1启用0禁用)
         enum:
         - 0
         - 1
@@ -202,17 +159,17 @@ definitions:
         type: string
       mobile:
         description: 手机号
-        example: "18812345678"
+        example: "18888888888"
         type: string
     required:
     - code
     - mobile
     type: object
-  model.WechatBindMobileRequest:
+  model.WxMaBindMobileRequest:
     properties:
       mobile:
         description: 手机号
-        example: "18812345678"
+        example: "18888888888"
         type: string
       openId:
         description: 微信openid
@@ -227,7 +184,7 @@ definitions:
     - openId
     - smsCode
     type: object
-  model.WechatPhoneLoginRequest:
+  model.WxMaPhoneLoginRequest:
     properties:
       loginCode:
         description: 微信登录code
@@ -241,7 +198,7 @@ definitions:
     - loginCode
     - phoneCode
     type: object
-  model.WechatSilentLoginRequest:
+  model.WxMaSilentLoginRequest:
     properties:
       code:
         description: 微信登录code
@@ -249,14 +206,6 @@ definitions:
         type: string
     required:
     - code
-    type: object
-  response.Result:
-    properties:
-      code:
-        type: string
-      data: {}
-      msg:
-        type: string
     type: object
 info:
   contact: {}
@@ -274,7 +223,7 @@ paths:
             type: object
       summary: 获取验证码
       tags:
-      - 01.认证接口
+      - 01.认证中心
   /api/v1/auth/login:
     post:
       consumes:
@@ -297,7 +246,7 @@ paths:
             type: object
       summary: 账号密码登录
       tags:
-      - 01.认证接口
+      - 01.认证中心
   /api/v1/auth/login/sms:
     post:
       consumes:
@@ -320,7 +269,7 @@ paths:
             type: object
       summary: 短信验证码登录
       tags:
-      - 01.认证接口
+      - 01.认证中心
   /api/v1/auth/logout:
     delete:
       consumes:
@@ -338,21 +287,18 @@ paths:
       - Bearer: []
       summary: 退出登录
       tags:
-      - 01.认证接口
+      - 01.认证中心
   /api/v1/auth/refresh-token:
     post:
       consumes:
-      - application/json
+      - application/x-www-form-urlencoded
       description: 使用刷新令牌获取新的访问令牌
       parameters:
-      - description: 刷新令牌信息 {\
-        in: body
-        name: body
+      - description: 刷新令牌
+        in: formData
+        name: refreshToken
         required: true
-        schema:
-          additionalProperties:
-            type: string
-          type: object
+        type: string
       produces:
       - application/json
       responses:
@@ -363,7 +309,7 @@ paths:
             type: object
       summary: 刷新令牌
       tags:
-      - 01.认证接口
+      - 01.认证中心
   /api/v1/auth/sms/code:
     post:
       consumes:
@@ -388,7 +334,7 @@ paths:
             type: object
       summary: 发送登录短信验证码
       tags:
-      - 01.认证接口
+      - 01.认证中心
   /api/v1/codegen/{tableName}/config:
     delete:
       parameters:
@@ -541,307 +487,6 @@ paths:
       summary: 刷新配置缓存
       tags:
       - 07.系统配置
-  /api/v1/depts:
-    get:
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 部门列表
-      tags:
-      - 05.部门接口
-    post:
-      parameters:
-      - description: 部门信息
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/model.DeptForm'
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 新增部门
-      tags:
-      - 05.部门接口
-  /api/v1/depts/{id}:
-    delete:
-      parameters:
-      - description: 部门ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 删除部门
-      tags:
-      - 05.部门接口
-    put:
-      parameters:
-      - description: 部门ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: 部门信息
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/model.DeptForm'
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 更新部门
-      tags:
-      - 05.部门接口
-  /api/v1/depts/{id}/form:
-    get:
-      parameters:
-      - description: 部门ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 获取部门表单数据
-      tags:
-      - 05.部门接口
-  /api/v1/depts/options:
-    get:
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 部门下拉列表
-      tags:
-      - 05.部门接口
-  /api/v1/dicts:
-    get:
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 字典分页列表
-      tags:
-      - 06.字典接口
-    post:
-      parameters:
-      - description: 字典信息
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/model.DictForm'
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 新增字典
-      tags:
-      - 06.字典接口
-  /api/v1/dicts/{id}:
-    delete:
-      parameters:
-      - description: 字典ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 删除字典
-      tags:
-      - 06.字典接口
-    put:
-      parameters:
-      - description: 字典ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: 字典信息
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/model.DictForm'
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 更新字典
-      tags:
-      - 06.字典接口
-  /api/v1/dicts/{id}/form:
-    get:
-      parameters:
-      - description: 字典ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 获取字典表单数据
-      tags:
-      - 06.字典接口
-  /api/v1/dicts/{id}/items:
-    get:
-      parameters:
-      - description: 字典编码
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 字典项列表
-      tags:
-      - 06.字典接口
-    post:
-      parameters:
-      - description: 字典编码
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: 字典项信息
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/model.DictItemForm'
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 新增字典项
-      tags:
-      - 06.字典接口
-  /api/v1/dicts/{id}/items/{itemId}:
-    put:
-      parameters:
-      - description: 字典编码
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: 字典项ID
-        in: path
-        name: itemId
-        required: true
-        type: integer
-      - description: 字典项信息
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/model.DictItemForm'
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 修改字典项
-      tags:
-      - 06.字典接口
-  /api/v1/dicts/{id}/items/{itemId}/form:
-    get:
-      parameters:
-      - description: 字典编码
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: 字典项ID
-        in: path
-        name: itemId
-        required: true
-        type: integer
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 字典项表单数据
-      tags:
-      - 06.字典接口
-  /api/v1/dicts/{id}/items/{itemIds}:
-    delete:
-      parameters:
-      - description: 字典编码
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: 字典项ID（多个用逗号分隔）
-        in: path
-        name: itemIds
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 删除字典项
-      tags:
-      - 06.字典接口
-  /api/v1/dicts/options:
-    get:
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 字典下拉列表
-      tags:
-      - 06.字典接口
   /api/v1/files:
     delete:
       parameters:
@@ -856,7 +501,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.Result'
+            $ref: '#/definitions/common.Result'
       summary: 删除文件
       tags:
       - 10.文件接口
@@ -880,7 +525,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/response.Result'
+            - $ref: '#/definitions/common.Result'
             - properties:
                 data:
                   $ref: '#/definitions/handler.UploadResult'
@@ -909,7 +554,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/response.Result'
+            - $ref: '#/definitions/common.Result'
             - properties:
                 data:
                   items:
@@ -936,7 +581,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/response.Result'
+            - $ref: '#/definitions/common.Result'
             - properties:
                 data:
                   $ref: '#/definitions/handler.UploadResult'
@@ -944,31 +589,19 @@ paths:
       summary: 图片上传
       tags:
       - 10.文件接口
-  /api/v1/health:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/health.HealthResponse'
-      summary: 健康检查
-      tags:
-      - 98.基础能力
   /api/v1/logs:
     get:
       responses: {}
       summary: 日志分页
       tags:
       - 09.日志接口
-  /api/v1/logs/visits/overview:
+  /api/v1/logs/analytics/overview:
     get:
       responses: {}
-      summary: 访问概览
+      summary: 访问统计概览
       tags:
       - 09.日志接口
-  /api/v1/logs/visits/trend:
+  /api/v1/logs/analytics/trend:
     get:
       responses: {}
       summary: 访问趋势
@@ -1391,7 +1024,7 @@ paths:
             type: string
       summary: 建立SSE连接
       tags:
-      - 14.SSE连接
+      - 13.SSE连接
   /api/v1/sse/online-count:
     get:
       consumes:
@@ -1402,21 +1035,10 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.Result'
+            $ref: '#/definitions/common.Result'
       summary: 获取在线用户数
       tags:
-      - 14.SSE连接
-  /api/v1/user/perms:
-    get:
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 获取当前用户权限（按钮权限）
-      tags:
-      - 04.菜单接口
+      - 13.SSE连接
   /api/v1/users:
     get:
       responses: {}
@@ -1511,6 +1133,12 @@ paths:
       summary: 导出用户
       tags:
       - 02.用户接口
+  /api/v1/users/import:
+    post:
+      responses: {}
+      summary: 导入用户
+      tags:
+      - 02.用户接口
   /api/v1/users/me:
     get:
       responses: {}
@@ -1563,7 +1191,7 @@ paths:
       summary: 下载用户导入模板
       tags:
       - 02.用户接口
-  /api/v1/wechat/miniapp/auth/bind-mobile:
+  /api/v1/wxma/auth/bind-mobile:
     post:
       consumes:
       - application/json
@@ -1574,7 +1202,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/model.WechatBindMobileRequest'
+          $ref: '#/definitions/model.WxMaBindMobileRequest'
       produces:
       - application/json
       responses:
@@ -1585,8 +1213,8 @@ paths:
             type: object
       summary: 绑定手机号
       tags:
-      - 13.微信小程序认证
-  /api/v1/wechat/miniapp/auth/phone-login:
+      - 12.微信小程序认证
+  /api/v1/wxma/auth/phone-login:
     post:
       consumes:
       - application/json
@@ -1597,7 +1225,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/model.WechatPhoneLoginRequest'
+          $ref: '#/definitions/model.WxMaPhoneLoginRequest'
       produces:
       - application/json
       responses:
@@ -1608,8 +1236,8 @@ paths:
             type: object
       summary: 手机号快捷登录
       tags:
-      - 13.微信小程序认证
-  /api/v1/wechat/miniapp/auth/silent-login:
+      - 12.微信小程序认证
+  /api/v1/wxma/auth/silent-login:
     post:
       consumes:
       - application/json
@@ -1620,7 +1248,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/model.WechatSilentLoginRequest'
+          $ref: '#/definitions/model.WxMaSilentLoginRequest'
       produces:
       - application/json
       responses:
@@ -1631,5 +1259,5 @@ paths:
             type: object
       summary: 静默登录
       tags:
-      - 13.微信小程序认证
+      - 12.微信小程序认证
 swagger: "2.0"
