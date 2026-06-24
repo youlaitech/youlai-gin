@@ -11,6 +11,7 @@ type MenuVO struct {
 	RouteName  string       `json:"routeName"` // 路由名称
 	RoutePath  string       `json:"routePath"` // 路由路径
 	Component  string       `json:"component"` // 前端组件
+	ExternalURL string      `json:"externalUrl"` // 外链地址
 	Perm       string       `json:"perm"` // 权限标识
 	AlwaysShow int          `json:"alwaysShow"` // 始终显示
 	KeepAlive  int          `json:"keepAlive"` // 页面缓存
@@ -41,4 +42,5 @@ type RouteMeta struct {
 	AlwaysShow bool   `json:"alwaysShow,omitempty"` // 始终显示
 	KeepAlive  bool   `json:"keepAlive,omitempty"` // 页面缓存
 	Params     map[string]any `json:"params,omitempty"` // 路由参数
+	ExternalURL string        `json:"externalUrl,omitempty"` // 外链地址
 }

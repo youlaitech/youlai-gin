@@ -16,6 +16,7 @@ type Menu struct {
 	RouteName  string           `gorm:"column:route_name" json:"routeName"` // 路由名称
 	RoutePath  string           `gorm:"column:route_path" json:"routePath"` // 路由路径
 	Component  string           `gorm:"column:component" json:"component"` // 前端组件
+	ExternalURL string          `gorm:"column:external_url" json:"externalUrl"` // 外链地址
 	Perm       string           `gorm:"column:perm" json:"perm"` // 权限标识
 	AlwaysShow int              `gorm:"column:always_show;default:0" json:"alwaysShow"` // 始终显示
 	KeepAlive  int              `gorm:"column:keep_alive;default:0" json:"keepAlive"` // 页面缓存
