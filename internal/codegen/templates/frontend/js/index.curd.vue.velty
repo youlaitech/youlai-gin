@@ -9,7 +9,7 @@
     >
 #foreach($fieldConfig in $fieldConfigsInQuery)#if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
       <template #$fieldConfig.fieldName="scope">
-        <Dict v-model="scope.formData[scope.prop]" code="$fieldConfig.dictType" v-bind="scope.attrs" />
+        <DictSelect v-model="scope.formData[scope.prop]" code="$fieldConfig.dictType" v-bind="scope.attrs" />
       </template>
 #end#end
     </PageSearch>
@@ -27,7 +27,7 @@
     >
 #foreach($fieldConfig in $fieldConfigsInList)#if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
       <template #$fieldConfig.fieldName="scope">
-        <DictLabel v-model="scope.row[scope.prop]" code="$fieldConfig.dictType" />
+        <DictTag v-model="scope.row[scope.prop]" code="$fieldConfig.dictType" />
       </template>
 #end#end
     </PageContent>
@@ -36,7 +36,7 @@
     <PageModal ref="addModalRef" :modal-config="addModalConfig" @submit-click="handleSubmitClick">
 #foreach($fieldConfig in $fieldConfigsInForm)#if($fieldConfig.formType != "HIDDEN" and $fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
       <template #$fieldConfig.fieldName="scope">
-        <Dict v-model="scope.formData[scope.prop]" code="$fieldConfig.dictType" v-bind="scope.attrs" />
+        <DictSelect v-model="scope.formData[scope.prop]" code="$fieldConfig.dictType" v-bind="scope.attrs" />
       </template>
 #end#end
     </PageModal>
@@ -45,7 +45,7 @@
     <PageModal ref="editModalRef" :modal-config="editModalConfig" @submit-click="handleSubmitClick">
 #foreach($fieldConfig in $fieldConfigsInForm)#if($fieldConfig.formType != "HIDDEN" and $fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
       <template #$fieldConfig.fieldName="scope">
-        <Dict v-model="scope.formData[scope.prop]" code="$fieldConfig.dictType" v-bind="scope.attrs" />
+        <DictSelect v-model="scope.formData[scope.prop]" code="$fieldConfig.dictType" v-bind="scope.attrs" />
       </template>
 #end#end
     </PageModal>
@@ -53,7 +53,10 @@
 </template>
 
 <script setup>
-defineOptions({ name: "$entityName" });
+defineOptions({
+  name: "$entityName",
+  inheritAttrs: false,
+});
 
 import ${entityName}API from "@/api/${moduleName}/${entityKebab}";
 import usePage from "@/components/CURD/usePage";
@@ -164,7 +167,7 @@ const contentConfig = reactive({
     {
       label: "操作",
       prop: "operation",
-      width: 220,
+      width: 180,
       templet: "tool",
       operat: ["edit", "delete"],
     },

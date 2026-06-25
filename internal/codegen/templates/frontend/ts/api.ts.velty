@@ -7,7 +7,7 @@ const ${entityUpperSnake}_BASE_URL = "/api/v1/${entityKebab}";
 const ${entityName}API = {
     /** 获取${businessName}分页数据 */
     getPage(queryParams?: ${entityName}QueryParams) {
-        return request<any, PageResult<${entityName}Item>>({
+        return request<unknown, PageResult<${entityName}Item>>({
             url: ${entityUpperSnake}_BASE_URL,
             method: "get",
             params: queryParams,
@@ -16,7 +16,7 @@ const ${entityName}API = {
 
     /** 获取${businessName}表单数据 */
     getFormData(id: string) {
-        return request<any, ${entityName}Form>({
+        return request<unknown, ${entityName}Form>({
             url: ${entityUpperSnake}_BASE_URL + "/" + id + "/form",
             method: "get",
         });
