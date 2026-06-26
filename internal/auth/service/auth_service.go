@@ -69,12 +69,12 @@ func GetCaptcha() (*authModel.CaptchaVO, error) {
 		captchaStore.Set(captchaID, answer)
 	}
 
-	// 清理内存中的验证码ID（我们使用自己的key）
 	captchaStore.Set(id, "")
 
 	return &authModel.CaptchaVO{
 		CaptchaID:     captchaID,
 		CaptchaBase64: b64s,
+		CaptchaCode:   answer,
 	}, nil
 }
 

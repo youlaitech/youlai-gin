@@ -116,9 +116,6 @@ func main() {
 	r.Use(logger.Recovery())
 	r.Use(middleware.ErrorHandler())
 
-	// 全局限流中间件（每秒 10 个请求，突发 20 个）
-	r.Use(middleware.RateLimitByIP())
-
 	// 业务路由
 	router.Register(r, tokenManager)
 
