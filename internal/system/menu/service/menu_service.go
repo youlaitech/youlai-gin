@@ -67,7 +67,30 @@ func (s *Service) buildRoutes(menus []model.Menu, parentId int64) []*model.Route
 	var routes []*model.RouteVO
 	for _, menu := range menus {
 		if int64(menu.ParentID) == parentId {
-			route := &model.RouteVO{Path: menu.RoutePath, Name: menu.RouteName, Component: menu.Component, Redirect: menu.Redirect, Meta: &model.RouteMeta{Title: menu.Name, Icon: menu.Icon, Hidden: menu.Visible == 0, AlwaysShow: menu.AlwaysShow == 1, KeepAlive: menu.KeepAlive == 1, Params: menu.Params}}
+			isExternal := menu.Type == "E"
+			isEmbedded := isExternal && menu.Component == "iframe"
+
+			path := menu.RoutePath
+			if isExternal && !isEmbedded && menu.ExternalURL != "" {
+				path = menu.ExternalURL
+			}
+
+			component := menu.Component
+			if isEmbedded {
+				component = "iframe"
+			} else if isExternal {
+				component = ""
+			}
+
+			meta := &model.RouteMeta{Title: menu.Name, Icon: menu.Icon, Hidden: menu.Visible == 0, AlwaysShow: menu.AlwaysShow == 1, Params: menu.Params}
+			if (menu.Type == "M" || isEmbedded) && menu.KeepAlive == 1 {
+				meta.KeepAlive = true
+			}
+			if isEmbedded && menu.ExternalURL != "" {
+				meta.ExternalURL = menu.ExternalURL
+			}
+
+			route := &model.RouteVO{Path: path, Name: menu.RouteName, Component: component, Redirect: menu.Redirect, Meta: meta}
 			if children := s.buildRoutes(menus, int64(menu.ID)); len(children) > 0 { route.Children = children }
 			routes = append(routes, route)
 		}
