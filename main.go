@@ -74,7 +74,7 @@ const swaggerIndexHTML = `<!DOCTYPE html>
 </html>
 `
 
-const Version = "0.1.0"
+const Version = "0.2.0"
 
 func main() {
 	// 加载配置（APP_ENV 或默认 dev）
@@ -109,7 +109,7 @@ func main() {
 	// 启动 Gin 服务
 	youlaDocs.SwaggerInfo.Title = "youlai-gin"
 	youlaDocs.SwaggerInfo.Description = "youlai 全家桶（Go/Gin）权限管理后台接口文档"
-	youlaDocs.SwaggerInfo.Version = "4.1.0"
+	youlaDocs.SwaggerInfo.Version = "4.2.0"
 	r := gin.New()
 	r.Use(logger.RequestIDMiddleware())
 	r.Use(logger.Middleware())

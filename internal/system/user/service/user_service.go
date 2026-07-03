@@ -53,10 +53,10 @@ func SaveUser(form *model.UserForm) error {
 		Username: form.Username,
 		Nickname: form.Nickname,
 		Mobile:   form.Mobile,
-		Gender:   form.Gender,
+		Gender:   int(form.Gender),
 		Email:    form.Email,
 		DeptID:   form.DeptID,
-		Status:   form.Status,
+		Status:   int(form.Status),
 		Avatar:   form.Avatar,
 	}
 

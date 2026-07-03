@@ -8,10 +8,10 @@ type UserForm struct {
 	Username string         `json:"username" binding:"required"` // 用户名
 	Nickname string         `json:"nickname" binding:"required"` // 昵称
 	Mobile   string         `json:"mobile"` // 手机号
-	Gender   int            `json:"gender"` // 性别
+	Gender   types.FlexInt `json:"gender"` // 性别 (兼容字符串和数字)
 	Avatar   string         `json:"avatar"` // 头像
 	Email    string         `json:"email"` // 邮箱
-	Status   int            `json:"status"` // 状态(1启用0禁用)
+	Status   types.FlexInt `json:"status"` // 状态(1启用0禁用) (兼容字符串和数字)
 	DeptID   types.BigInt   `json:"deptId"` // 部门ID
 	RoleIDs  []types.BigInt `json:"roleIds" binding:"required"`
 	Openid   string         `json:"openId"`
@@ -21,7 +21,7 @@ type UserForm struct {
 type UserProfileForm struct {
 	Nickname string `json:"nickname"` // 昵称
 	Avatar   string `json:"avatar"` // 头像
-	Gender   *int   `json:"gender"` // 性别
+	Gender   *types.FlexInt `json:"gender"` // 性别 (兼容字符串和数字)
 }
 
 // PasswordForm 修改密码表单

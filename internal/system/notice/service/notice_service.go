@@ -31,15 +31,16 @@ func GetNoticeByID(id int64) (*model.Notice, error) {
 
 // SaveNotice 保存通知（新增或更新）
 func SaveNotice(form *model.NoticeForm) error {
-	parsePublishTime := func(s string) (types.LocalTime, bool, error) {
+	parsePublishTime := func(s string) (*types.LocalTime, error) {
 		if strings.TrimSpace(s) == "" {
-			return types.LocalTime{}, false, nil
+			return nil, nil
 		}
 		parsed, err := time.ParseInLocation(types.TimeFormat, s, time.Local)
 		if err != nil {
-			return types.LocalTime{}, false, err
+			return nil, err
 		}
-		return types.LocalTime(parsed), true, nil
+		t := types.LocalTime(parsed)
+		return &t, nil
 	}
 
 	notice := &model.Notice{
@@ -52,9 +53,9 @@ func SaveNotice(form *model.NoticeForm) error {
 		TargetType:  form.TargetType,
 	}
 
-	if pt, ok, err := parsePublishTime(form.PublishTime); err != nil {
+	if pt, err := parsePublishTime(form.PublishTime); err != nil {
 		return errs.BadRequest("发布时间格式错误")
-	} else if ok {
+	} else if pt != nil {
 		notice.PublishTime = pt
 	}
 
@@ -63,8 +64,9 @@ func SaveNotice(form *model.NoticeForm) error {
 		notice.TargetUsers = string(targetUsersJSON)
 	}
 
-	if (time.Time(notice.PublishTime)).IsZero() && notice.Status == 1 {
-		notice.PublishTime = types.Now()
+	if notice.PublishTime == nil && notice.Status == 1 {
+		now := types.Now()
+		notice.PublishTime = &now
 	}
 
 	var err error
@@ -164,7 +166,8 @@ func PublishNotice(id int64, publisherID int64) error {
 
 	notice.Status = 1
 	notice.PublisherID = types.BigInt(publisherID)
-	notice.PublishTime = types.LocalTime(now)
+	pt := types.LocalTime(now)
+	notice.PublishTime = &pt
 
 	// 推送通知
 	var targetUsers []types.BigInt
