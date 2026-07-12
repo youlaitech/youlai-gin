@@ -103,6 +103,9 @@ func (s *Service) SaveMenu(form *model.MenuForm) error {
 	exists, err := s.repo.CheckMenuNameExists(form.Name, int64(form.ParentID), int64(form.ID))
 	if err != nil { return errs.SystemError("检查菜单名称失败") }
 	if exists { return errs.BadRequest("同级菜单名称已存在") }
+	if form.Type == "C" {
+		form.Component = "Layout"
+	}
 	menu := &model.Menu{ID: form.ID, ParentID: form.ParentID, Name: form.Name, Type: form.Type, RouteName: form.RouteName, RoutePath: form.RoutePath, Component: form.Component, Perm: form.Perm, AlwaysShow: form.AlwaysShow, KeepAlive: form.KeepAlive, Visible: form.Visible, Sort: form.Sort, Icon: form.Icon, Redirect: form.Redirect, Params: s.keyValueToMap(form.Params)}
 	if form.ParentID == 0 { menu.TreePath = "0" } else {
 		parent, err := s.repo.GetMenuByID(int64(form.ParentID))
