@@ -1,11 +1,13 @@
 package repository
 
 import (
+	"context"
 	"strings"
 
 	"gorm.io/gorm"
 
 	"youlai-gin/internal/system/menu/model"
+	"youlai-gin/pkg/gormx"
 )
 
 // Repository 菜单数据访问层
@@ -33,11 +35,20 @@ func (r *Repository) GetMenuByID(id int64) (*model.Menu, error) {
 	return &menu, err
 }
 
-// CreateMenu 创建菜单
-func (r *Repository) CreateMenu(menu *model.Menu) error { return r.db.Create(menu).Error }
+// CreateMenu 创建菜单（ctx 携带操作人，由审计钩子填充 create_by/update_by）
+func (r *Repository) CreateMenu(ctx context.Context, menu *model.Menu) error {
+	return r.db.WithContext(ctx).Create(menu).Error
+}
 
 // UpdateMenu 更新菜单
-func (r *Repository) UpdateMenu(menu *model.Menu) error { return r.db.Model(&model.Menu{}).Where("id = ?", menu.ID).Updates(menu).Error }
+// 用 BuildPatchMap(form) 生成「列名→值」映射：指针字段 nil 跳过、非 nil（含 0）写入，
+// 从根上解决 GORM Updates(struct) 默认跳过零值字段的问题。
+func (r *Repository) UpdateMenu(ctx context.Context, form *model.MenuForm) error {
+	return r.db.WithContext(ctx).
+		Model(&model.Menu{}).
+		Where("id = ?", form.ID).
+		Updates(gormx.BuildPatchMap(form)).Error
+}
 
 // DeleteMenu 删除菜单
 func (r *Repository) DeleteMenu(id int64) error { return r.db.Delete(&model.Menu{}, id).Error }
@@ -62,10 +73,10 @@ func (r *Repository) GetUserMenus(userId int64) ([]model.Menu, error) {
 	var isROOT bool
 	for _, c := range roleCodes { if c == "ROOT" { isROOT = true; break } }
 	if isROOT {
-		err := r.db.Raw("SELECT DISTINCT m.* FROM sys_menu m WHERE m.type IN ('C','M') ORDER BY m.sort ASC, m.id ASC").Scan(&menus).Error
+		err := r.db.Raw("SELECT DISTINCT m.* FROM sys_menu m WHERE m.type != 'B' ORDER BY m.sort ASC, m.id ASC").Scan(&menus).Error
 		return menus, err
 	}
-	err := r.db.Raw(`SELECT DISTINCT m.* FROM sys_menu m INNER JOIN sys_role_menu rm ON m.id = rm.menu_id INNER JOIN sys_user_role ur ON rm.role_id = ur.role_id INNER JOIN sys_role r ON ur.role_id = r.id WHERE ur.user_id = ? AND r.status = 1 AND m.type IN ('C','M') ORDER BY m.sort ASC, m.id ASC`, userId).Scan(&menus).Error
+	err := r.db.Raw(`SELECT DISTINCT m.* FROM sys_menu m INNER JOIN sys_role_menu rm ON m.id = rm.menu_id INNER JOIN sys_user_role ur ON rm.role_id = ur.role_id INNER JOIN sys_role r ON ur.role_id = r.id WHERE ur.user_id = ? AND r.status = 1 AND m.type != 'B' ORDER BY m.sort ASC, m.id ASC`, userId).Scan(&menus).Error
 	return menus, err
 }
 

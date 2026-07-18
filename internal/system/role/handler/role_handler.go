@@ -80,7 +80,7 @@ func SaveRole(c *gin.Context) {
 		return
 	}
 
-	if err := service.SaveRole(&form); err != nil {
+	if err := service.SaveRole(c, &form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -129,7 +129,7 @@ func UpdateRole(c *gin.Context) {
 	}
 
 	form.ID = types.BigInt(id)
-	if err := service.SaveRole(&form); err != nil {
+	if err := service.SaveRole(c, &form); err != nil {
 		c.Error(err)
 		return
 	}

@@ -13,6 +13,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
+	"github.com/gin-gonic/gin"
+	appContext "youlai-gin/internal/common/context"
 	roleRepo "youlai-gin/internal/system/role/repository"
 	deptRepo "youlai-gin/internal/system/dept/repository"
 	"youlai-gin/internal/system/user/model"
@@ -38,8 +40,8 @@ func GetUserPage(query *model.UserQuery, currentUser *auth.UserDetails) (*baseMo
 	return &baseModel.PagedData{List: users, Total: total}, nil
 }
 
-// SaveUser 保存用户（新增或更新）
-func SaveUser(form *model.UserForm) error {
+// SaveUser 新增或更新用户
+func SaveUser(c *gin.Context, form *model.UserForm) error {
 	// 检查用户名是否已存在
 	exists, err := repository.CheckUsernameExists(form.Username, int64(form.ID))
 	if err != nil {
@@ -49,39 +51,38 @@ func SaveUser(form *model.UserForm) error {
 		return errs.Business("用户名已存在")
 	}
 
-	user := &model.User{
-		Username: form.Username,
-		Nickname: form.Nickname,
-		Mobile:   form.Mobile,
-		Gender:   int(form.Gender),
-		Email:    form.Email,
-		DeptID:   form.DeptID,
-		Status:   int(form.Status),
-		Avatar:   form.Avatar,
-	}
+	ctx := appContext.OperatorCtx(c)
 
 	if form.ID > 0 {
-		user.ID = types.BigInt(int64(form.ID))
-		if err := repository.UpdateUser(user); err != nil {
+		// 更新
+		if err := repository.UpdateUser(ctx, form); err != nil {
 			return errs.SystemError("更新用户失败").WithErr(err)
 		}
-
 		// 更新用户角色
 		roleIDs := types.ToInt64Slice(form.RoleIDs)
 		if err := repository.SaveUserRoles(int64(form.ID), roleIDs); err != nil {
 			return errs.SystemError("更新用户角色失败").WithErr(err)
 		}
 	} else {
+		// 新增
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(constant.DefaultPassword), bcrypt.DefaultCost)
 		if err != nil {
 			return errs.SystemError("密码加密失败")
 		}
-		user.Password = string(hashedPassword)
-
-		if err := repository.CreateUser(user); err != nil {
+		user := &model.User{
+			Username: form.Username,
+			Nickname: form.Nickname,
+			Mobile:   form.Mobile,
+			Gender:   int(form.Gender),
+			Email:    form.Email,
+			DeptID:   form.DeptID,
+			Status:   int(form.Status),
+			Avatar:   form.Avatar,
+			Password: string(hashedPassword),
+		}
+		if err := repository.CreateUser(ctx, user); err != nil {
 			return errs.SystemError("创建用户失败").WithErr(err)
 		}
-
 		if len(form.RoleIDs) > 0 {
 			roleIDs := types.ToInt64Slice(form.RoleIDs)
 			if err := repository.SaveUserRoles(int64(user.ID), roleIDs); err != nil {
@@ -720,7 +721,7 @@ func ImportUsersFromExcel(file io.Reader) (map[string]interface{}, error) {
 		}
 		user.Password = string(hashedPassword)
 
-		if err := repository.CreateUser(user); err != nil {
+		if err := repository.CreateUser(context.Background(), user); err != nil {
 			failCount++
 			failDetails = append(failDetails, fmt.Sprintf("第%d行: 创建失败 - %v", i+2, err))
 			continue

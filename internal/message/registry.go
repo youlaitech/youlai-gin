@@ -9,11 +9,13 @@ import (
 	"youlai-gin/internal/common/logger"
 )
 
+// SessionInfo 单条 SSE 会话信息
 type SessionInfo struct {
 	Username    string
 	ConnectTime int64
 }
 
+// SseSessionRegistry 维护「用户 ↔ 连接」映射，支撑在线人数统计与定向推送
 type SseSessionRegistry struct {
 	mu               sync.RWMutex
 	userEmittersMap  map[string]map[*SseEmitter]bool
@@ -29,6 +31,7 @@ func NewSseSessionRegistry() *SseSessionRegistry {
 	}
 }
 
+// UserConnected 登记用户的一条新连接
 func (r *SseSessionRegistry) UserConnected(username string, emitter *SseEmitter) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -46,6 +49,7 @@ func (r *SseSessionRegistry) UserConnected(username string, emitter *SseEmitter)
 	logger.Debug("SSE连接已建立", zap.String("username", username), zap.Int("online", len(r.userEmittersMap)))
 }
 
+// RemoveEmitter 移除连接，用户连接全部断开时一并清理其映射
 func (r *SseSessionRegistry) RemoveEmitter(emitter *SseEmitter) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -68,18 +72,21 @@ func (r *SseSessionRegistry) RemoveEmitter(emitter *SseEmitter) {
 	}
 }
 
+// GetOnlineUserCount 在线用户数（按用户名去重）
 func (r *SseSessionRegistry) GetOnlineUserCount() int {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	return len(r.userEmittersMap)
 }
 
+// GetTotalConnectionCount 连接总数（含同一用户的多个标签页）
 func (r *SseSessionRegistry) GetTotalConnectionCount() int {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	return len(r.emitterUserMap)
 }
 
+// GetOnlineUsers 在线用户列表，含各自会话数与最早登录时间
 func (r *SseSessionRegistry) GetOnlineUsers() []*OnlineUserDTO {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -106,6 +113,7 @@ func (r *SseSessionRegistry) GetOnlineUsers() []*OnlineUserDTO {
 	return result
 }
 
+// GetAllEmitters 返回全部活跃连接
 func (r *SseSessionRegistry) GetAllEmitters() []*SseEmitter {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -117,6 +125,7 @@ func (r *SseSessionRegistry) GetAllEmitters() []*SseEmitter {
 	return emitters
 }
 
+// GetUserEmitters 返回某用户的全部连接
 func (r *SseSessionRegistry) GetUserEmitters(username string) []*SseEmitter {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -132,6 +141,7 @@ func (r *SseSessionRegistry) GetUserEmitters(username string) []*SseEmitter {
 	return emitters
 }
 
+// IsUserOnline 判断用户是否有活跃连接
 func (r *SseSessionRegistry) IsUserOnline(username string) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

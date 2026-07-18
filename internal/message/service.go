@@ -11,12 +11,14 @@ import (
 	"youlai-gin/internal/common/logger"
 )
 
+// SseEmitter 单个 SSE 连接，封装响应写入与关闭信号
 type SseEmitter struct {
 	w       http.ResponseWriter
 	flusher http.Flusher
 	done    chan struct{}
 }
 
+// NewSseEmitter 基于 HTTP 响应创建 SSE 连接，要求底层支持流式写入
 func NewSseEmitter(w http.ResponseWriter) (*SseEmitter, error) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -35,6 +37,7 @@ func NewSseEmitter(w http.ResponseWriter) (*SseEmitter, error) {
 	}, nil
 }
 
+// Send 向客户端推送一条命名事件
 func (e *SseEmitter) Send(eventName string, data interface{}) error {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -51,10 +54,12 @@ func (e *SseEmitter) Close() {
 	close(e.done)
 }
 
+// Done 返回连接关闭信号，供调用方监听
 func (e *SseEmitter) Done() <-chan struct{} {
 	return e.done
 }
 
+// SendHeartbeat 发送注释行心跳以保活连接
 func (e *SseEmitter) SendHeartbeat() error {
 	select {
 	case <-e.done:
@@ -69,16 +74,19 @@ func (e *SseEmitter) SendHeartbeat() error {
 	return nil
 }
 
+// SseService 管理 SSE 连接与事件广播
 type SseService struct {
 	registry *SseSessionRegistry
 }
 
+// NewSseService 创建 SSE 服务
 func NewSseService() *SseService {
 	return &SseService{
 		registry: NewSseSessionRegistry(),
 	}
 }
 
+// CreateConnection 建立连接、登记会话并广播最新在线人数
 func (s *SseService) CreateConnection(username string, w http.ResponseWriter) (*SseEmitter, error) {
 	emitter, err := NewSseEmitter(w)
 	if err != nil {
@@ -100,6 +108,7 @@ func (s *SseService) CreateConnection(username string, w http.ResponseWriter) (*
 	return emitter, nil
 }
 
+// SendDictChange 广播字典变更事件
 func (s *SseService) SendDictChange(dictCode string) {
 	if dictCode == "" {
 		return
@@ -114,6 +123,7 @@ func (s *SseService) SendOnlineCount() {
 	s.broadcast(TopicOnlineCount, count)
 }
 
+// SendToUser 向指定用户的全部连接推送事件
 func (s *SseService) SendToUser(username string, eventName string, data interface{}) {
 	emitters := s.registry.GetUserEmitters(username)
 	if emitters == nil {
@@ -136,6 +146,7 @@ func (s *SseService) GetOnlineUserCount() int {
 	return s.registry.GetOnlineUserCount()
 }
 
+// SendSystemMessage 广播系统通知
 func (s *SseService) SendSystemMessage(message string) {
 	systemMessage := map[string]interface{}{
 		"sender":    "系统通知",
@@ -166,10 +177,12 @@ func (s *SseService) broadcast(eventName string, data interface{}) {
 
 var defaultSseService *SseService
 
+// InitSseService 初始化全局 SSE 服务实例
 func InitSseService() {
 	defaultSseService = NewSseService()
 }
 
+// GetSseService 返回全局 SSE 服务实例
 func GetSseService() *SseService {
 	return defaultSseService
 }

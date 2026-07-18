@@ -5,6 +5,8 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/gin-gonic/gin"
+	appContext "youlai-gin/internal/common/context"
 	"youlai-gin/internal/message"
 	"youlai-gin/internal/system/dict/model"
 	"youlai-gin/internal/system/dict/repository"
@@ -12,6 +14,8 @@ import (
 	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/types"
 )
+
+
 
 // Service 字典业务逻辑层
 type Service struct {
@@ -41,16 +45,17 @@ func (s *Service) GetDictList() ([]baseModel.Option[string], error) {
 	return options, nil
 }
 
-// SaveDict 保存字典（新增或更新）
-func (s *Service) SaveDict(form *model.DictForm) error {
+// SaveDict 新增或更新字典
+func (s *Service) SaveDict(c *gin.Context, form *model.DictForm) error {
 	exists, err := s.repo.CheckDictCodeExists(form.DictCode, int64(form.ID))
 	if err != nil { return errs.SystemError("检查字典编码失败") }
 	if exists { return errs.Business("字典编码已存在") }
-	dict := &model.Dict{ID: form.ID, DictCode: form.DictCode, Name: form.Name, Status: form.Status, Remark: form.Remark}
+	ctx := appContext.OperatorCtx(c)
 	if form.ID == 0 {
-		if err := s.repo.CreateDict(dict); err != nil { return errs.SystemError("创建字典失败") }
+		dict := &model.Dict{ID: form.ID, DictCode: form.DictCode, Name: form.Name, Status: form.Status, Remark: form.Remark}
+		if err := s.repo.CreateDict(ctx, dict); err != nil { return errs.SystemError("创建字典失败") }
 	} else {
-		if err := s.repo.UpdateDict(dict); err != nil { return errs.SystemError("更新字典失败") }
+		if err := s.repo.UpdateDict(ctx, form); err != nil { return errs.SystemError("更新字典失败") }
 	}
 	if sse := message.GetSseService(); sse != nil { sse.SendDictChange(form.DictCode) }
 	return nil
@@ -107,12 +112,14 @@ func (s *Service) GetDictItemPage(query *model.DictItemQuery) (*baseModel.PagedD
 }
 
 // SaveDictItem 保存字典项（新增或更新）
-func (s *Service) SaveDictItem(form *model.DictItemForm) error {
-	item := &model.DictItem{ID: form.ID, DictCode: form.DictCode, Value: form.Value, Label: form.Label, TagType: form.TagType, Sort: form.Sort, Status: form.Status, Remark: form.Remark}
+// 新增时由表单构造完整实体；更新时直接把表单交给 Repository，由 BuildPatchMap 做部分更新。
+func (s *Service) SaveDictItem(c *gin.Context, form *model.DictItemForm) error {
+	ctx := appContext.OperatorCtx(c)
 	if form.ID == 0 {
-		if err := s.repo.CreateDictItem(item); err != nil { return errs.SystemError("创建字典项失败") }
+		item := &model.DictItem{ID: form.ID, DictCode: form.DictCode, Value: form.Value, Label: form.Label, TagType: form.TagType, Sort: form.Sort, Status: form.Status, Remark: form.Remark}
+		if err := s.repo.CreateDictItem(ctx, item); err != nil { return errs.SystemError("创建字典项失败") }
 	} else {
-		if err := s.repo.UpdateDictItem(item); err != nil { return errs.SystemError("更新字典项失败") }
+		if err := s.repo.UpdateDictItem(ctx, form); err != nil { return errs.SystemError("更新字典项失败") }
 	}
 	if sse := message.GetSseService(); sse != nil { sse.SendDictChange(form.DictCode) }
 	return nil

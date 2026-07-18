@@ -85,7 +85,7 @@ func (h *Handler) SaveDept(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.SaveDept(&form); err != nil {
+	if err := h.svc.SaveDept(c, &form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -125,7 +125,7 @@ func (h *Handler) UpdateDept(c *gin.Context) {
 	}
 
 	form.ID = types.BigInt(id)
-	if err := h.svc.SaveDept(&form); err != nil {
+	if err := h.svc.SaveDept(c, &form); err != nil {
 		c.Error(err)
 		return
 	}

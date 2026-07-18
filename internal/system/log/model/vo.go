@@ -31,7 +31,7 @@ type VisitTrendVO struct {
 	UvList []int64  `json:"uvList"` // 访客数(UV)
 }
 
-// VisitStatsVO 访问统计VO（对齐前端 vue3-element-admin 字段）
+// VisitStatsVO 访问统计 VO，含今日/累计的 UV、PV 及增长率
 type VisitStatsVO struct {
 	TodayUvCount int64 `json:"todayUvCount"` // 今日独立访客数 (UV)
 	TotalUvCount int64 `json:"totalUvCount"` // 累计独立访客数 (UV)

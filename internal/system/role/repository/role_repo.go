@@ -1,11 +1,14 @@
 package repository
 
 import (
+	"context"
+
 	"gorm.io/gorm"
 
 	"youlai-gin/internal/common/database"
 	"youlai-gin/internal/system/role/model"
 	"youlai-gin/pkg/constant"
+	"youlai-gin/pkg/gormx"
 	"youlai-gin/pkg/types"
 )
 
@@ -40,14 +43,19 @@ func GetRoleByID(id int64) (*model.Role, error) {
 	return &role, err
 }
 
-// CreateRole 创建角色
-func CreateRole(role *model.Role) error {
-	return database.DB.Create(role).Error
+// CreateRole 创建角色（ctx 携带操作人，由审计钩子填充 create_by/update_by）
+func CreateRole(ctx context.Context, role *model.Role) error {
+	return database.DB.WithContext(ctx).Create(role).Error
 }
 
 // UpdateRole 更新角色
-func UpdateRole(role *model.Role) error {
-	return database.DB.Model(&model.Role{}).Where("id = ?", role.ID).Updates(role).Error
+// 用 BuildPatchMap(form) 生成「列名→值」映射：指针字段 nil 跳过、非 nil（含 0）写入，
+// 从根上解决 GORM Updates(struct) 默认跳过零值字段的问题。
+func UpdateRole(ctx context.Context, form *model.RoleForm) error {
+	return database.DB.WithContext(ctx).
+		Model(&model.Role{}).
+		Where("id = ?", form.ID).
+		Updates(gormx.BuildPatchMap(form)).Error
 }
 
 // DeleteRole 删除角色（逻辑删除）

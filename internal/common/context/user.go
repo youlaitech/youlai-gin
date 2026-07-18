@@ -1,6 +1,7 @@
 package context
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -8,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"youlai-gin/internal/common/auth"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/gormx"
 )
 
 // GetCurrentUserID 从上下文获取当前用户ID
@@ -40,6 +42,16 @@ func MustGetCurrentUserID(c *gin.Context) int64 {
 // GetUserIDMust GetCurrentUserID 的别名函数，返回用户ID和错误
 func GetUserIDMust(c *gin.Context) (int64, error) {
 	return GetCurrentUserID(c)
+}
+
+// OperatorCtx 从 gin 上下文取出当前操作人 ID 并注入 context，供 GORM 审计钩子填充
+// create_by / update_by；取不到操作人时退化为原始 gin 上下文（审计钩子会自动跳过）。
+func OperatorCtx(c *gin.Context) context.Context {
+	ctx := context.Context(c)
+	if operatorID, err := GetCurrentUserID(c); err == nil {
+		ctx = gormx.WithOperator(c, operatorID)
+	}
+	return ctx
 }
 
 // ParsePathParam 从路径参数中解析 int64 ID

@@ -1,9 +1,12 @@
 package repository
 
 import (
+	"context"
+
 	"gorm.io/gorm"
 
 	"youlai-gin/internal/system/dict/model"
+	"youlai-gin/pkg/gormx"
 )
 
 // Repository 字典数据访问层
@@ -47,12 +50,19 @@ func (r *Repository) GetDictByID(id int64) (*model.Dict, error) {
 	return &dict, err
 }
 
-// CreateDict 创建字典
-func (r *Repository) CreateDict(dict *model.Dict) error { return r.db.Create(dict).Error }
+// CreateDict 创建字典（ctx 携带操作人，由审计钩子填充 create_by/update_by）
+func (r *Repository) CreateDict(ctx context.Context, dict *model.Dict) error {
+	return r.db.WithContext(ctx).Create(dict).Error
+}
 
 // UpdateDict 更新字典
-func (r *Repository) UpdateDict(dict *model.Dict) error {
-	return r.db.Model(&model.Dict{}).Where("id = ?", dict.ID).Updates(dict).Error
+// 用 BuildPatchMap(form) 生成「列名→值」映射：指针字段 nil 跳过、非 nil（含 0）写入，
+// 从根上解决 GORM Updates(struct) 默认跳过零值字段的问题。
+func (r *Repository) UpdateDict(ctx context.Context, form *model.DictForm) error {
+	return r.db.WithContext(ctx).
+		Model(&model.Dict{}).
+		Where("id = ?", form.ID).
+		Updates(gormx.BuildPatchMap(form)).Error
 }
 
 // DeleteDict 删除字典（逻辑删除）
@@ -102,14 +112,18 @@ func (r *Repository) GetDictItemByID(id int64) (*model.DictItem, error) {
 	return &item, err
 }
 
-// CreateDictItem 创建字典项
-func (r *Repository) CreateDictItem(item *model.DictItem) error { return r.db.Create(item).Error }
+// CreateDictItem 创建字典项（ctx 携带操作人，由审计钩子填充 create_by/update_by）
+func (r *Repository) CreateDictItem(ctx context.Context, item *model.DictItem) error {
+	return r.db.WithContext(ctx).Create(item).Error
+}
 
 // UpdateDictItem 更新字典项
-func (r *Repository) UpdateDictItem(item *model.DictItem) error {
-	return r.db.Model(&model.DictItem{}).Where("id = ?", item.ID).Select(
-		"dict_code", "value", "label", "tag_type", "sort", "status", "remark",
-	).Updates(item).Error
+// 用 BuildPatchMap(form) 生成「列名→值」映射：指针字段 nil 跳过、非 nil（含 0）写入。
+func (r *Repository) UpdateDictItem(ctx context.Context, form *model.DictItemForm) error {
+	return r.db.WithContext(ctx).
+		Model(&model.DictItem{}).
+		Where("id = ?", form.ID).
+		Updates(gormx.BuildPatchMap(form)).Error
 }
 
 // DeleteDictItem 删除字典项（物理删除）

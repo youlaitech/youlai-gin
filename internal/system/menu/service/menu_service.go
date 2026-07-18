@@ -1,23 +1,40 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
 
 	"gorm.io/gorm"
 
+	"github.com/gin-gonic/gin"
 	"youlai-gin/internal/common/database"
 	"youlai-gin/internal/common/logger"
 	"youlai-gin/internal/common/utils"
+	appContext "youlai-gin/internal/common/context"
 	"youlai-gin/internal/system/menu/model"
 	"youlai-gin/internal/system/menu/repository"
 	roleRepo "youlai-gin/internal/system/role/repository"
 	roleService "youlai-gin/internal/system/role/service"
 	common "youlai-gin/pkg/model"
 	"youlai-gin/pkg/errs"
+	"youlai-gin/pkg/gormx"
 	"youlai-gin/pkg/types"
 )
+
+// operatorCtx 将操作人 ID 注入 context，供审计钩子填充 create_by / update_by；
+// 取不到时退化为原始 gin context（审计钩子会自动跳过）。
+func operatorCtx(c *gin.Context) context.Context {
+	ctx := context.Context(c)
+	if operatorID, err := appContext.GetCurrentUserID(c); err == nil {
+		ctx = gormx.WithOperator(c, operatorID)
+	}
+	return ctx
+}
+
+// SaveMenu ..."""
+
 
 // Service 菜单业务逻辑层
 type Service struct {
@@ -98,24 +115,57 @@ func (s *Service) buildRoutes(menus []model.Menu, parentId int64) []*model.Route
 	return routes
 }
 
-// SaveMenu 保存菜单（新增或更新）
-func (s *Service) SaveMenu(form *model.MenuForm) error {
+// SaveMenu 新增或更新菜单
+func (s *Service) SaveMenu(c *gin.Context, form *model.MenuForm) error {
 	exists, err := s.repo.CheckMenuNameExists(form.Name, int64(form.ParentID), int64(form.ID))
 	if err != nil { return errs.SystemError("检查菜单名称失败") }
 	if exists { return errs.BadRequest("同级菜单名称已存在") }
 	if form.Type == "C" {
 		form.Component = "Layout"
 	}
-	menu := &model.Menu{ID: form.ID, ParentID: form.ParentID, Name: form.Name, Type: form.Type, RouteName: form.RouteName, RoutePath: form.RoutePath, Component: form.Component, Perm: form.Perm, AlwaysShow: form.AlwaysShow, KeepAlive: form.KeepAlive, Visible: form.Visible, Sort: form.Sort, Icon: form.Icon, Redirect: form.Redirect, Params: s.keyValueToMap(form.Params)}
-	if form.ParentID == 0 { menu.TreePath = "0" } else {
-		parent, err := s.repo.GetMenuByID(int64(form.ParentID))
-		if err != nil { return errs.SystemError("查询父菜单失败") }
-		menu.TreePath = fmt.Sprintf("%s,%d", parent.TreePath, parent.ID)
+	ctx := operatorCtx(c)
+	menuID := int64(form.ID)
+	if form.ID == 0 {
+		menu := s.buildMenuEntity(form)
+		if form.ParentID == 0 { menu.TreePath = "0" } else {
+			parent, err := s.repo.GetMenuByID(int64(form.ParentID))
+			if err != nil { return errs.SystemError("查询父菜单失败") }
+			menu.TreePath = fmt.Sprintf("%s,%d", parent.TreePath, parent.ID)
+		}
+		if err := s.repo.CreateMenu(ctx, menu); err != nil { return errs.SystemError("创建菜单失败") }
+		menuID = int64(menu.ID)
+	} else {
+		if err := s.repo.UpdateMenu(ctx, form); err != nil { return errs.SystemError("更新菜单失败") }
 	}
-	var menuID int64
-	if form.ID == 0 { if err := s.repo.CreateMenu(menu); err != nil { return errs.SystemError("创建菜单失败") }; menuID = int64(menu.ID) } else { if err := s.repo.UpdateMenu(menu); err != nil { return errs.SystemError("更新菜单失败") }; menuID = int64(menu.ID) }
-	if menu.Type == "B" && menu.Perm != "" { if err := s.refreshAffectedRolesCache([]int64{menuID}); err != nil { logger.Log.Sugar().Infof("刷新角色权限缓存失败: %v", err) } }
+	if form.Type == "B" && form.Perm != "" {
+		if err := s.refreshAffectedRolesCache([]int64{menuID}); err != nil {
+			logger.Log.Sugar().Infof("刷新角色权限缓存失败: %v", err)
+		}
+	}
 	return nil
+}
+
+// BuildPatchMap form with direct field access — no deref needed since all fields are value types.
+
+// buildMenuEntity 由表单构造新增实体。
+func (s *Service) buildMenuEntity(form *model.MenuForm) *model.Menu {
+	return &model.Menu{
+		ID:         form.ID,
+		ParentID:   form.ParentID,
+		Name:       form.Name,
+		Type:       form.Type,
+		RouteName:  form.RouteName,
+		RoutePath:  form.RoutePath,
+		Component:  form.Component,
+		Perm:       form.Perm,
+		AlwaysShow: form.AlwaysShow,
+		KeepAlive:  form.KeepAlive,
+		Visible:    form.Visible,
+		Sort:       form.Sort,
+		Icon:       form.Icon,
+		Redirect:   form.Redirect,
+		Params:     s.keyValueToMap(form.Params),
+	}
 }
 
 // GetMenuForm 获取菜单表单数据
@@ -125,7 +175,23 @@ func (s *Service) GetMenuForm(id int64) (*model.MenuForm, error) {
 		if errors.Is(err, gorm.ErrRecordNotFound) { return nil, errs.NotFound("菜单不存在") }
 		return nil, errs.SystemError("查询菜单失败")
 	}
-	return &model.MenuForm{ID: menu.ID, ParentID: menu.ParentID, Name: menu.Name, Type: menu.Type, RouteName: menu.RouteName, RoutePath: menu.RoutePath, Component: menu.Component, Perm: menu.Perm, AlwaysShow: menu.AlwaysShow, KeepAlive: menu.KeepAlive, Visible: menu.Visible, Sort: menu.Sort, Icon: menu.Icon, Redirect: menu.Redirect, Params: s.mapToKeyValue(menu.Params)}, nil
+	return &model.MenuForm{
+		ID:         menu.ID,
+		ParentID:   menu.ParentID,
+		Name:       menu.Name,
+		Type:       menu.Type,
+		RouteName:  menu.RouteName,
+		RoutePath:  menu.RoutePath,
+		Component:  menu.Component,
+		Perm:       menu.Perm,
+		AlwaysShow: menu.AlwaysShow,
+		KeepAlive:  menu.KeepAlive,
+		Visible:    menu.Visible,
+		Sort:       menu.Sort,
+		Icon:       menu.Icon,
+		Redirect:   menu.Redirect,
+		Params:     s.mapToKeyValue(menu.Params),
+	}, nil
 }
 
 // DeleteMenu 删除菜单
@@ -158,12 +224,12 @@ func (s *Service) AddMenuForCodegen(parentMenuId int64, tableName, moduleName, b
 	if maxSortMenu, err := s.repo.GetMaxSortMenuByParentID(parentMenuId); err == nil && maxSortMenu != nil { sort = int(maxSortMenu.Sort) + 1 }
 	entityKebab := s.toKebabCase(entityName)
 	menu := &model.Menu{ParentID: types.BigInt(parentMenuId), Name: businessName, Type: "M", RouteName: entityName, RoutePath: entityKebab, Component: moduleName + "/" + entityKebab + "/index", Sort: sort, Visible: 1, TreePath: fmt.Sprintf("%s,%d", parentMenu.TreePath, parentMenuId)}
-	if err := s.repo.CreateMenu(menu); err != nil { return errs.SystemError("创建菜单失败") }
+	if err := s.repo.CreateMenu(context.Background(), menu); err != nil { return errs.SystemError("创建菜单失败") }
 	permPrefix := moduleName + ":" + strings.ReplaceAll(tableName, "_", "-") + ":"
 	for i, action := range []string{"查询", "新增", "修改", "删除"} {
 		perm := permPrefix + []string{"list", "create", "update", "delete"}[i]
 		button := &model.Menu{ParentID: types.BigInt(menu.ID), Type: "B", Name: action, Perm: perm, Sort: i + 1, TreePath: fmt.Sprintf("%s,%d", menu.TreePath, menu.ID)}
-		if err := s.repo.CreateMenu(button); err != nil { logger.Log.Sugar().Infof("创建按钮菜单失败: %v", err) }
+		if err := s.repo.CreateMenu(context.Background(), button); err != nil { logger.Log.Sugar().Infof("创建按钮菜单失败: %v", err) }
 	}
 	return nil
 }

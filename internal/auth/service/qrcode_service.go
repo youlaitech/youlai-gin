@@ -168,10 +168,12 @@ func newQrCodeTicket() string {
 	return strings.ReplaceAll(uuid.New().String(), "-", "")
 }
 
+// qrCodeRedisKey 由票据拼接 Redis Key
 func qrCodeRedisKey(ticket string) string {
 	return fmt.Sprintf(qrCodeRedisKeyFmt, ticket)
 }
 
+// saveQrCodeContext 序列化扫码上下文并写入 Redis
 func saveQrCodeContext(ctx *authModel.QrCodeLoginContext, ttl int) error {
 	data, err := json.Marshal(ctx)
 	if err != nil {
@@ -181,6 +183,7 @@ func saveQrCodeContext(ctx *authModel.QrCodeLoginContext, ttl int) error {
 	return redis.Client.Set(c, qrCodeRedisKey(ctx.Ticket), string(data), time.Duration(ttl)*time.Second).Err()
 }
 
+// loadQrCodeContext 从 Redis 读取并反序列化扫码上下文
 func loadQrCodeContext(ticket string) (*authModel.QrCodeLoginContext, error) {
 	if ticket == "" {
 		return nil, errs.QrCodeNotFound()
@@ -197,6 +200,7 @@ func loadQrCodeContext(ticket string) (*authModel.QrCodeLoginContext, error) {
 	return &ctx, nil
 }
 
+// remainQrCodeSeconds 返回票据剩余有效秒数
 func remainQrCodeSeconds(ticket string) int {
 	c := context.Background()
 	d, err := redis.Client.TTL(c, qrCodeRedisKey(ticket)).Result()

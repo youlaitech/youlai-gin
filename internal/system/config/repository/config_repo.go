@@ -1,9 +1,12 @@
 package repository
 
 import (
+	"context"
+
 	"youlai-gin/internal/common/database"
 	"youlai-gin/internal/system/config/model"
 	pkgDatabase "youlai-gin/internal/common/database"
+	"youlai-gin/pkg/gormx"
 )
 
 // GetConfigList 获取配置列表
@@ -63,14 +66,18 @@ func GetConfigByID(id int64) (*model.Config, error) {
 	return &config, err
 }
 
-// CreateConfig 创建配置
-func CreateConfig(config *model.Config) error {
-	return database.DB.Create(config).Error
+// CreateConfig 创建配置（ctx 携带操作人，由审计钩子填充 create_by/update_by）
+func CreateConfig(ctx context.Context, config *model.Config) error {
+	return database.DB.WithContext(ctx).Create(config).Error
 }
 
 // UpdateConfig 更新配置
-func UpdateConfig(config *model.Config) error {
-	return database.DB.Model(config).Updates(config).Error
+// 用 BuildPatchMap(form) 生成「列名→值」映射，从根上解决 GORM Updates(struct) 默认跳过零值的问题。
+func UpdateConfig(ctx context.Context, form *model.ConfigForm) error {
+	return database.DB.WithContext(ctx).
+		Model(&model.Config{}).
+		Where("id = ?", form.ID).
+		Updates(gormx.BuildPatchMap(form)).Error
 }
 
 // DeleteConfig 删除配置

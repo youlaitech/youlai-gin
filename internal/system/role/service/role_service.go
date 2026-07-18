@@ -7,6 +7,8 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/gin-gonic/gin"
+	appContext "youlai-gin/internal/common/context"
 	permService "youlai-gin/internal/common/permission/service"
 	"youlai-gin/internal/system/role/model"
 	"youlai-gin/internal/system/role/repository"
@@ -16,6 +18,8 @@ import (
 	"youlai-gin/internal/common/redis"
 	"youlai-gin/pkg/types"
 )
+
+
 
 // GetRolePage 角色分页列表
 func GetRolePage(query *model.RoleQuery) (*common.PagedData, error) {
@@ -60,8 +64,8 @@ func GetRoleOptions() ([]common.Option[types.BigInt], error) {
 	return options, nil
 }
 
-// SaveRole 保存角色（新增或更新）
-func SaveRole(form *model.RoleForm) error {
+// SaveRole 新增或更新角色
+func SaveRole(c *gin.Context, form *model.RoleForm) error {
 	var oldDataScope int
 	if form.ID != 0 {
 		oldRole, err := repository.GetRoleByID(int64(form.ID))
@@ -86,22 +90,23 @@ func SaveRole(form *model.RoleForm) error {
 		return errs.Business("角色编码已存在")
 	}
 
-	role := &model.Role{
-		ID:        form.ID,
-		Name:      form.Name,
-		Code:      form.Code,
+	ctx := appContext.OperatorCtx(c)
+
+	if form.ID == 0 {
+		role := &model.Role{
+			ID:        form.ID,
+			Name:      form.Name,
+			Code:      form.Code,
 		Sort:      form.Sort,
 		Status:    form.Status,
 		DataScope: form.DataScope,
-	}
-
-	if form.ID == 0 {
-		if err := repository.CreateRole(role); err != nil {
+		}
+		if err := repository.CreateRole(ctx, role); err != nil {
 			return errs.SystemError("创建角色失败")
 		}
 		form.ID = role.ID
 	} else {
-		if err := repository.UpdateRole(role); err != nil {
+		if err := repository.UpdateRole(ctx, form); err != nil {
 			return errs.SystemError("更新角色失败")
 		}
 	}

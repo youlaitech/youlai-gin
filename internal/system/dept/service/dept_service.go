@@ -1,11 +1,14 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
 
+	"github.com/gin-gonic/gin"
+	appContext "youlai-gin/internal/common/context"
 	"youlai-gin/internal/system/dept/model"
 	"youlai-gin/internal/common/auth"
 	"youlai-gin/pkg/errs"
@@ -17,8 +20,8 @@ import (
 type Repository interface {
 	GetDeptList(query *model.DeptQuery, currentUser *auth.UserDetails) ([]model.Dept, error)
 	GetDeptByID(id int64) (*model.Dept, error)
-	CreateDept(dept *model.Dept) error
-	UpdateDept(dept *model.Dept) error
+	CreateDept(ctx context.Context, dept *model.Dept) error
+	UpdateDept(ctx context.Context, form *model.DeptForm) error
 	DeleteDept(id int64) error
 	GetDeptOptions(currentUser *auth.UserDetails) ([]model.Dept, error)
 	CheckDeptNameExists(name string, parentId int64, excludeId int64) (bool, error)
@@ -103,8 +106,8 @@ func (s *Service) GetDeptOptions(currentUser *auth.UserDetails) ([]model.DeptOpt
 	return tree, nil
 }
 
-// SaveDept 保存部门（新增或更新）
-func (s *Service) SaveDept(form *model.DeptForm) error {
+// SaveDept 新增或更新部门
+func (s *Service) SaveDept(c *gin.Context, form *model.DeptForm) error {
 	exists, err := s.repo.CheckDeptNameExists(form.Name, int64(form.ParentID), int64(form.ID))
 	if err != nil {
 		return errs.SystemError("检查部门名称失败")
@@ -121,31 +124,33 @@ func (s *Service) SaveDept(form *model.DeptForm) error {
 		return errs.Business("部门编号已存在")
 	}
 
-	dept := &model.Dept{
-		ID:       form.ID,
-		Name:     form.Name,
-		Code:     form.Code,
-		ParentID: form.ParentID,
-		Sort:     form.Sort,
-		Status:   form.Status,
-	}
-
-	if form.ParentID == 0 {
-		dept.TreePath = "0"
-	} else {
-		parent, err := s.repo.GetDeptByID(int64(form.ParentID))
-		if err != nil {
-			return errs.SystemError("查询父部门失败")
-		}
-		dept.TreePath = fmt.Sprintf("%s,%d", parent.TreePath, parent.ID)
-	}
+	ctx := appContext.OperatorCtx(c)
 
 	if form.ID == 0 {
-		if err := s.repo.CreateDept(dept); err != nil {
+		var treePath string
+		if form.ParentID == 0 {
+			treePath = "0"
+		} else {
+			parent, err := s.repo.GetDeptByID(int64(form.ParentID))
+			if err != nil {
+				return errs.SystemError("查询父部门失败")
+			}
+			treePath = fmt.Sprintf("%s,%d", parent.TreePath, parent.ID)
+		}
+		dept := &model.Dept{
+			ID:       form.ID,
+			Name:     form.Name,
+			Code:     form.Code,
+			ParentID: form.ParentID,
+			TreePath: treePath,
+		Sort:     form.Sort,
+		Status:   form.Status,
+		}
+		if err := s.repo.CreateDept(ctx, dept); err != nil {
 			return errs.SystemError("创建部门失败")
 		}
 	} else {
-		if err := s.repo.UpdateDept(dept); err != nil {
+		if err := s.repo.UpdateDept(ctx, form); err != nil {
 			return errs.SystemError("更新部门失败")
 		}
 	}
@@ -172,6 +177,8 @@ func (s *Service) GetDeptForm(id int64) (*model.DeptForm, error) {
 		Status:   dept.Status,
 	}, nil
 }
+
+
 
 // DeleteDept 删除部门
 func (s *Service) DeleteDept(id int64) error {

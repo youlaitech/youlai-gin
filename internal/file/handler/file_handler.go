@@ -1,12 +1,18 @@
 package handler
 
 import (
+	"fmt"
+	"mime/multipart"
+	"path/filepath"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 
-	"youlai-gin/pkg/errs"
 	response "youlai-gin/internal/common"
+	"youlai-gin/internal/common/config"
 	"youlai-gin/internal/common/storage"
 	"youlai-gin/internal/common/utils"
+	"youlai-gin/pkg/errs"
 )
 
 // UploadResult 上传结果
@@ -33,7 +39,7 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 
-	if err := utils.ValidateDocument(file); err != nil {
+	if err := validateUpload(file); err != nil {
 		c.Error(errs.BadRequest(err.Error()))
 		return
 	}
@@ -98,7 +104,7 @@ func UploadFiles(c *gin.Context) {
 
 	for _, file := range files {
 		// 严格验证文件
-		if err := utils.ValidateDocument(file); err != nil {
+		if err := validateUpload(file); err != nil {
 			continue // 跳过验证失败的文件
 		}
 
@@ -203,4 +209,28 @@ func DeleteFile(c *gin.Context) {
 	}
 
 	response.Ok(c, nil)
+}
+
+// validateUpload 按 file-storage 配置校验上传文件（大小上限 + 扩展名白名单）
+func validateUpload(file *multipart.FileHeader) error {
+	upload := config.Cfg.FileStorage.Upload
+
+	if max := upload.MaxFileSizeBytes(); max > 0 && file.Size > max {
+		return fmt.Errorf("文件大小超过限制，最大允许 %s", utils.FormatFileSize(max))
+	}
+
+	if len(upload.AllowedExtensions) > 0 {
+		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(file.Filename), "."))
+		allowed := false
+		for _, e := range upload.AllowedExtensions {
+			if strings.EqualFold(ext, e) {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			return fmt.Errorf("不支持的文件类型：.%s", ext)
+		}
+	}
+	return nil
 }

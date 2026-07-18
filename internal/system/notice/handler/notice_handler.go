@@ -57,7 +57,7 @@ func SaveNotice(c *gin.Context) {
 		return
 	}
 
-	if err := service.SaveNotice(&form); err != nil {
+	if err := service.SaveNotice(c, &form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -134,7 +134,7 @@ func UpdateNotice(c *gin.Context) {
 	}
 
 	form.ID = types.BigInt(id)
-	if err := service.SaveNotice(&form); err != nil {
+	if err := service.SaveNotice(c, &form); err != nil {
 		c.Error(err)
 		return
 	}

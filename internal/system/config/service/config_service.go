@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	appContext "youlai-gin/internal/common/context"
 	"youlai-gin/internal/system/config/model"
 	"youlai-gin/internal/system/config/repository"
 	common "youlai-gin/pkg/model"
@@ -123,8 +125,8 @@ func GetConfigFormData(id int64) (*model.ConfigForm, error) {
 	}, nil
 }
 
-// SaveConfig 保存配置（新增或更新）
-func SaveConfig(form *model.ConfigForm) error {
+// SaveConfig 新增或更新系统配置
+func SaveConfig(c *gin.Context, form *model.ConfigForm) error {
 	config := &model.Config{
 		ID:          form.ID,
 		ConfigKey:   form.ConfigKey,
@@ -133,17 +135,19 @@ func SaveConfig(form *model.ConfigForm) error {
 		Remark:      form.Remark,
 	}
 
+	ctx := appContext.OperatorCtx(c)
+
 	var err error
 	if config.ID > 0 {
 		// 更新
-		err = repository.UpdateConfig(config)
+		err = repository.UpdateConfig(ctx, form)
 	} else {
 		// 新增 - 检查Key是否已存在
 		existing, _ := repository.GetConfigByKey(config.ConfigKey)
 		if existing != nil && existing.ID > 0 {
 			return errs.Business(fmt.Sprintf("配置Key [%s] 已存在", config.ConfigKey))
 		}
-		err = repository.CreateConfig(config)
+		err = repository.CreateConfig(ctx, config)
 	}
 
 	if err != nil {

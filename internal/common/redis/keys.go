@@ -11,5 +11,6 @@ const (
 	UserTokenVersion       = "auth:user:token_version:" // 用户 Token 版本号
 
 	// 限流相关
-	RateLimiterIPPrefix = "rate_limiter:ip:" // IP 限流
+	RateLimiterIPPrefix = "rate_limit:ip:"  // IP 限流
+	RateLimiterAPIPrefix = "rate_limit:api:" // 接口限流
 )

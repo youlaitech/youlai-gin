@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"context"
+
 	"gorm.io/gorm"
 
 	"youlai-gin/internal/common/database"
@@ -53,14 +55,19 @@ func GetNoticeByID(id int64) (*model.Notice, error) {
 	return &notice, err
 }
 
-// CreateNotice 创建通知
-func CreateNotice(notice *model.Notice) error {
-	return database.DB.Create(notice).Error
+// CreateNotice 创建通知（ctx 携带操作人，由审计钩子填充 create_by/update_by）
+func CreateNotice(ctx context.Context, notice *model.Notice) error {
+	return database.DB.WithContext(ctx).Create(notice).Error
 }
 
 // UpdateNotice 更新通知
-func UpdateNotice(notice *model.Notice) error {
-	return database.DB.Model(notice).Updates(notice).Error
+// patch 为 BuildPatchMap(form) 生成的「列名→值」映射，并补充 publish_time、target_user_ids 等转换字段；
+// 指针字段 nil 跳过、非 nil（含 0）写入，从根上解决 GORM Updates(struct) 默认跳过零值的问题。
+func UpdateNotice(ctx context.Context, id int64, patch map[string]any) error {
+	return database.DB.WithContext(ctx).
+		Model(&model.Notice{}).
+		Where("id = ?", id).
+		Updates(patch).Error
 }
 
 // UpdateNoticeFields

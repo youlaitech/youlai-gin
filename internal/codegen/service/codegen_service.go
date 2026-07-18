@@ -180,6 +180,7 @@ type genTableColumnRow struct {
 	DictType     string `gorm:"column:dict_type"`
 }
 
+// GetTablePage 分页查询可代码生成的数据表列表
 func GetTablePage(query *model.TableQuery) (*commonModel.PagedData, error) {
 	offset := query.GetOffset()
 	limit := query.GetLimit()
@@ -221,6 +222,7 @@ LIMIT ? OFFSET ?`, where)
 	return &commonModel.PagedData{List: list, Total: total}, nil
 }
 
+// GetGenConfig 读取指定表的代码生成配置，未配置时按表结构生成默认配置
 func GetGenConfig(tableName string) (*model.GenConfigForm, error) {
 	var cfg genTableRow
 	tx := database.DB.Table("gen_table").Where("table_name = ? AND is_deleted = 0", tableName).Limit(1).Find(&cfg)
@@ -351,6 +353,7 @@ ORDER BY ORDINAL_POSITION ASC`, tableName).Scan(&cols).Error; err != nil {
 	}, nil
 }
 
+// SaveGenConfig 新增或更新代码生成配置及字段，并联动生成菜单
 func SaveGenConfig(tableName string, body *model.GenConfigForm) error {
 	if body == nil {
 		return errs.BadRequest("参数错误")
@@ -495,6 +498,7 @@ func SaveGenConfig(tableName string, body *model.GenConfigForm) error {
 	return nil
 }
 
+// DeleteGenConfig 逻辑删除代码生成配置（置 is_deleted=1）
 func DeleteGenConfig(tableName string) error {
 	var cfg genTableRow
 	if err := database.DB.Table("gen_table").Where("table_name = ? AND is_deleted = 0", tableName).First(&cfg).Error; err != nil {
@@ -512,6 +516,7 @@ func DeleteGenConfig(tableName string) error {
 	return nil
 }
 
+// GetPreview 按模板渲染指定表的各层代码预览
 func GetPreview(tableName string, pageType string, typeParam string) ([]model.CodegenPreviewVO, error) {
 	cfg, err := GetGenConfig(tableName)
 	if err != nil {
@@ -550,6 +555,7 @@ func GetPreview(tableName string, pageType string, typeParam string) ([]model.Co
 	return previews, nil
 }
 
+// DownloadZip 生成多表代码压缩包，返回文件名与压缩内容
 func DownloadZip(tableNames []string, pageType string, typeParam string) (string, []byte, error) {
 	buf := new(bytes.Buffer)
 	zw := zip.NewWriter(buf)

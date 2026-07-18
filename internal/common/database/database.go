@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm/schema"
 
 	"youlai-gin/internal/common/logger"
+	"youlai-gin/pkg/gormx"
 )
 
 var DB *gorm.DB
@@ -27,6 +28,9 @@ func NewDB(cfg *Config) (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("连接数据库失败: %w", err)
 	}
+
+	// 注册全局审计钩子（create_by / update_by 自动填充）
+	gormx.RegisterAuditHooks(db)
 
 	if err := cfg.ApplyConnectionPool(db); err != nil {
 		return nil, fmt.Errorf("配置连接池失败: %w", err)

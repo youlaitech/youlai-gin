@@ -9,10 +9,13 @@ func NewStorage(config *Config) (Storage, error) {
 	switch config.Type {
 	case TypeLocal:
 		return NewLocalStorage(config.BasePath, config.Domain), nil
-		
+
 	case TypeAliyun:
 		return NewAliyunOSS(config)
-		
+
+	case TypeMinio:
+		return NewMinioStorage(config)
+
 	default:
 		return nil, fmt.Errorf("不支持的存储类型: %s", config.Type)
 	}

@@ -1,6 +1,8 @@
 ﻿package repository
 
 import (
+	"context"
+
 	roleRepo "youlai-gin/internal/system/role/repository"
 	"youlai-gin/internal/common/permission/datascope"
 	"youlai-gin/internal/system/user/model"
@@ -8,6 +10,7 @@ import (
 	"youlai-gin/internal/common/database"
 	pkgDatabase "youlai-gin/internal/common/database"
 	"youlai-gin/pkg/constant"
+	"youlai-gin/pkg/gormx"
 	"youlai-gin/pkg/types"
 )
 
@@ -124,14 +127,19 @@ func GetUserRoles(userID int64) ([]string, error) {
 	return roleCodes, err
 }
 
-// CreateUser 创建用户
-func CreateUser(user *model.User) error {
-	return database.DB.Create(user).Error
+// CreateUser 创建用户（ctx 携带操作人，由审计钩子填充 create_by/update_by）
+func CreateUser(ctx context.Context, user *model.User) error {
+	return database.DB.WithContext(ctx).Create(user).Error
 }
 
 // UpdateUser 更新用户
-func UpdateUser(user *model.User) error {
-	return database.DB.Model(&model.User{}).Where("id = ?", user.ID).Updates(user).Error
+// 用 BuildPatchMap(form) 生成「列名→值」映射：指针字段 nil 跳过、非 nil（含 0）写入，
+// 从根上解决 GORM Updates(struct) 默认跳过零值字段的问题。
+func UpdateUser(ctx context.Context, form *model.UserForm) error {
+	return database.DB.WithContext(ctx).
+		Model(&model.User{}).
+		Where("id = ?", form.ID).
+		Updates(gormx.BuildPatchMap(form)).Error
 }
 
 // DeleteUser 删除用户（逻辑删除）

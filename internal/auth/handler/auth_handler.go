@@ -21,7 +21,7 @@ import (
 )
 
 // RegisterAuthRoutes 注册认证相关 HTTP 路由
-func RegisterAuthRoutes(r *gin.RouterGroup) {
+func RegisterAuthRoutes(r *gin.RouterGroup, tokenManager pkgAuth.TokenManager) {
 	r.GET("/auth/captcha", GetCaptcha)
 	r.POST("/auth/login", middleware.OperationLog(enums.LogModuleLogin, enums.ActionTypeLogin), Login)
 	r.POST("/auth/login/sms", middleware.OperationLog(enums.LogModuleLogin, enums.ActionTypeLogin), LoginBySms)
@@ -30,7 +30,7 @@ func RegisterAuthRoutes(r *gin.RouterGroup) {
 	r.POST("/auth/refresh-token", RefreshToken)
 
 	// 扫码登录路由
-	RegisterQrCodeRoutes(r)
+	RegisterQrCodeRoutes(r, tokenManager)
 }
 
 // GetCaptcha 获取验证码
@@ -140,13 +140,8 @@ func RefreshToken(c *gin.Context) {
 // @Success 200 {object} map[string]interface{} "code/msg"
 // @Router /api/v1/auth/sms/code [post]
 func SendSmsCode(c *gin.Context) {
-	var req map[string]string
-	if err := validator.BindJSON(c, &req); err != nil {
-		c.Error(err)
-		return
-	}
-
-	mobile := req["mobile"]
+	// mobile 从 URL 查询参数读取（如 ?mobile=138xxxx）
+	mobile := c.Query("mobile")
 	if mobile == "" {
 		c.Error(errs.BadRequest("手机号不能为空"))
 		return

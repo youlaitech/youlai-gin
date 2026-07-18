@@ -5,14 +5,19 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	appContext "youlai-gin/internal/common/context"
 	"youlai-gin/internal/system/notice/model"
 	"youlai-gin/internal/system/notice/repository"
 	common "youlai-gin/pkg/model"
 	"youlai-gin/internal/common/database"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/internal/message"
+	"youlai-gin/pkg/gormx"
 	"youlai-gin/pkg/types"
 )
+
+
 
 // GetNoticePage 通知分页查询
 func GetNoticePage(query *model.NoticeQuery) (*common.PagedData, error) {
@@ -30,7 +35,11 @@ func GetNoticeByID(id int64) (*model.Notice, error) {
 }
 
 // SaveNotice 保存通知（新增或更新）
-func SaveNotice(form *model.NoticeForm) error {
+// 新增时由表单构造完整实体；更新时由 BuildPatchMap(form) 生成部分更新映射，并补充 publish_time、
+// target_user_ids 等需要转换的字段，从根上解决 GORM Updates(struct) 默认跳过零值的问题。
+func SaveNotice(c *gin.Context, form *model.NoticeForm) error {
+	ctx := appContext.OperatorCtx(c)
+
 	parsePublishTime := func(s string) (*types.LocalTime, error) {
 		if strings.TrimSpace(s) == "" {
 			return nil, nil
@@ -43,45 +52,59 @@ func SaveNotice(form *model.NoticeForm) error {
 		return &t, nil
 	}
 
-	notice := &model.Notice{
-		ID:          form.ID,
-		Title:       form.Title,
-		Content:     form.Content,
-		Type:        form.Type,
-		Level:       form.Level,
-		Status:      form.Status,
-		TargetType:  form.TargetType,
-	}
+	status := form.Status
+	patch := gormx.BuildPatchMap(form)
 
+	// publish_time：字符串时间转 *types.LocalTime 后写入
 	if pt, err := parsePublishTime(form.PublishTime); err != nil {
 		return errs.BadRequest("发布时间格式错误")
 	} else if pt != nil {
-		notice.PublishTime = pt
-	}
-
-	if len(form.TargetUsers) > 0 {
-		targetUsersJSON, _ := json.Marshal(form.TargetUsers)
-		notice.TargetUsers = string(targetUsersJSON)
-	}
-
-	if notice.PublishTime == nil && notice.Status == 1 {
+		patch["publish_time"] = pt
+	} else if v, ok := patch["publish_status"].(int); ok && v == 1 {
+		// 发布且未指定时间时默认当前时间
 		now := types.Now()
-		notice.PublishTime = &now
+		patch["publish_time"] = &now
 	}
 
-	var err error
-	if notice.ID > 0 {
-		err = repository.UpdateNotice(notice)
+	// target_user_ids：切片转 JSON 字符串后写入
+	if len(form.TargetUsers) > 0 {
+		if b, err := json.Marshal(form.TargetUsers); err == nil {
+			patch["target_user_ids"] = string(b)
+		}
+	}
+
+	if form.ID == 0 {
+		notice := &model.Notice{
+			Title:      form.Title,
+			Content:    form.Content,
+			Type:       form.Type,
+			Level:      form.Level,
+			Status:     status,
+			TargetType: form.TargetType,
+		}
+		if pt, _ := parsePublishTime(form.PublishTime); pt != nil {
+			notice.PublishTime = pt
+		} else if status == 1 {
+			now := types.Now()
+			notice.PublishTime = &now
+		}
+		if len(form.TargetUsers) > 0 {
+			if b, err := json.Marshal(form.TargetUsers); err == nil {
+				notice.TargetUsers = string(b)
+			}
+		}
+		if err := repository.CreateNotice(ctx, notice); err != nil {
+			return errs.SystemError("创建通知失败")
+		}
 	} else {
-		err = repository.CreateNotice(notice)
-	}
-
-	if err != nil {
-		return errs.SystemError("保存通知失败")
+		if err := repository.UpdateNotice(ctx, int64(form.ID), patch); err != nil {
+			return errs.SystemError("更新通知失败")
+		}
 	}
 
 	// 如果是发布状态，推送通知
-	if notice.Status == 1 {
+	if status == 1 {
+		notice := &model.Notice{ID: form.ID, Title: form.Title, Type: form.Type, Level: form.Level, Status: status}
 		go pushNotice(notice, form.TargetUsers)
 	}
 

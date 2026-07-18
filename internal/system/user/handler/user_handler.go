@@ -88,7 +88,7 @@ func SaveUser(c *gin.Context) {
 		return
 	}
 
-	if err := userService.SaveUser(&form); err != nil {
+	if err := userService.SaveUser(c, &form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -136,7 +136,7 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	form.ID = types.BigInt(userId)
-	if err := userService.SaveUser(&form); err != nil {
+	if err := userService.SaveUser(c, &form); err != nil {
 		c.Error(err)
 		return
 	}

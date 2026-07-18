@@ -125,7 +125,7 @@ func SaveConfig(c *gin.Context) {
 		return
 	}
 
-	if err := service.SaveConfig(&form); err != nil {
+	if err := service.SaveConfig(c, &form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -152,7 +152,7 @@ func UpdateConfig(c *gin.Context) {
 	}
 
 	form.ID = id
-	if err := service.SaveConfig(&form); err != nil {
+	if err := service.SaveConfig(c, &form); err != nil {
 		c.Error(err)
 		return
 	}

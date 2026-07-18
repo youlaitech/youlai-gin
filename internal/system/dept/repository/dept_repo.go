@@ -1,11 +1,14 @@
 package repository
 
 import (
+	"context"
+
 	"gorm.io/gorm"
 
 	"youlai-gin/internal/common/permission/datascope"
 	"youlai-gin/internal/system/dept/model"
 	"youlai-gin/internal/common/auth"
+	"youlai-gin/pkg/gormx"
 )
 
 // Repository 部门数据访问层
@@ -48,14 +51,19 @@ func (r *Repository) GetDeptByID(id int64) (*model.Dept, error) {
 	return &dept, err
 }
 
-// CreateDept 创建部门
-func (r *Repository) CreateDept(dept *model.Dept) error {
-	return r.db.Create(dept).Error
+// CreateDept 创建部门（ctx 携带操作人，由审计钩子填充 create_by/update_by）
+func (r *Repository) CreateDept(ctx context.Context, dept *model.Dept) error {
+	return r.db.WithContext(ctx).Create(dept).Error
 }
 
 // UpdateDept 更新部门
-func (r *Repository) UpdateDept(dept *model.Dept) error {
-	return r.db.Model(&model.Dept{}).Where("id = ?", dept.ID).Updates(dept).Error
+// 用 BuildPatchMap(form) 生成「列名→值」映射：指针字段 nil 跳过、非 nil（含 0）写入，
+// 从根上解决 GORM Updates(struct) 默认跳过零值字段的问题。
+func (r *Repository) UpdateDept(ctx context.Context, form *model.DeptForm) error {
+	return r.db.WithContext(ctx).
+		Model(&model.Dept{}).
+		Where("id = ?", form.ID).
+		Updates(gormx.BuildPatchMap(form)).Error
 }
 
 // DeleteDept 删除部门（逻辑删除）

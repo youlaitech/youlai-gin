@@ -108,7 +108,7 @@ func (h *Handler) SaveMenu(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.SaveMenu(&form); err != nil {
+	if err := h.svc.SaveMenu(c, &form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -157,7 +157,7 @@ func (h *Handler) UpdateMenu(c *gin.Context) {
 	}
 
 	form.ID = types.BigInt(id)
-	if err := h.svc.SaveMenu(&form); err != nil {
+	if err := h.svc.SaveMenu(c, &form); err != nil {
 		c.Error(err)
 		return
 	}

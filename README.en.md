@@ -2,8 +2,6 @@
 
 # <img alt="youlai-gin" width="28" src="./docs/images/logo/logo.png" align="center"> youlai-gin
 
-[English](./README.en.md) · [简体中文](./README.md)
-
 **Enterprise-grade permission management backend based on Go/Gin**
 
 [![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)](https://go.dev/)
@@ -19,7 +17,10 @@
 
 <div align="center">
 
-[🖥️ Live Preview](https://vue.youlai.tech) | [📱 Mobile Preview](https://app.youlai.tech) | [📖 Documentation](https://www.youlai.tech/docs/server/gin/)
+[![Live Preview](https://img.shields.io/badge/Live%20Preview-2D8CF0?style=for-the-badge&logo=google-chrome&logoColor=white)](https://vue.youlai.tech)
+[![Mobile Preview](https://img.shields.io/badge/Mobile%20Preview-19BE6B?style=for-the-badge&logo=android&logoColor=white)](https://app.youlai.tech)
+[![Documentation](https://img.shields.io/badge/Documentation-8B5CF6?style=for-the-badge&logo=gitbook&logoColor=white)](https://www.youlai.tech/docs/server/gin/)
+[![简体中文](https://img.shields.io/badge/简体中文-00B4D8?style=for-the-badge&logo=google-translate&logoColor=white)](./README.md)
 
 </div>
 
@@ -164,7 +165,7 @@ Released under the [Apache License 2.0](LICENSE); free for commercial use.
 <table align="center">
   <tr>
     <td align="center">
-      <img src="./docs/images/qrcode/wechat-official.png" height="180" alt="Official WeChat Account"><br>
+      <img src="./docs/images/qrcode/wechat-official.jpg" height="180" alt="Official WeChat Account"><br>
       <sub>Official WeChat Account</sub>
     </td>
     <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>

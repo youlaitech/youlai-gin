@@ -56,7 +56,7 @@ func (h *Handler) GetDictList(c *gin.Context) {
 func (h *Handler) SaveDict(c *gin.Context) {
 	var f model.DictForm
 	if e := validator.BindJSON(c, &f); e != nil { c.Error(e); return }
-	if e := h.svc.SaveDict(&f); e != nil { c.Error(e); return }
+	if e := h.svc.SaveDict(c, &f); e != nil { c.Error(e); return }
 	response.OkMsg(c, "保存成功")
 }
 func (h *Handler) GetDictForm(c *gin.Context) {
@@ -72,7 +72,7 @@ func (h *Handler) UpdateDict(c *gin.Context) {
 	var f model.DictForm
 	if e := validator.BindJSON(c, &f); e != nil { c.Error(e); return }
 	f.ID = types.BigInt(id)
-	if e := h.svc.SaveDict(&f); e != nil { c.Error(e); return }
+	if e := h.svc.SaveDict(c, &f); e != nil { c.Error(e); return }
 	response.OkMsg(c, "更新成功")
 }
 func (h *Handler) DeleteDict(c *gin.Context) {
@@ -98,7 +98,7 @@ func (h *Handler) SaveDictItemByCode(c *gin.Context) {
 	var f model.DictItemForm
 	if e := validator.BindJSON(c, &f); e != nil { c.Error(e); return }
 	f.DictCode = c.Param("id")
-	if e := h.svc.SaveDictItem(&f); e != nil { c.Error(e); return }
+	if e := h.svc.SaveDictItem(c, &f); e != nil { c.Error(e); return }
 	response.OkMsg(c, "新增成功")
 }
 func (h *Handler) GetDictItemFormByCode(c *gin.Context) {
@@ -115,7 +115,7 @@ func (h *Handler) UpdateDictItemByCode(c *gin.Context) {
 	if e := validator.BindJSON(c, &f); e != nil { c.Error(e); return }
 	f.ID = types.BigInt(id)
 	f.DictCode = c.Param("id")
-	if e := h.svc.SaveDictItem(&f); e != nil { c.Error(e); return }
+	if e := h.svc.SaveDictItem(c, &f); e != nil { c.Error(e); return }
 	response.OkMsg(c, "更新成功")
 }
 func (h *Handler) DeleteDictItemsByCode(c *gin.Context) {

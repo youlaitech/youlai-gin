@@ -13,14 +13,15 @@ import (
 	"github.com/gin-gonic/gin"
 
 	youlaDocs "youlai-gin/api"
-	"youlai-gin/internal/router"
 	"youlai-gin/internal/common/auth"
 	"youlai-gin/internal/common/config"
 	"youlai-gin/internal/common/database"
 	"youlai-gin/internal/common/logger"
 	"youlai-gin/internal/common/redis"
-	"youlai-gin/internal/middleware"
+	"youlai-gin/internal/common/storage"
 	"youlai-gin/internal/message"
+	"youlai-gin/internal/middleware"
+	"youlai-gin/internal/router"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -74,7 +75,7 @@ const swaggerIndexHTML = `<!DOCTYPE html>
 </html>
 `
 
-const Version = "0.2.1"
+const Version = "0.3.1"
 
 func main() {
 	// 加载配置（APP_ENV 或默认 dev）
@@ -97,6 +98,28 @@ func main() {
 	}
 	logger.Log.Sugar().Infof("Redis 已连接: %s:%d (db=%d)", config.Cfg.Redis.Host, config.Cfg.Redis.Port, config.Cfg.Redis.Database)
 
+	// 初始化文件存储（按 file-storage.type 选择 minio / local 驱动）
+	fileCfg := &config.Cfg.FileStorage
+	storageCfg := &storage.Config{
+		Type:      fileCfg.Type,
+		Endpoint:  fileCfg.Minio.Endpoint,
+		AccessKey: fileCfg.Minio.AccessKey,
+		SecretKey: fileCfg.Minio.SecretKey,
+		Bucket:    fileCfg.Minio.Bucket,
+		Domain:    fileCfg.Minio.Domain,
+		BasePath:  fileCfg.Local.Path,
+	}
+	if storageCfg.Type == "" {
+		storageCfg.Type = storage.TypeLocal
+	}
+	if storageCfg.Type == storage.TypeLocal {
+		storageCfg.Domain = fileCfg.Local.BaseURL
+	}
+	if err := storage.InitDefaultStorage(storageCfg); err != nil {
+		log.Fatalf("文件存储初始化失败: %v", err)
+	}
+	logger.Log.Sugar().Infof("文件存储已初始化: type=%s", storageCfg.Type)
+
 	// 初始化 SSE 服务
 	message.InitSseService()
 
@@ -115,6 +138,7 @@ func main() {
 	r.Use(logger.Middleware())
 	r.Use(logger.Recovery())
 	r.Use(middleware.ErrorHandler())
+	r.Use(middleware.RateLimitByIP())
 
 	// 业务路由
 	router.Register(r, tokenManager)

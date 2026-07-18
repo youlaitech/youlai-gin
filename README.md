@@ -72,17 +72,42 @@
 
 **环境要求**：Go 1.25+ · MySQL 8.0+ · Redis 7.x+
 
-1. 克隆项目：`git clone https://gitee.com/youlaiorg/youlai-gin.git`
-2. 导入数据库：`sql/mysql/youlai_admin.sql`
-3. 修改配置（可选，默认已配置线上只读数据源）：`configs/dev.yaml`
-4. 安装依赖：`go mod tidy`
-5. 启动服务：`go run main.go`，访问 http://localhost:8000/swagger/index.html
+1. 克隆项目：
+   ```bash
+   git clone https://gitee.com/youlaiorg/youlai-gin.git
+   ```
+
+2. 导入数据库：
+   ```bash
+   mysql -u root -p youlai_admin < sql/mysql/youlai_admin.sql
+   ```
+
+3. 修改配置（可选，默认已配置线上只读数据源）：
+   ```bash
+   # 编辑 configs/dev.yaml 调整数据库连接等
+   ```
+
+4. 安装依赖：
+   ```bash
+   go mod tidy
+   ```
+
+5. 启动服务：
+   ```bash
+   go run main.go
+   ```
+   启动后访问 http://localhost:8000/swagger/index.html，能打开接口文档即说明后端已正常运行。
 
 默认账号：`admin` / `123456`
 
-> 💡 **热重载**：推荐使用 `air` 工具，先 `go install github.com/cosmtrek/air@latest`，再 `air`
-
 详细指南：[部署文档](https://www.youlai.tech/docs/server/gin/deploy)
+
+## 前端对接
+
+启动配套前端 [vue3-element-admin](https://gitee.com/youlaiorg/vue3-element-admin)，访问 http://localhost:3000 即可登录：
+
+- 账号：`admin`
+- 密码：`123456`
 
 ## 目录结构
 

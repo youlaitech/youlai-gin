@@ -21,6 +21,8 @@ import (
 	userHandler "youlai-gin/internal/system/user/handler"
 )
 
+// RegisterRoutes 装配系统管理各模块（部门/字典/菜单/角色/用户/配置/通知/日志）的路由。
+// 部门、字典、菜单走 repository → service → handler 的依赖注入；其余模块自行注册。
 func RegisterRoutes(r *gin.RouterGroup) {
 	db := database.DB
 

@@ -7,19 +7,24 @@ import (
 	appContext "youlai-gin/internal/common/context"
 	"youlai-gin/internal/auth/service"
 	response "youlai-gin/internal/common"
+	pkgAuth "youlai-gin/internal/common/auth"
 	"youlai-gin/internal/common/validator"
 	"youlai-gin/pkg/errs"
 )
 
 // RegisterQrCodeRoutes 注册扫码登录路由，基础路径 /api/v1/auth/qr-code
-func RegisterQrCodeRoutes(r *gin.RouterGroup) {
+// generate/status/login 免登录；scan/confirm/cancel 需 APP 登录态，套 JWT 鉴权中间件。
+func RegisterQrCodeRoutes(r *gin.RouterGroup, tokenManager pkgAuth.TokenManager) {
 	qr := r.Group("/auth/qr-code")
 	qr.POST("/generate", QrCodeGenerate) // 免登录
 	qr.GET("/status", QrCodeStatus)      // 免登录
-	qr.POST("/scan", QrCodeScan)         // 需 APP 登录态
-	qr.POST("/confirm", QrCodeConfirm)   // 需 APP 登录态
-	qr.POST("/cancel", QrCodeCancel)     // 需 APP 登录态
 	qr.POST("/login", QrCodeLogin)       // 免登录（PC 端）
+
+	authQr := r.Group("/auth/qr-code")
+	authQr.Use(pkgAuth.Middleware(tokenManager))
+	authQr.POST("/scan", QrCodeScan)     // 需 APP 登录态
+	authQr.POST("/confirm", QrCodeConfirm) // 需 APP 登录态
+	authQr.POST("/cancel", QrCodeCancel) // 需 APP 登录态
 }
 
 // QrCodeGenerate 生成扫码登录票据
