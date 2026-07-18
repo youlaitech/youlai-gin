@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
+
+	"github.com/google/uuid"
 
 	authModel "youlai-gin/internal/auth/model"
 	"youlai-gin/internal/common/auth"
@@ -162,7 +165,7 @@ func QrCodeLogin(ticket string) (*auth.AuthenticationToken, error) {
 // ======================== 内部工具 ========================
 
 func newQrCodeTicket() string {
-	return fmt.Sprintf("%x", time.Now().UnixNano())
+	return strings.ReplaceAll(uuid.New().String(), "-", "")
 }
 
 func qrCodeRedisKey(ticket string) string {
