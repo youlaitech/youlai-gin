@@ -18,6 +18,7 @@ type UserDetails struct {
 	UserID     int64                   `json:"userId"`
 	Username   string                  `json:"username"`
 	DeptID     types.BigInt            `json:"deptId"`
+	Avatar     string                  `json:"avatar"`      // 头像
 	DataScopes []permModel.RoleDataScope `json:"dataScopes"` // 数据权限列表（支持多角色）
 	Roles      []string                `json:"roles"`        // 角色列表
 }
@@ -27,6 +28,7 @@ type UserSession struct {
 	UserID     int64                    `json:"userId"`
 	Username   string                   `json:"username"`
 	DeptID     types.BigInt             `json:"deptId"`
+	Avatar     string                   `json:"avatar"`      // 头像
 	DataScopes []permModel.RoleDataScope `json:"dataScopes"` // 数据权限列表
 	Roles      []string                 `json:"roles"`       // 角色权限集合
 }
@@ -37,6 +39,7 @@ func (s *UserSession) ToUserDetails() *UserDetails {
 		UserID:     s.UserID,
 		Username:   s.Username,
 		DeptID:     s.DeptID,
+		Avatar:     s.Avatar,
 		DataScopes: s.DataScopes,
 		Roles:      s.Roles,
 	}

@@ -13,11 +13,20 @@ const (
 	UserContextKey      = "user"
 )
 
+// 认证白名单：命中则跳过 JWT 校验
+var authWhitelist = map[string]bool{
+	"/api/v1/statistics/visits/trend":    true,
+	"/api/v1/statistics/visits/overview": true,
+	"/api/v1/auth/qr-code/generate":      true,
+	"/api/v1/auth/qr-code/status":        true,
+	"/api/v1/auth/qr-code/login":         true,
+}
+
 // Middleware 认证中间件
 func Middleware(tokenManager TokenManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 白名单路径跳过认证
-		if c.Request.URL.Path == "/api/v1/statistics/visits/trend" || c.Request.URL.Path == "/api/v1/statistics/visits/overview" {
+		if authWhitelist[c.Request.URL.Path] {
 			c.Next()
 			return
 		}

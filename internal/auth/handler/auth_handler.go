@@ -1,13 +1,18 @@
 package handler
 
 import (
+	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"youlai-gin/internal/auth/model"
 	"youlai-gin/internal/auth/service"
 	pkgAuth "youlai-gin/internal/common/auth"
+	"youlai-gin/internal/common/redis"
+	"youlai-gin/pkg/constant"
 	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/internal/middleware"
@@ -23,6 +28,9 @@ func RegisterAuthRoutes(r *gin.RouterGroup) {
 	r.POST("/auth/sms/code", SendSmsCode)
 	r.DELETE("/auth/logout", middleware.OperationLog(enums.LogModuleLogin, enums.ActionTypeLogout), Logout)
 	r.POST("/auth/refresh-token", RefreshToken)
+
+	// 扫码登录路由
+	RegisterQrCodeRoutes(r)
 }
 
 // GetCaptcha 获取验证码
@@ -141,6 +149,22 @@ func SendSmsCode(c *gin.Context) {
 	mobile := req["mobile"]
 	if mobile == "" {
 		c.Error(errs.BadRequest("手机号不能为空"))
+		return
+	}
+
+	// 接口级限流：同一手机号 60 秒内仅允许发送 1 次验证码
+	key := redis.RateLimiterAPIPrefix + "sms:" + mobile
+	now := time.Now().UnixMilli()
+	member := uuid.New().String()
+	smsCount, rerr := redis.Client.Eval(c.Request.Context(), middleware.SlidingWindowLua,
+		[]string{key}, now, int64(60*1000), member).Int64()
+	if rerr == nil && smsCount > 1 {
+		c.Header("Retry-After", "60")
+		response.FromAppError(c, &errs.AppError{
+			Code:       constant.CodeRequestConcurrencyLimitExceeded,
+			Msg:        constant.MsgRequestConcurrencyLimitExceeded,
+			HTTPStatus: http.StatusTooManyRequests,
+		})
 		return
 	}
 

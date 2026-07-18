@@ -114,6 +114,7 @@ func Login(req *authModel.LoginRequest) (*auth.AuthenticationToken, int64, error
 		UserID:     int64(user.ID),
 		Username:   user.Username,
 		DeptID:     user.DeptID,
+		Avatar:     user.Avatar,
 		DataScopes: dataScopes,
 		Roles:      roles,
 	}
@@ -234,6 +235,7 @@ func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, int6
 		UserID:     int64(user.ID),
 		Username:   user.Username,
 		DeptID:     user.DeptID,
+		Avatar:     user.Avatar,
 		DataScopes: dataScopes,
 		Roles:      roles,
 	}

@@ -51,6 +51,7 @@ func (m *RedisTokenManager) GenerateToken(user *UserDetails) (*AuthenticationTok
 		UserID:     user.UserID,
 		Username:   user.Username,
 		DeptID:     user.DeptID,
+		Avatar:     user.Avatar,
 		DataScopes: user.DataScopes,
 		Roles:      user.Roles,
 	}

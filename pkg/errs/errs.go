@@ -189,6 +189,42 @@ func Forbidden(msg string) *AppError {
 	}
 }
 
+// QrCodeNotFound 扫码登录票据不存在或已过期（A0250）
+func QrCodeNotFound() *AppError {
+	return &AppError{
+		Code:       constant.CodeQrCodeNotFound,
+		Msg:        constant.MsgQrCodeNotFound,
+		HTTPStatus: http.StatusOK,
+	}
+}
+
+// QrCodeStatusIllegal 当前扫码状态不允许该操作（A0251）
+func QrCodeStatusIllegal() *AppError {
+	return &AppError{
+		Code:       constant.CodeQrCodeStatusIllegal,
+		Msg:        constant.MsgQrCodeStatusIllegal,
+		HTTPStatus: http.StatusOK,
+	}
+}
+
+// QrCodeUserMismatch 操作用户与扫码用户不一致（A0252）
+func QrCodeUserMismatch() *AppError {
+	return &AppError{
+		Code:       constant.CodeQrCodeUserMismatch,
+		Msg:        constant.MsgQrCodeUserMismatch,
+		HTTPStatus: http.StatusOK,
+	}
+}
+
+// QrCodeAlreadyUsed 扫码登录票据已被使用（A0253，预留）
+func QrCodeAlreadyUsed() *AppError {
+	return &AppError{
+		Code:       constant.CodeQrCodeAlreadyUsed,
+		Msg:        constant.MsgQrCodeAlreadyUsed,
+		HTTPStatus: http.StatusOK,
+	}
+}
+
 // Business 通用业务错误（B0001，仅 toast 提示，无需前端特殊处理）
 // 适用于：用户名已存在、手机号已绑定、编码重复等
 func Business(msg string) *AppError {

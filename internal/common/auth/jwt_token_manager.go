@@ -31,6 +31,7 @@ type CustomClaims struct {
 	UserID         int64        `json:"userId"`
 	Username       string       `json:"username"`
 	DeptID         types.BigInt `json:"deptId"`
+	Avatar         string       `json:"avatar"`
 	DataScopes     []permModel.RoleDataScope `json:"dataScopes"`
 	Roles          []string     `json:"roles"`
 	IsRefreshToken bool         `json:"isRefreshToken"` // 是否为刷新令牌
@@ -86,6 +87,7 @@ func (m *JwtTokenManager) generateToken(user *UserDetails, ttl int, isRefreshTok
 		UserID:         user.UserID,
 		Username:       user.Username,
 		DeptID:         user.DeptID,
+		Avatar:         user.Avatar,
 		DataScopes:     user.DataScopes,
 		Roles:          user.Roles,
 		IsRefreshToken: isRefreshToken,
@@ -120,6 +122,7 @@ func (m *JwtTokenManager) ParseToken(tokenString string) (*UserDetails, error) {
 			UserID:    claims.UserID,
 			Username:  claims.Username,
 			DeptID:    claims.DeptID,
+			Avatar:    claims.Avatar,
 			DataScopes: claims.DataScopes,
 			Roles:     claims.Roles,
 		}, nil

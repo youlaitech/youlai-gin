@@ -37,6 +37,15 @@ const (
 	CodeAccessUnauthorized = "A0301" // 访问未授权
 	MsgAccessUnauthorized  = "访问未授权"
 
+	CodeQrCodeNotFound      = "A0250" // 扫码登录票据不存在或已过期
+	MsgQrCodeNotFound       = "扫码登录票据不存在或已过期"
+	CodeQrCodeStatusIllegal = "A0251" // 当前扫码状态不允许该操作
+	MsgQrCodeStatusIllegal  = "当前扫码状态不允许该操作"
+	CodeQrCodeUserMismatch  = "A0252" // 操作用户与扫码用户不一致
+	MsgQrCodeUserMismatch   = "操作用户与扫码用户不一致"
+	CodeQrCodeAlreadyUsed   = "A0253" // 扫码登录票据已被使用（预留）
+	MsgQrCodeAlreadyUsed    = "扫码登录票据已被使用"
+
 	CodeRequestConcurrencyLimitExceeded = "A0502" // 请求并发数超出限制
 	MsgRequestConcurrencyLimitExceeded  = "请求并发数超出限制"
 
