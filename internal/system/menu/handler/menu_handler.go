@@ -38,9 +38,6 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 }
 
 // @Summary 菜单列表
-
-
-// @Summary 菜单列表
 // @Tags 04.菜单接口
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus [get]

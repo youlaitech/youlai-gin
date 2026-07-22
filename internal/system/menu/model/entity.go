@@ -12,7 +12,7 @@ type Menu struct {
 	ParentID   types.BigInt     `gorm:"column:parent_id;not null" json:"parentId"` // 父级ID
 	TreePath   string           `gorm:"column:tree_path" json:"treePath"` // 树路径
 	Name       string           `gorm:"column:name;not null" json:"name"` // 名称
-	Type       string           `gorm:"column:type;not null" json:"type"` // 类型(C目录/M菜单/B按钮)
+	Type       string           `gorm:"column:type;not null" json:"type"` // 类型(C目录/M菜单/E外链/B按钮)
 	RouteName  string           `gorm:"column:route_name" json:"routeName"` // 路由名称
 	RoutePath  string           `gorm:"column:route_path" json:"routePath"` // 路由路径
 	Component  string           `gorm:"column:component" json:"component"` // 前端组件

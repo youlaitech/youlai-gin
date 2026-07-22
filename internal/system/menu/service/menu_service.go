@@ -33,8 +33,6 @@ func operatorCtx(c *gin.Context) context.Context {
 	return ctx
 }
 
-// SaveMenu ..."""
-
 
 // Service 菜单业务逻辑层
 type Service struct {
@@ -50,7 +48,7 @@ func (s *Service) GetMenuList(query *model.MenuQuery) ([]*model.MenuVO, error) {
 	if err != nil { return nil, errs.SystemError("查询菜单列表失败") }
 	menuVOs := make([]*model.MenuVO, len(menus))
 	for i, menu := range menus {
-		menuVOs[i] = &model.MenuVO{ID: menu.ID, ParentID: menu.ParentID, Name: menu.Name, Type: menu.Type, RouteName: menu.RouteName, RoutePath: menu.RoutePath, Component: menu.Component, Perm: menu.Perm, AlwaysShow: menu.AlwaysShow, KeepAlive: menu.KeepAlive, Visible: menu.Visible, Sort: menu.Sort, Icon: menu.Icon, Redirect: menu.Redirect, CreateTime: types.LocalTime(menu.CreateTime), UpdateTime: types.LocalTime(menu.UpdateTime)}
+		menuVOs[i] = &model.MenuVO{ID: menu.ID, ParentID: menu.ParentID, Name: menu.Name, Type: menu.Type, RouteName: menu.RouteName, RoutePath: menu.RoutePath, Component: menu.Component, ExternalURL: menu.ExternalURL, Perm: menu.Perm, AlwaysShow: menu.AlwaysShow, KeepAlive: menu.KeepAlive, Visible: menu.Visible, Sort: menu.Sort, Icon: menu.Icon, Redirect: menu.Redirect, CreateTime: types.LocalTime(menu.CreateTime), UpdateTime: types.LocalTime(menu.UpdateTime)}
 	}
 	return utils.BuildTreeSimple(menuVOs, func(m *model.MenuVO) int64 { return int64(m.ID) }, func(m *model.MenuVO) int64 { return int64(m.ParentID) }, func(m **model.MenuVO, children []*model.MenuVO) { (*m).Children = children }), nil
 }
@@ -117,35 +115,85 @@ func (s *Service) buildRoutes(menus []model.Menu, parentId int64) []*model.Route
 
 // SaveMenu 新增或更新菜单
 func (s *Service) SaveMenu(c *gin.Context, form *model.MenuForm) error {
+	if form.ID != 0 && int64(form.ParentID) == int64(form.ID) {
+		return errs.BadRequest("父级菜单不能为当前菜单")
+	}
 	exists, err := s.repo.CheckMenuNameExists(form.Name, int64(form.ParentID), int64(form.ID))
 	if err != nil { return errs.SystemError("检查菜单名称失败") }
 	if exists { return errs.BadRequest("同级菜单名称已存在") }
+	isExternal := form.Type == "E"
+	isEmbedded := isExternal && form.Component == "iframe"
 	if form.Type == "C" {
+		if form.ParentID == 0 && form.RoutePath != "" && !strings.HasPrefix(form.RoutePath, "/") {
+			form.RoutePath = "/" + form.RoutePath
+		}
 		form.Component = "Layout"
+	} else if isExternal && !isEmbedded {
+		form.Component = ""
 	}
+	needsRouteName := form.Type == "M" || isEmbedded
+	if needsRouteName {
+		if form.RouteName != "" {
+			dup, err := s.repo.CheckRouteNameExists(form.RouteName, int64(form.ID))
+			if err != nil { return errs.SystemError("检查路由名称失败") }
+			if dup { return errs.BadRequest("路由名称已存在") }
+		}
+	} else {
+		form.RouteName = ""
+	}
+	treePath, err := s.generateTreePath(int64(form.ParentID))
+	if err != nil { return errs.SystemError("查询父菜单失败") }
 	ctx := operatorCtx(c)
 	menuID := int64(form.ID)
 	if form.ID == 0 {
 		menu := s.buildMenuEntity(form)
-		if form.ParentID == 0 { menu.TreePath = "0" } else {
-			parent, err := s.repo.GetMenuByID(int64(form.ParentID))
-			if err != nil { return errs.SystemError("查询父菜单失败") }
-			menu.TreePath = fmt.Sprintf("%s,%d", parent.TreePath, parent.ID)
-		}
+		menu.TreePath = treePath
 		if err := s.repo.CreateMenu(ctx, menu); err != nil { return errs.SystemError("创建菜单失败") }
 		menuID = int64(menu.ID)
 	} else {
 		if err := s.repo.UpdateMenu(ctx, form); err != nil { return errs.SystemError("更新菜单失败") }
+		if err := s.repo.UpdateMenuTreePath(menuID, treePath); err != nil {
+			logger.Log.Sugar().Infof("更新菜单树路径失败: %v", err)
+		}
 	}
-	if form.Type == "B" && form.Perm != "" {
+	if form.Type == "B" && form.Perm != "" || form.ID != 0 {
 		if err := s.refreshAffectedRolesCache([]int64{menuID}); err != nil {
 			logger.Log.Sugar().Infof("刷新角色权限缓存失败: %v", err)
 		}
 	}
+	if menuID != 0 {
+		s.updateChildrenTreePath(menuID, treePath)
+	}
 	return nil
 }
 
-// BuildPatchMap form with direct field access — no deref needed since all fields are value types.
+// generateTreePath 根据父 ID 生成树路径：根节点返回 "0"，非根节点返回父树路径 + "," + 父ID
+func (s *Service) generateTreePath(parentId int64) (string, error) {
+	if parentId == 0 {
+		return "0", nil
+	}
+	parent, err := s.repo.GetMenuByID(parentId)
+	if err != nil {
+		return "", err
+	}
+	return parent.TreePath + "," + fmt.Sprintf("%d", parent.ID), nil
+}
+
+// updateChildrenTreePath 递归更新子菜单树路径
+func (s *Service) updateChildrenTreePath(id int64, treePath string) {
+	children, err := s.repo.GetChildrenByParentID(id)
+	if err != nil || len(children) == 0 {
+		return
+	}
+	childTreePath := treePath + "," + fmt.Sprintf("%d", id)
+	if err := s.repo.UpdateTreePathByParentID(id, childTreePath); err != nil {
+		logger.Log.Sugar().Infof("更新子节点树路径失败(parent=%d): %v", id, err)
+		return
+	}
+	for _, child := range children {
+		s.updateChildrenTreePath(int64(child.ID), childTreePath)
+	}
+}
 
 // buildMenuEntity 由表单构造新增实体。
 func (s *Service) buildMenuEntity(form *model.MenuForm) *model.Menu {
@@ -157,6 +205,7 @@ func (s *Service) buildMenuEntity(form *model.MenuForm) *model.Menu {
 		RouteName:  form.RouteName,
 		RoutePath:  form.RoutePath,
 		Component:  form.Component,
+		ExternalURL: form.ExternalURL,
 		Perm:       form.Perm,
 		AlwaysShow: form.AlwaysShow,
 		KeepAlive:  form.KeepAlive,
@@ -165,7 +214,6 @@ func (s *Service) buildMenuEntity(form *model.MenuForm) *model.Menu {
 		Icon:       form.Icon,
 		Redirect:   form.Redirect,
 		Params:     s.keyValueToMap(form.Params),
-		ExternalURL: form.ExternalUrl,
 	}
 }
 
@@ -184,6 +232,7 @@ func (s *Service) GetMenuForm(id int64) (*model.MenuForm, error) {
 		RouteName:  menu.RouteName,
 		RoutePath:  menu.RoutePath,
 		Component:  menu.Component,
+		ExternalURL: menu.ExternalURL,
 		Perm:       menu.Perm,
 		AlwaysShow: menu.AlwaysShow,
 		KeepAlive:  menu.KeepAlive,
@@ -192,7 +241,6 @@ func (s *Service) GetMenuForm(id int64) (*model.MenuForm, error) {
 		Icon:       menu.Icon,
 		Redirect:   menu.Redirect,
 		Params:     s.mapToKeyValue(menu.Params),
-		ExternalUrl: menu.ExternalURL,
 	}, nil
 }
 

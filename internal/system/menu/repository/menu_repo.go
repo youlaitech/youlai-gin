@@ -108,6 +108,15 @@ func (r *Repository) CheckMenuNameExists(name string, parentId int64, excludeId 
 	return count > 0, err
 }
 
+// CheckRouteNameExists 检查路由名称是否存在
+func (r *Repository) CheckRouteNameExists(routeName string, excludeId int64) (bool, error) {
+	var count int64
+	db := r.db.Model(&model.Menu{}).Where("route_name = ?", routeName)
+	if excludeId > 0 { db = db.Where("id != ?", excludeId) }
+	err := db.Count(&count).Error
+	return count > 0, err
+}
+
 // GetChildrenCount 获取子菜单数量
 func (r *Repository) GetChildrenCount(parentId int64) (int64, error) {
 	var count int64
@@ -121,4 +130,21 @@ func (r *Repository) GetMaxSortMenuByParentID(parentId int64) (*model.Menu, erro
 	err := r.db.Where("parent_id = ?", parentId).Order("sort DESC").First(&menu).Error
 	if err != nil { return nil, err }
 	return &menu, nil
+}
+
+// GetChildrenByParentID 获取直接子菜单
+func (r *Repository) GetChildrenByParentID(parentId int64) ([]model.Menu, error) {
+	var children []model.Menu
+	err := r.db.Where("parent_id = ?", parentId).Find(&children).Error
+	return children, err
+}
+
+// UpdateTreePathByParentID 批量更新子节点树路径
+func (r *Repository) UpdateTreePathByParentID(parentId int64, treePath string) error {
+	return r.db.Model(&model.Menu{}).Where("parent_id = ?", parentId).Update("tree_path", treePath).Error
+}
+
+// UpdateMenuTreePath 更新单个菜单的树路径（父级变更时调用）
+func (r *Repository) UpdateMenuTreePath(id int64, treePath string) error {
+	return r.db.Model(&model.Menu{}).Where("id = ?", id).Update("tree_path", treePath).Error
 }

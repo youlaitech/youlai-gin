@@ -7,7 +7,7 @@ type MenuVO struct {
 	ID         types.BigInt `json:"id"` // 主键
 	ParentID   types.BigInt `json:"parentId"` // 父级ID
 	Name       string       `json:"name"` // 名称
-	Type       string       `json:"type"` // 类型(C目录/M菜单/B按钮)
+	Type       string       `json:"type"` // 类型(C目录/M菜单/E外链/B按钮)
 	RouteName  string       `json:"routeName"` // 路由名称
 	RoutePath  string       `json:"routePath"` // 路由路径
 	Component  string       `json:"component"` // 前端组件
