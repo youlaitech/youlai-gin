@@ -165,6 +165,7 @@ func (s *Service) buildMenuEntity(form *model.MenuForm) *model.Menu {
 		Icon:       form.Icon,
 		Redirect:   form.Redirect,
 		Params:     s.keyValueToMap(form.Params),
+		ExternalURL: form.ExternalUrl,
 	}
 }
 
@@ -191,6 +192,7 @@ func (s *Service) GetMenuForm(id int64) (*model.MenuForm, error) {
 		Icon:       menu.Icon,
 		Redirect:   menu.Redirect,
 		Params:     s.mapToKeyValue(menu.Params),
+		ExternalUrl: menu.ExternalURL,
 	}, nil
 }
 
