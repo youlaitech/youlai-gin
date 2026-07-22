@@ -10,7 +10,7 @@ type MenuForm struct {
 	ID         types.BigInt      `json:"id"`                                  // 主键
 	ParentID   types.BigInt      `json:"parentId"`                           // 父级ID
 	Name       string            `json:"name" binding:"required"`            // 名称
-	Type       string            `json:"type" binding:"required,oneof=C M B"` // 类型(C目录/M菜单/B按钮)
+	Type       string            `json:"type" binding:"required,oneof=C M B E"` // 类型(C目录/M菜单/B按钮 /E外链)
 	RouteName  string            `json:"routeName"`                          // 路由名称
 	RoutePath  string            `json:"routePath"`                          // 路由路径
 	Component  string            `json:"component"`                         // 前端组件
@@ -22,4 +22,5 @@ type MenuForm struct {
 	Icon       string            `json:"icon"`                              // 图标
 	Redirect   string            `json:"redirect"`                          // 重定向
 	Params     []baseModel.KeyValue `json:"params"`                         // 路由参数
+	ExternalUrl string           `json:"externalUrl"`                       // 外链地址
 }
