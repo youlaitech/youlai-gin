@@ -93,21 +93,20 @@
    ```
 
 5. 启动服务：
+
+   **方式一：GoLand 启动（推荐）**
+   用 GoLand 打开项目，等待依赖索引完成，点击 `main.go` 旁的运行按钮或 `go run` 配置即可。
+
+   **方式二：命令行启动**
    ```bash
    go run main.go
    ```
    启动后访问 http://localhost:8000/swagger/index.html，能打开接口文档即说明后端已正常运行。
 
-默认账号：`admin` / `123456`
+6. 启动前端（可选）：
+   如需可视化操作界面，启动配套前端 [vue3-element-admin](https://gitee.com/youlaiorg/vue3-element-admin)，访问 http://localhost:3000，使用 `admin` / `123456` 登录。
 
-详细指南：[部署文档](https://www.youlai.tech/docs/server/gin/deploy)
-
-## 前端对接
-
-启动配套前端 [vue3-element-admin](https://gitee.com/youlaiorg/vue3-element-admin)，访问 http://localhost:3000 即可登录：
-
-- 账号：`admin`
-- 密码：`123456`
+> 更多内容详见官方文档：[快速开始](https://www.youlai.tech/docs/server/gin/quick-start.html) · [部署指南](https://www.youlai.tech/docs/server/gin/deploy.html)
 
 ## 目录结构
 
