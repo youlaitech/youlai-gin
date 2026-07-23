@@ -34,11 +34,12 @@ type FileStorageUploadConfig struct {
 
 // FileStorageMinioConfig MinIO 对象存储
 type FileStorageMinioConfig struct {
-	Endpoint  string `mapstructure:"endpoint"`   // 服务地址（含 scheme，如 http://host:9000）
-	AccessKey string `mapstructure:"access-key"` // 访问凭据
-	SecretKey string `mapstructure:"secret-key"` // 凭据密钥
-	Bucket    string `mapstructure:"bucket"`     // 存储桶名称
-	Domain    string `mapstructure:"domain"`     // 自定义域名（配置后 URL 走域名，留空用 endpoint）
+	Endpoint         string `mapstructure:"endpoint"`            // 服务地址（含 scheme，如 http://host:9000）
+	AccessKey        string `mapstructure:"access-key"`          // 访问凭据
+	SecretKey        string `mapstructure:"secret-key"`          // 凭据密钥
+	Bucket           string `mapstructure:"bucket"`              // 存储桶名称
+	Domain           string `mapstructure:"domain"`              // 自定义域名（配置后 URL 走域名，留空用 endpoint）
+	PathNoBucketName bool   `mapstructure:"path-no-bucket-name"` // 返回url中不包含存储桶名称（兼容Cloudflare R2）
 }
 
 // FileStorageLocalConfig 本地存储

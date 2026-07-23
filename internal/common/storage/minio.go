@@ -14,10 +14,11 @@ import (
 
 // MinioStorage MinIO 对象存储（S3 协议兼容）
 type MinioStorage struct {
-	client   *minio.Client
-	bucket   string
-	endpoint string // 原始地址（含 scheme）
-	domain   string // 自定义域名（优先于 endpoint 拼接访问 URL）
+	client           *minio.Client
+	bucket           string
+	endpoint         string // 原始地址（含 scheme）
+	domain           string // 自定义域名（优先于 endpoint 拼接访问 URL）
+	pathNoBucketName bool   // 返回url中不包含存储桶名称（兼容Cloudflare R2）
 }
 
 // NewMinioStorage 创建 MinIO 客户端，并校验/创建存储桶（含公共读策略）
@@ -38,10 +39,11 @@ func NewMinioStorage(config *Config) (*MinioStorage, error) {
 	}
 
 	s := &MinioStorage{
-		client:   client,
-		bucket:   config.Bucket,
-		endpoint: config.Endpoint,
-		domain:   config.Domain,
+		client:           client,
+		bucket:           config.Bucket,
+		endpoint:         config.Endpoint,
+		domain:           config.Domain,
+		pathNoBucketName: config.PathNoBucketName,
 	}
 	if err := s.ensureBucket(); err != nil {
 		return nil, err
@@ -109,6 +111,9 @@ func (s *MinioStorage) GetURL(path string, expires time.Duration) (string, error
 		base = s.domain
 	}
 	base = strings.TrimRight(base, "/")
+	if s.pathNoBucketName {
+		return fmt.Sprintf("%s/%s", base, path), nil
+	}
 	return fmt.Sprintf("%s/%s/%s", base, s.bucket, path), nil
 }
 

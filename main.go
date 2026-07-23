@@ -101,13 +101,14 @@ func main() {
 	// 初始化文件存储（按 file-storage.type 选择 minio / local 驱动）
 	fileCfg := &config.Cfg.FileStorage
 	storageCfg := &storage.Config{
-		Type:      fileCfg.Type,
-		Endpoint:  fileCfg.Minio.Endpoint,
-		AccessKey: fileCfg.Minio.AccessKey,
-		SecretKey: fileCfg.Minio.SecretKey,
-		Bucket:    fileCfg.Minio.Bucket,
-		Domain:    fileCfg.Minio.Domain,
-		BasePath:  fileCfg.Local.Path,
+		Type:             fileCfg.Type,
+		Endpoint:         fileCfg.Minio.Endpoint,
+		AccessKey:        fileCfg.Minio.AccessKey,
+		SecretKey:        fileCfg.Minio.SecretKey,
+		Bucket:           fileCfg.Minio.Bucket,
+		Domain:           fileCfg.Minio.Domain,
+		PathNoBucketName: fileCfg.Minio.PathNoBucketName,
+		BasePath:         fileCfg.Local.Path,
 	}
 	if storageCfg.Type == "" {
 		storageCfg.Type = storage.TypeLocal
