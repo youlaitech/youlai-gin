@@ -117,6 +117,8 @@ file-storage:
     bucket: public
     # 自定义域名：配置后文件 URL 走域名，留空则用 endpoint（IP）格式
     domain:
+    # 返回的url中path不带bucket名称（兼容Cloudflare R2）
+    path-no-bucket-name: false
   # 本地存储
   local:
     path: ./uploads

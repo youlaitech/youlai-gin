@@ -99,6 +99,7 @@ file-storage:
     secret-key: p9rBdQZPBIJcMH23iyFkZkXmmawbmwPlk3JLlaaj
     bucket: public
     domain:
+    path-no-bucket-name: false
   # 本地存储
   local:
     path: ./uploads

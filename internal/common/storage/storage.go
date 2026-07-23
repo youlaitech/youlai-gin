@@ -52,15 +52,17 @@ type FileInfo struct {
 
 // Config 存储配置
 type Config struct {
-	Type      string `mapstructure:"type"`      // 存储类型：local, aliyun
-	Endpoint  string `mapstructure:"endpoint"`  // 端点地址
-	Bucket    string `mapstructure:"bucket"`    // 存储桶名称
-	AccessKey string `mapstructure:"accessKey"` // 访问密钥ID
-	SecretKey string `mapstructure:"secretKey"` // 访问密钥Secret
-	Region    string `mapstructure:"region"`    // 区域
-	Domain    string `mapstructure:"domain"`    // 自定义域名（CDN）
-	IsPrivate bool   `mapstructure:"isPrivate"` // 是否私有（影响URL生成）
-	BasePath  string `mapstructure:"basePath"`  // 基础路径
+	Type             string `mapstructure:"type"`             // 存储类型：local, aliyun
+	Endpoint         string `mapstructure:"endpoint"`         // 端点地址
+	Bucket           string `mapstructure:"bucket"`           // 存储桶名称
+	AccessKey        string `mapstructure:"accessKey"`        // 访问密钥ID
+	SecretKey        string `mapstructure:"secretKey"`        // 访问密钥Secret
+	Region           string `mapstructure:"region"`           // 区域
+	Domain           string `mapstructure:"domain"`           // 自定义域名（CDN）
+	IsPrivate        bool   `mapstructure:"isPrivate"`        // 是否私有（影响URL生成）
+	BasePath         string `mapstructure:"basePath"`         // 基础路径
+	PathNoBucketName bool   `mapstructure:"pathNoBucketName"` // 返回url中不包含存储桶名称（兼容Cloudflare R2）
+
 }
 
 // StorageType 存储类型常量
