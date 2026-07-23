@@ -18,7 +18,7 @@ type WechatConfig struct {
 	} `mapstructure:"miniapp"`
 }
 
-// FileStorageConfig 文件存储配置（结构参照 youlai-boot 的 file-storage）
+// FileStorageConfig 文件存储配置
 type FileStorageConfig struct {
 	Type   string                  `mapstructure:"type"`   // 存储类型：minio | aliyun | local
 	Upload FileStorageUploadConfig `mapstructure:"upload"` // 上传限制

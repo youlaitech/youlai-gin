@@ -1,12 +1,10 @@
-# ============================================
 # 开发环境配置 (dev.yaml)
-# ============================================
 
-# ==================== 服务配置 ====================
+# 服务配置
 server:
   port: 8000
 
-# ==================== 数据库配置 ====================
+# 数据库配置
 database:
   host: www.youlai.tech # MySQL 主机地址
   port: 3306 # MySQL 端口
@@ -22,7 +20,7 @@ database:
   maxOpenConns: 100 # 最大打开连接数
   connMaxLifetime: 3600 # 连接最大存活时间（秒）
 
-# ==================== Redis 配置 ====================
+# Redis 配置
 redis:
   host: www.youlai.tech # Redis 主机（开发用本地）
   port: 6379 # Redis 端口
@@ -42,7 +40,7 @@ redis:
     write: 3 # 写入超时
     pool: 5 # 连接池获取连接超时
 
-# ==================== 日志配置 ====================
+# 日志配置
 logger:
   level: debug # 日志级别：debug/info/warn/error（开发用 debug）
 
@@ -63,7 +61,7 @@ logger:
     format: json # 文件格式（json 便于后续分析）
     errorPath: logs/dev-error.log # 错误日志单独文件
 
-# ==================== 安全配置 ====================
+# 安全配置
 security:
   sessionType: jwt # 会话类型：jwt（无状态）/ redis-token（有状态）
 
@@ -80,7 +78,7 @@ security:
     refreshTokenTTL: 2592000 # 刷新令牌有效期（秒）
     allowMultiLogin: true # 是否允许多设备同时登录（开发环境允许）
 
-# ==================== 环境变量覆盖示例 ====================
+# 环境变量覆盖示例
 # 任何配置项都可以通过环境变量覆盖，格式：APP_<模块>_<字段>
 #
 # 示例：
@@ -89,13 +87,13 @@ security:
 #   export APP_REDIS_HOST="remote-redis.com"         # 覆盖 Redis 地址
 #   export APP_SECURITY_JWT_SECRETKEY="new-secret"   # 覆盖 JWT 密钥
 
-# ==================== 微信小程序配置 ====================
+# 微信小程序配置
 wechat:
   miniapp:
     appId: Your_AppId
     appSecret: Your_AppSecret
 
-# ==================== 文件存储（结构参照 youlai-boot 的 file-storage） ====================
+# 文件存储
 file-storage:
   # 存储类型：minio | local
   type: minio
