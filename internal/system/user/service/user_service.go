@@ -16,6 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 	appContext "youlai-gin/internal/common/context"
 	roleRepo "youlai-gin/internal/system/role/repository"
+	roleSvc "youlai-gin/internal/system/role/service"
 	deptRepo "youlai-gin/internal/system/dept/repository"
 	"youlai-gin/internal/system/user/model"
 	"youlai-gin/internal/system/user/repository"
@@ -178,6 +179,15 @@ func GetCurrentUserInfoWithRoles(userId int64, roles []string) (*model.CurrentUs
 	// 获取用户权限列表（从Redis缓存）
 	perms := []string{}
 	if len(roles) > 0 {
+		perms, err = getRolePermsFromCache(roles)
+		if err != nil {
+			return nil, errs.SystemError("查询用户权限失败")
+		}
+	}
+
+	// 缓存未命中时触发全量刷新（防止 DB 数据已更新但缓存未同步）
+	if len(perms) == 0 && len(roles) > 0 {
+		_ = roleSvc.RefreshRolePermsCacheByCodes(roles)
 		perms, err = getRolePermsFromCache(roles)
 		if err != nil {
 			return nil, errs.SystemError("查询用户权限失败")

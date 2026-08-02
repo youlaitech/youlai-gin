@@ -6,7 +6,7 @@ import "time"
 // SSE 消息主题
 const (
 	TopicDict        = "dict"         // 字典数据变更
-	TopicOnlineCount = "online-count" // 在线人数变化
+	TopicOnlineCount = "online-users" // 在线人数变化
 	TopicSystem      = "system"       // 系统级通知
 )
 
