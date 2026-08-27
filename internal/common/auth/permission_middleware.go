@@ -3,6 +3,7 @@ package auth
 import (
 	"github.com/gin-gonic/gin"
 	permService "youlai-gin/internal/common/permission/service"
+	"youlai-gin/pkg/constant"
 	"youlai-gin/pkg/errs"
 
 	"net/http"
@@ -17,10 +18,29 @@ func getCurrentUserID(c *gin.Context) (int64, error) {
 	return user.UserID, nil
 }
 
+// isRootUser 判断当前用户是否拥有 ROOT 角色（超级管理员直接放行所有按钮权限）
+func isRootUser(c *gin.Context) bool {
+	user, exists := GetCurrentUser(c)
+	if !exists {
+		return false
+	}
+	for _, role := range user.Roles {
+		if role == constant.RoleCodeRoot {
+			return true
+		}
+	}
+	return false
+}
+
 // RequirePermission 权限校验中间件
 // 用法: users.GET("", RequirePermission("sys:user:list"), handler.ListUser)
 func RequirePermission(perm string) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if isRootUser(c) {
+			c.Next()
+			return
+		}
+
 		userID, err := getCurrentUserID(c)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, errs.Unauthorized("未登录"))
@@ -44,6 +64,11 @@ func RequirePermission(perm string) gin.HandlerFunc {
 // RequireAnyPermission 需要拥有任意一个权限
 func RequireAnyPermission(perms ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if isRootUser(c) {
+			c.Next()
+			return
+		}
+
 		userID, err := getCurrentUserID(c)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, errs.Unauthorized("未登录"))

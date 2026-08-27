@@ -75,7 +75,7 @@ const swaggerIndexHTML = `<!DOCTYPE html>
 </html>
 `
 
-const Version = "0.3.1"
+const Version = "0.4.0"
 
 func main() {
 	// 加载配置（APP_ENV 或默认 dev）
@@ -98,16 +98,16 @@ func main() {
 	}
 	logger.Log.Sugar().Infof("Redis 已连接: %s:%d (db=%d)", config.Cfg.Redis.Host, config.Cfg.Redis.Port, config.Cfg.Redis.Database)
 
-	// 初始化文件存储（按 file-storage.type 选择 minio / local 驱动）
+	// 初始化文件存储（按 storage.type 选择 s3 / local 驱动）
 	fileCfg := &config.Cfg.FileStorage
 	storageCfg := &storage.Config{
 		Type:             fileCfg.Type,
-		Endpoint:         fileCfg.Minio.Endpoint,
-		AccessKey:        fileCfg.Minio.AccessKey,
-		SecretKey:        fileCfg.Minio.SecretKey,
-		Bucket:           fileCfg.Minio.Bucket,
-		Domain:           fileCfg.Minio.Domain,
-		PathNoBucketName: fileCfg.Minio.PathNoBucketName,
+		Endpoint:         fileCfg.S3.Endpoint,
+		AccessKey:        fileCfg.S3.AccessKey,
+		SecretKey:        fileCfg.S3.SecretKey,
+		Bucket:           fileCfg.S3.Bucket,
+		Domain:           fileCfg.S3.Domain,
+		PathNoBucketName: fileCfg.S3.PathNoBucketName,
 		BasePath:         fileCfg.Local.Path,
 	}
 	if storageCfg.Type == "" {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strconv"
 	"strings"
+	"time"
 
 	deptModel "youlai-gin/internal/system/dept/model"
 	permModel "youlai-gin/internal/common/permission/model"
@@ -14,6 +15,9 @@ import (
 	"youlai-gin/internal/common/redis"
 	"youlai-gin/pkg/types"
 )
+
+// RolePermsCacheTTL 角色权限缓存过期时间，避免脏权限被永久缓存
+const RolePermsCacheTTL = 10 * time.Minute
 
 func getUserRoleCodes(userID int64) ([]string, error) {
 	var roleCodes []string
@@ -350,11 +354,17 @@ func getUserPermsByRoles(roleCodes []string) ([]string, error) {
 			continue
 		}
 		if val == "" {
+			missingRoles = append(missingRoles, roleCode)
 			continue
 		}
 
 		var rolePerms []string
 		if err := json.Unmarshal([]byte(val), &rolePerms); err != nil {
+			missingRoles = append(missingRoles, roleCode)
+			continue
+		}
+		// 缓存为空数组时回源复核，避免首次加载失败写入的空权限被永久信任
+		if len(rolePerms) == 0 {
 			missingRoles = append(missingRoles, roleCode)
 			continue
 		}
@@ -385,6 +395,8 @@ func getUserPermsByRoles(roleCodes []string) ([]string, error) {
 				}
 				permsJSON, _ := json.Marshal(perms)
 				redis.Client.HSet(ctx, rolePermsKey, roleCode, string(permsJSON))
+				// 加过期时间，避免脏权限被永久缓存；过期后重新从 DB 加载自愈
+				redis.Client.Expire(ctx, rolePermsKey, RolePermsCacheTTL)
 			}
 		}
 	}

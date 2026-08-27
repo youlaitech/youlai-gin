@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"time"
 
 	"youlai-gin/internal/system/role/repository"
 	pkgRedis "youlai-gin/internal/common/redis"
@@ -29,6 +30,7 @@ func RefreshRolePermsCacheByCode(roleCode string) error {
 			log.Printf("缓存角色[%s]空权限失败: %v", roleCode, err)
 			return err
 		}
+		_ = pkgRedis.Client.Expire(ctx, rolePermsKey, 10*time.Minute).Err()
 		log.Printf("刷新角色[%s]权限缓存: []", roleCode)
 		return nil
 	}
@@ -43,6 +45,7 @@ func RefreshRolePermsCacheByCode(roleCode string) error {
 		log.Printf("缓存角色[%s]权限失败: %v", roleCode, err)
 		return err
 	}
+	_ = pkgRedis.Client.Expire(ctx, rolePermsKey, 10*time.Minute).Err()
 
 	log.Printf("刷新角色[%s]权限缓存: %v", roleCode, rolePerms.Perms)
 	return nil
@@ -83,6 +86,7 @@ func RefreshRolePermsCacheByCodes(roleCodes []string) error {
 			log.Printf("缓存角色[%s]权限失败: %v", rolePerms.RoleCode, err)
 			continue
 		}
+		_ = pkgRedis.Client.Expire(ctx, rolePermsKey, 10*time.Minute).Err()
 
 		successCount++
 	}

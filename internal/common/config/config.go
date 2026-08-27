@@ -20,10 +20,10 @@ type WechatConfig struct {
 
 // FileStorageConfig 文件存储配置
 type FileStorageConfig struct {
-	Type   string                  `mapstructure:"type"`   // 存储类型：minio | aliyun | local
+	Type   string                 `mapstructure:"type"`   // 存储类型：s3 | aliyun | local
 	Upload FileStorageUploadConfig `mapstructure:"upload"` // 上传限制
-	Minio  FileStorageMinioConfig  `mapstructure:"minio"`  // MinIO 对象存储
-	Local  FileStorageLocalConfig  `mapstructure:"local"`  // 本地存储
+	S3     FileStorageS3Config    `mapstructure:"s3"`     // S3(RustFS) 对象存储
+	Local  FileStorageLocalConfig `mapstructure:"local"`  // 本地存储
 }
 
 // FileStorageUploadConfig 上传限制
@@ -32,8 +32,8 @@ type FileStorageUploadConfig struct {
 	AllowedExtensions []string `mapstructure:"allowed-extensions"` // 允许的文件扩展名白名单（置空表示不限制）
 }
 
-// FileStorageMinioConfig MinIO 对象存储
-type FileStorageMinioConfig struct {
+// FileStorageS3Config S3(RustFS) 对象存储
+type FileStorageS3Config struct {
 	Endpoint         string `mapstructure:"endpoint"`            // 服务地址（含 scheme，如 http://host:9000）
 	AccessKey        string `mapstructure:"access-key"`          // 访问凭据
 	SecretKey        string `mapstructure:"secret-key"`          // 凭据密钥
@@ -81,7 +81,7 @@ type Config struct {
 	Security    auth.SecurityConfig `mapstructure:"security"`
 	Wechat      WechatConfig        `mapstructure:"wechat"`
 	RateLimit   RateLimitConfig     `mapstructure:"rate-limit"`
-	FileStorage FileStorageConfig   `mapstructure:"file-storage"`
+	FileStorage FileStorageConfig   `mapstructure:"storage"`
 }
 
 // Cfg 全局配置实例

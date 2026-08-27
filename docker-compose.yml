@@ -1,0 +1,61 @@
+# 有来后台管理系统(Gin) Docker Compose 配置
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0.29
+    container_name: youlai-gin-mysql
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+      - MYSQL_ROOT_PASSWORD=123456
+    volumes:
+      - ./sql/mysql:/docker-entrypoint-initdb.d:ro
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+      - --explicit_defaults_for_timestamp=true
+      - --lower_case_table_names=1
+    ports:
+      - 3306:3306
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 缓存
+  redis:
+    image: redis:7.2.3
+    container_name: youlai-gin-redis
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+    command: redis-server --requirepass 123456 --appendonly no
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "123456", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # RustFS：S3 协议兼容的对象存储服务（MinIO 停止维护后的开源替代）
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: youlai-gin-rustfs
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      - TZ=Asia/Shanghai
+      - RUSTFS_ACCESS_KEY=rustfs-admin
+      - RUSTFS_SECRET_KEY=rustfs-admin
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - rustfs_data:/data
+
+volumes:
+  rustfs_data:
