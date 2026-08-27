@@ -52,7 +52,7 @@ type FileInfo struct {
 
 // Config 存储配置
 type Config struct {
-	Type             string `mapstructure:"type"`             // 存储类型：local, aliyun
+	Type             string `mapstructure:"type"`             // 存储类型：local, aliyun, s3
 	Endpoint         string `mapstructure:"endpoint"`         // 端点地址
 	Bucket           string `mapstructure:"bucket"`           // 存储桶名称
 	AccessKey        string `mapstructure:"accessKey"`        // 访问密钥ID
@@ -69,5 +69,5 @@ type Config struct {
 const (
 	TypeLocal  = "local"
 	TypeAliyun = "aliyun"
-	TypeMinio  = "minio"
+	TypeS3     = "s3"
 )

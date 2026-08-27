@@ -211,7 +211,7 @@ func DeleteFile(c *gin.Context) {
 	response.Ok(c, nil)
 }
 
-// validateUpload 按 file-storage 配置校验上传文件（大小上限 + 扩展名白名单）
+// validateUpload 按 storage 配置校验上传文件（大小上限 + 扩展名白名单）
 func validateUpload(file *multipart.FileHeader) error {
 	upload := config.Cfg.FileStorage.Upload
 
