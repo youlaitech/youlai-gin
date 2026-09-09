@@ -75,7 +75,7 @@ const swaggerIndexHTML = `<!DOCTYPE html>
 </html>
 `
 
-const Version = "4.2.0"
+const Version = "0.1.1"
 
 func main() {
 	// 加载配置（APP_ENV 或默认 dev）

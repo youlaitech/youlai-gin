@@ -177,7 +177,7 @@ func (r *Repository) UpdateGenTable(ctx context.Context, id int64, updates map[s
 	return nil
 }
 
-// ReplaceGenColumns 覆盖写字段配置（先删后插，保证与前台提交保持一致）
+// ReplaceGenColumns 覆盖写字段配置（先删后插）
 func (r *Repository) ReplaceGenColumns(ctx context.Context, tableID int64, cols []GenColumn) error {
 	if err := r.db.WithContext(ctx).Table("gen_table_column").
 		Where("table_id = ?", tableID).Delete(&GenColumn{}).Error; err != nil {

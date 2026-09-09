@@ -11,7 +11,7 @@ import (
 )
 
 // RegisterRoutes 装配认证模块（账号密码 / 扫码 / 微信小程序）路由。
-// 所有子域均走 repository → service → handler 的依赖注入，对上层 router 保持唯一入口。
+// 所有子域均走 repository → service → handler 的依赖注入。
 func RegisterRoutes(api *gin.RouterGroup, tokenManager pkgAuth.TokenManager) {
 	db := database.DB
 	userRepo := userRepo.NewRepository(db)
