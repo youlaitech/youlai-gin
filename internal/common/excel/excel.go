@@ -3,7 +3,7 @@ package excel
 import (
 	"fmt"
 	"io"
-	
+
 	"github.com/xuri/excelize/v2"
 )
 
@@ -34,14 +34,14 @@ func (e *ExcelExporter) SetHeaders(headers []string) error {
 			return err
 		}
 	}
-	
+
 	// 设置表头样式
 	headerStyle, _ := e.file.NewStyle(&excelize.Style{
-		Font: &excelize.Font{Bold: true, Size: 12},
-		Fill: excelize.Fill{Type: "pattern", Color: []string{"#E0E0E0"}, Pattern: 1},
+		Font:      &excelize.Font{Bold: true, Size: 12},
+		Fill:      excelize.Fill{Type: "pattern", Color: []string{"#E0E0E0"}, Pattern: 1},
 		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
 	})
-	
+
 	endCol := numToCol(len(headers) - 1)
 	e.file.SetCellStyle(e.sheetName, fmt.Sprintf("A%d", e.row), fmt.Sprintf("%s%d", endCol, e.row), headerStyle)
 	e.row++

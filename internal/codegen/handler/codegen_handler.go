@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 	"net/http"
@@ -8,23 +8,42 @@ import (
 
 	"youlai-gin/internal/codegen/model"
 	"youlai-gin/internal/codegen/service"
-	"youlai-gin/pkg/errs"
 	response "youlai-gin/internal/common"
 	"youlai-gin/internal/common/validator"
+	"youlai-gin/pkg/errs"
 )
+
+// CodegenHandler 代码生成接口层（数据表 / 配置 / 预览 / 下载）
+type CodegenHandler struct {
+	svc *service.CodegenService
+}
+
+// NewCodegenHandler 创建 CodegenHandler 实例
+func NewCodegenHandler(svc *service.CodegenService) *CodegenHandler { return &CodegenHandler{svc: svc} }
+
+// RegisterRoutes 注册代码生成路由，基础路径 /api/v1/codegen
+func (h *CodegenHandler) RegisterRoutes(r *gin.RouterGroup) {
+	codegenGroup := r.Group("/codegen")
+	codegenGroup.GET("/table", h.GetTablePage)
+	codegenGroup.GET("/:tableName/config", h.GetGenConfig)
+	codegenGroup.POST("/:tableName/config", h.SaveGenConfig)
+	codegenGroup.DELETE("/:tableName/config", h.DeleteGenConfig)
+	codegenGroup.GET("/:tableName/preview", h.GetPreview)
+	codegenGroup.GET("/:tableName/download", h.Download)
+}
 
 // GetTablePage 数据表分页
 // @Summary 数据表分页
 // @Tags 11.代码生成
 // @Router /api/v1/codegen/table [get]
-func GetTablePage(c *gin.Context) {
+func (h *CodegenHandler) GetTablePage(c *gin.Context) {
 	var query model.TableQuery
 	if err := validator.BindQuery(c, &query); err != nil {
 		c.Error(err)
 		return
 	}
 
-	result, err := service.GetTablePage(&query)
+	result, err := h.svc.GetTablePage(c.Request.Context(), &query)
 	if err != nil {
 		c.Error(err)
 		return
@@ -38,9 +57,9 @@ func GetTablePage(c *gin.Context) {
 // @Tags 11.代码生成
 // @Param tableName path string true "表名"
 // @Router /api/v1/codegen/{tableName}/config [get]
-func GetGenConfig(c *gin.Context) {
+func (h *CodegenHandler) GetGenConfig(c *gin.Context) {
 	tableName := c.Param("tableName")
-	result, err := service.GetGenConfig(tableName)
+	result, err := h.svc.GetGenConfig(c.Request.Context(), tableName)
 	if err != nil {
 		c.Error(err)
 		return
@@ -53,7 +72,7 @@ func GetGenConfig(c *gin.Context) {
 // @Tags 11.代码生成
 // @Param tableName path string true "表名"
 // @Router /api/v1/codegen/{tableName}/config [post]
-func SaveGenConfig(c *gin.Context) {
+func (h *CodegenHandler) SaveGenConfig(c *gin.Context) {
 	tableName := c.Param("tableName")
 	var body model.GenConfigForm
 	if err := validator.BindJSON(c, &body); err != nil {
@@ -61,7 +80,7 @@ func SaveGenConfig(c *gin.Context) {
 		return
 	}
 
-	if err := service.SaveGenConfig(tableName, &body); err != nil {
+	if err := h.svc.SaveGenConfig(c.Request.Context(), tableName, &body); err != nil {
 		c.Error(err)
 		return
 	}
@@ -74,9 +93,9 @@ func SaveGenConfig(c *gin.Context) {
 // @Tags 11.代码生成
 // @Param tableName path string true "表名"
 // @Router /api/v1/codegen/{tableName}/config [delete]
-func DeleteGenConfig(c *gin.Context) {
+func (h *CodegenHandler) DeleteGenConfig(c *gin.Context) {
 	tableName := c.Param("tableName")
-	if err := service.DeleteGenConfig(tableName); err != nil {
+	if err := h.svc.DeleteGenConfig(c.Request.Context(), tableName); err != nil {
 		c.Error(err)
 		return
 	}
@@ -88,12 +107,12 @@ func DeleteGenConfig(c *gin.Context) {
 // @Tags 11.代码生成
 // @Param tableName path string true "表名"
 // @Router /api/v1/codegen/{tableName}/preview [get]
-func GetPreview(c *gin.Context) {
+func (h *CodegenHandler) GetPreview(c *gin.Context) {
 	tableName := c.Param("tableName")
 	pageType := c.DefaultQuery("pageType", "classic")
 	typeParam := c.DefaultQuery("type", "ts")
 
-	list, err := service.GetPreview(tableName, pageType, typeParam)
+	list, err := h.svc.GetPreview(c.Request.Context(), tableName, pageType, typeParam)
 	if err != nil {
 		c.Error(err)
 		return
@@ -106,7 +125,7 @@ func GetPreview(c *gin.Context) {
 // @Tags 11.代码生成
 // @Param tableName path string true "表名（可逗号分隔）"
 // @Router /api/v1/codegen/{tableName}/download [get]
-func Download(c *gin.Context) {
+func (h *CodegenHandler) Download(c *gin.Context) {
 	tableName := c.Param("tableName")
 	pageType := c.DefaultQuery("pageType", "classic")
 	typeParam := c.DefaultQuery("type", "ts")
@@ -123,7 +142,7 @@ func Download(c *gin.Context) {
 		return
 	}
 
-	fileName, data, err := service.DownloadZip(tableNames, pageType, typeParam)
+	fileName, data, err := h.svc.DownloadZip(c.Request.Context(), tableNames, pageType, typeParam)
 	if err != nil {
 		c.Error(err)
 		return

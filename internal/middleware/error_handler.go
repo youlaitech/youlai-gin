@@ -6,8 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"youlai-gin/pkg/errs"
 	response "youlai-gin/internal/common"
+	"youlai-gin/pkg/errs"
 )
 
 // ErrorHandler 统一错误处理中间件，捕获 c.Error() 并转换为结构化的 HTTP 响应

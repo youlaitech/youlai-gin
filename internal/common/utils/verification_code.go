@@ -6,8 +6,8 @@ import (
 	"math/rand"
 	"time"
 
-	"youlai-gin/pkg/errs"
 	"youlai-gin/internal/common/redis"
+	"youlai-gin/pkg/errs"
 )
 
 const (

@@ -4,15 +4,10 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"youlai-gin/internal/file/handler"
+	"youlai-gin/internal/file/service"
 )
 
-// RegisterRoutes 注册文件管理路由
+// RegisterRoutes 注册文件管理路由（service → handler 依赖注入）
 func RegisterRoutes(router *gin.RouterGroup) {
-	fileGroup := router.Group("/files")
-	{
-		fileGroup.POST("", handler.UploadFile)        // 单文件上传
-		fileGroup.POST("/batch", handler.UploadFiles) // 批量上传
-		fileGroup.POST("/image", handler.UploadImage) // 图片上传
-		fileGroup.DELETE("", handler.DeleteFile)      // 删除文件
-	}
+	handler.NewFileHandler(service.NewFileService()).RegisterRoutes(router)
 }

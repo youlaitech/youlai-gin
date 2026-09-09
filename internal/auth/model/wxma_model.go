@@ -13,9 +13,9 @@ type WxMaPhoneLoginRequest struct {
 
 // WxMaBindMobileRequest 绑定手机号请求
 type WxMaBindMobileRequest struct {
-	OpenID string `json:"openId" binding:"required" example:"xxx"` // 微信openid
-	Mobile string `json:"mobile" binding:"required" example:"18888888888"` // 手机号
-	SmsCode string `json:"smsCode" binding:"required" example:"1234"` // 短信验证码
+	OpenID  string `json:"openId" binding:"required" example:"xxx"`         // 微信openid
+	Mobile  string `json:"mobile" binding:"required" example:"18888888888"` // 手机号
+	SmsCode string `json:"smsCode" binding:"required" example:"1234"`       // 短信验证码
 }
 
 // WxMaLoginResult 微信小程序登录结果

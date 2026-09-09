@@ -34,25 +34,25 @@ func (s *LocalStorage) Upload(path string, file io.Reader, contentType string) (
 // UploadWithOptions 带选项的上传
 func (s *LocalStorage) UploadWithOptions(path string, file io.Reader, opts *UploadOptions) (string, error) {
 	fullPath := filepath.Join(s.basePath, path)
-	
+
 	// 确保目录存在
 	dir := filepath.Dir(fullPath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", fmt.Errorf("创建目录失败: %w", err)
 	}
-	
+
 	// 创建文件
 	dst, err := os.Create(fullPath)
 	if err != nil {
 		return "", fmt.Errorf("创建文件失败: %w", err)
 	}
 	defer dst.Close()
-	
+
 	// 复制文件内容
 	if _, err := io.Copy(dst, file); err != nil {
 		return "", fmt.Errorf("写入文件失败: %w", err)
 	}
-	
+
 	// 返回访问URL
 	return s.GetURL(path, 0)
 }
@@ -89,9 +89,9 @@ func (s *LocalStorage) GetInfo(path string) (*FileInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	url, _ := s.GetURL(path, 0)
-	
+
 	return &FileInfo{
 		Path:         path,
 		Size:         info.Size(),

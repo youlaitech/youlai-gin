@@ -1,4 +1,4 @@
-package message
+package service
 
 import (
 	"sync"
@@ -6,6 +6,7 @@ import (
 
 	"go.uber.org/zap"
 
+	msgModel "youlai-gin/internal/message/model"
 	"youlai-gin/internal/common/logger"
 )
 
@@ -16,11 +17,12 @@ type SessionInfo struct {
 }
 
 // SseSessionRegistry 维护「用户 ↔ 连接」映射，支撑在线人数统计与定向推送
+// 内部实现（非 DB 仓储）：连接登记写在此层，SseService 只感知会话概念
 type SseSessionRegistry struct {
-	mu               sync.RWMutex
-	userEmittersMap  map[string]map[*SseEmitter]bool
-	emitterUserMap   map[*SseEmitter]*SessionInfo
-	emitterTimeMap   map[*SseEmitter]int64
+	mu              sync.RWMutex
+	userEmittersMap map[string]map[*SseEmitter]bool
+	emitterUserMap  map[*SseEmitter]*SessionInfo
+	emitterTimeMap  map[*SseEmitter]int64
 }
 
 func NewSseSessionRegistry() *SseSessionRegistry {
@@ -87,11 +89,11 @@ func (r *SseSessionRegistry) GetTotalConnectionCount() int {
 }
 
 // GetOnlineUsers 在线用户列表，含各自会话数与最早登录时间
-func (r *SseSessionRegistry) GetOnlineUsers() []*OnlineUserDTO {
+func (r *SseSessionRegistry) GetOnlineUsers() []*msgModel.OnlineUserDTO {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	result := make([]*OnlineUserDTO, 0, len(r.userEmittersMap))
+	result := make([]*msgModel.OnlineUserDTO, 0, len(r.userEmittersMap))
 	for username, emitters := range r.userEmittersMap {
 		var earliestLoginTime int64 = -1
 		for emitter := range emitters {
@@ -104,7 +106,7 @@ func (r *SseSessionRegistry) GetOnlineUsers() []*OnlineUserDTO {
 		if earliestLoginTime == -1 {
 			earliestLoginTime = time.Now().UnixMilli()
 		}
-		result = append(result, &OnlineUserDTO{
+		result = append(result, &msgModel.OnlineUserDTO{
 			Username:     username,
 			SessionCount: len(emitters),
 			LoginTime:    earliestLoginTime,

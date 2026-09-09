@@ -4,18 +4,18 @@ import (
 	"fmt"
 	"io"
 	"time"
-	
+
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
 // AliyunOSS 阿里云OSS存储
 type AliyunOSS struct {
-	client    *oss.Client
-	bucket    *oss.Bucket
+	client     *oss.Client
+	bucket     *oss.Bucket
 	bucketName string
 	endpoint   string
-	domain     string    // 自定义域名（CDN）
-	isPrivate  bool      // 是否私有
+	domain     string // 自定义域名（CDN）
+	isPrivate  bool   // 是否私有
 }
 
 // NewAliyunOSS 创建阿里云OSS存储
@@ -25,18 +25,18 @@ func NewAliyunOSS(config *Config) (*AliyunOSS, error) {
 	if err != nil {
 		return nil, fmt.Errorf("创建OSS客户端失败: %w", err)
 	}
-	
+
 	bucket, err := client.Bucket(config.Bucket)
 	if err != nil {
 		return nil, fmt.Errorf("获取Bucket失败: %w", err)
 	}
-	
+
 	domain := config.Domain
 	if domain == "" {
 		// 默认域名：<bucket>.<endpoint>
 		domain = fmt.Sprintf("https://%s.%s", config.Bucket, config.Endpoint)
 	}
-	
+
 	return &AliyunOSS{
 		client:     client,
 		bucket:     bucket,
@@ -57,19 +57,19 @@ func (s *AliyunOSS) Upload(path string, file io.Reader, contentType string) (str
 // UploadWithOptions 带选项的上传
 func (s *AliyunOSS) UploadWithOptions(path string, file io.Reader, opts *UploadOptions) (string, error) {
 	var options []oss.Option
-	
+
 	if opts.ContentType != "" {
 		options = append(options, oss.ContentType(opts.ContentType))
 	}
-	
+
 	if opts.CacheControl != "" {
 		options = append(options, oss.CacheControl(opts.CacheControl))
 	}
-	
+
 	if opts.ContentDisposition != "" {
 		options = append(options, oss.ContentDisposition(opts.ContentDisposition))
 	}
-	
+
 	// 设置ACL
 	if opts.ACL != "" {
 		var aclType oss.ACLType
@@ -83,12 +83,12 @@ func (s *AliyunOSS) UploadWithOptions(path string, file io.Reader, opts *UploadO
 		}
 		options = append(options, oss.ObjectACL(aclType))
 	}
-	
+
 	// 上传文件
 	if err := s.bucket.PutObject(path, file, options...); err != nil {
 		return "", fmt.Errorf("上传文件失败: %w", err)
 	}
-	
+
 	// 返回访问URL
 	return s.GetURL(path, 0)
 }
@@ -104,7 +104,7 @@ func (s *AliyunOSS) GetURL(path string, expires time.Duration) (string, error) {
 	if s.isPrivate && expires > 0 {
 		return s.bucket.SignURL(path, oss.HTTPGet, int64(expires.Seconds()))
 	}
-	
+
 	// 公开文件直接返回URL
 	return fmt.Sprintf("%s/%s", s.domain, path), nil
 }
@@ -120,19 +120,19 @@ func (s *AliyunOSS) GetInfo(path string) (*FileInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	url, _ := s.GetURL(path, 0)
-	
+
 	var size int64
 	if sizeStr := meta.Get("Content-Length"); sizeStr != "" {
 		fmt.Sscanf(sizeStr, "%d", &size)
 	}
-	
+
 	var lastModified time.Time
 	if modStr := meta.Get("Last-Modified"); modStr != "" {
 		lastModified, _ = time.Parse(time.RFC1123, modStr)
 	}
-	
+
 	return &FileInfo{
 		Path:         path,
 		Size:         size,

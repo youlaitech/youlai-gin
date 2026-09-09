@@ -3,16 +3,15 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 
-	"youlai-gin/internal/system/menu/model"
-	"youlai-gin/internal/system/menu/service"
+	response "youlai-gin/internal/common"
 	"youlai-gin/internal/common/auth"
 	appContext "youlai-gin/internal/common/context"
+	"youlai-gin/internal/common/validator"
+	"youlai-gin/internal/middleware"
+	"youlai-gin/internal/system/menu/model"
+	"youlai-gin/internal/system/menu/service"
 	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
-	"youlai-gin/internal/middleware"
-	response "youlai-gin/internal/common"
-	"youlai-gin/pkg/types"
-	"youlai-gin/internal/common/validator"
 )
 
 // Handler 菜单接口层
@@ -27,13 +26,13 @@ func NewHandler(svc *service.Service) *Handler { return &Handler{svc: svc} }
 func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 	menus := r.Group("/menus")
 	{
-		menus.GET("", h.GetMenuList)
-		menus.GET("/options", h.GetMenuOptions)
-		menus.GET("/routes", h.GetCurrentUserRoutes)
-		menus.POST("", auth.RequirePermission("sys:menu:create"), middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeInsert), h.SaveMenu)
-		menus.GET("/:id/form", auth.RequirePermission("sys:menu:update"), h.GetMenuForm)
-		menus.PUT("/:id", auth.RequirePermission("sys:menu:update"), middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeUpdate), h.UpdateMenu)
-		menus.DELETE("/:id", auth.RequirePermission("sys:menu:delete"), middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeDelete), h.DeleteMenu)
+		menus.GET("", h.List)
+		menus.GET("/options", h.Options)
+		menus.GET("/routes", h.UserRoutes)
+		menus.POST("", auth.RequirePermission("sys:menu:create"), middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeInsert), h.Create)
+		menus.GET("/:id/form", auth.RequirePermission("sys:menu:update"), h.GetForm)
+		menus.PUT("/:id", auth.RequirePermission("sys:menu:update"), middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeUpdate), h.Update)
+		menus.DELETE("/:id", auth.RequirePermission("sys:menu:delete"), middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeDelete), h.Delete)
 	}
 }
 
@@ -41,14 +40,14 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 // @Tags 04.菜单接口
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus [get]
-func (h *Handler) GetMenuList(c *gin.Context) {
+func (h *Handler) List(c *gin.Context) {
 	var query model.MenuQuery
 	if err := validator.BindQuery(c, &query); err != nil {
 		c.Error(err)
 		return
 	}
 
-	list, err := h.svc.GetMenuList(&query)
+	list, err := h.svc.List(c.Request.Context(), &query)
 	if err != nil {
 		c.Error(err)
 		return
@@ -61,10 +60,10 @@ func (h *Handler) GetMenuList(c *gin.Context) {
 // @Tags 04.菜单接口
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/options [get]
-func (h *Handler) GetMenuOptions(c *gin.Context) {
+func (h *Handler) Options(c *gin.Context) {
 	onlyParent := c.Query("onlyParent") == "true"
 
-	options, err := h.svc.GetMenuOptions(onlyParent)
+	options, err := h.svc.Options(c.Request.Context(), onlyParent)
 	if err != nil {
 		c.Error(err)
 		return
@@ -77,14 +76,14 @@ func (h *Handler) GetMenuOptions(c *gin.Context) {
 // @Tags 04.菜单接口
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/routes [get]
-func (h *Handler) GetCurrentUserRoutes(c *gin.Context) {
-	userId, err := appContext.GetUserIDMust(c)
+func (h *Handler) UserRoutes(c *gin.Context) {
+	userId, err := appContext.GetCurrentUserID(c)
 	if err != nil {
 		c.Error(errs.Unauthorized("未登录"))
 		return
 	}
 
-	routes, err := h.svc.GetCurrentUserRoutes(userId)
+	routes, err := h.svc.UserRoutes(c.Request.Context(), userId)
 	if err != nil {
 		c.Error(err)
 		return
@@ -98,14 +97,14 @@ func (h *Handler) GetCurrentUserRoutes(c *gin.Context) {
 // @Param body body model.MenuForm true "菜单信息"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus [post]
-func (h *Handler) SaveMenu(c *gin.Context) {
+func (h *Handler) Create(c *gin.Context) {
 	var form model.MenuForm
 	if err := validator.BindJSON(c, &form); err != nil {
 		c.Error(err)
 		return
 	}
 
-	if err := h.svc.SaveMenu(c, &form); err != nil {
+	if err := h.svc.Create(appContext.OperatorCtx(c), &form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -118,14 +117,14 @@ func (h *Handler) SaveMenu(c *gin.Context) {
 // @Param id path int true "菜单ID"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/{id}/form [get]
-func (h *Handler) GetMenuForm(c *gin.Context) {
+func (h *Handler) GetForm(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "菜单")
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	form, err := h.svc.GetMenuForm(id)
+	form, err := h.svc.GetForm(c.Request.Context(), id)
 	if err != nil {
 		c.Error(err)
 		return
@@ -140,7 +139,7 @@ func (h *Handler) GetMenuForm(c *gin.Context) {
 // @Param body body model.MenuForm true "菜单信息"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/{id} [put]
-func (h *Handler) UpdateMenu(c *gin.Context) {
+func (h *Handler) Update(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "菜单")
 	if err != nil {
 		c.Error(err)
@@ -153,13 +152,12 @@ func (h *Handler) UpdateMenu(c *gin.Context) {
 		return
 	}
 
-	form.ID = types.BigInt(id)
-	if err := h.svc.SaveMenu(c, &form); err != nil {
+	if err := h.svc.Update(appContext.OperatorCtx(c), id, &form); err != nil {
 		c.Error(err)
 		return
 	}
 
-	response.OkMsg(c, "更新成功")
+	response.OkMsg(c, "修改成功")
 }
 
 // @Summary 删除菜单
@@ -167,14 +165,14 @@ func (h *Handler) UpdateMenu(c *gin.Context) {
 // @Param id path int true "菜单ID"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/{id} [delete]
-func (h *Handler) DeleteMenu(c *gin.Context) {
+func (h *Handler) Delete(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "菜单")
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	if err := h.svc.DeleteMenu(id); err != nil {
+	if err := h.svc.Delete(appContext.OperatorCtx(c), id); err != nil {
 		c.Error(err)
 		return
 	}

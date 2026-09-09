@@ -8,11 +8,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	response "youlai-gin/internal/common"
 	"youlai-gin/internal/common/config"
 	"youlai-gin/internal/common/redis"
 	"youlai-gin/pkg/constant"
 	"youlai-gin/pkg/errs"
-	response "youlai-gin/internal/common"
 )
 
 const (

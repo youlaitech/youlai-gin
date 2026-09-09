@@ -2,6 +2,7 @@ package auth
 
 import (
 	"github.com/gin-gonic/gin"
+
 	permService "youlai-gin/internal/common/permission/service"
 	"youlai-gin/pkg/constant"
 	"youlai-gin/pkg/errs"

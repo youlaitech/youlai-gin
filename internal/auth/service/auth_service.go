@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"image/color"
 	"strings"
 	"time"
@@ -15,25 +14,36 @@ import (
 
 	authModel "youlai-gin/internal/auth/model"
 	"youlai-gin/internal/common/auth"
-	permService "youlai-gin/internal/common/permission/service"
 	"youlai-gin/internal/common/redis"
-	userRepo "youlai-gin/internal/system/user/repository"
+	userModel "youlai-gin/internal/system/user/model"
 	"youlai-gin/pkg/errs"
 )
 
-// tokenManager 全局 TokenManager 实例
-var tokenManager auth.TokenManager
-
-// captchaStore 验证码存储
-var captchaStore = base64Captcha.DefaultMemStore
-
-// InitTokenManager 初始化 TokenManager（由 main 或 router 调用）
-func InitTokenManager(tm auth.TokenManager) {
-	tokenManager = tm
+// UserRepository 用户数据访问子集（认证场景所需查询，由 user.Repository 实现）
+type UserRepository interface {
+	Get(ctx context.Context, id int64) (*userModel.User, error)
+	GetByUsername(ctx context.Context, username string) (*userModel.User, error)
+	GetByMobile(ctx context.Context, mobile string) (*userModel.User, error)
+	RoleCodes(ctx context.Context, userID int64) ([]string, error)
 }
 
-// GetCaptcha 获取验证码
-func GetCaptcha() (*authModel.CaptchaVO, error) {
+// captchaStore 图形验证码内存回退存储
+var captchaStore = base64Captcha.DefaultMemStore
+
+// AuthService 账号密码 / 短信验证码登录业务逻辑层
+type AuthService struct {
+	tm       auth.TokenManager // 令牌生命周期操作（登出/刷新）；签发统一走 TokenIssuer
+	issuer   *TokenIssuer
+	userRepo UserRepository
+}
+
+// NewAuthService 创建 AuthService 实例
+func NewAuthService(tm auth.TokenManager, issuer *TokenIssuer, userRepo UserRepository) *AuthService {
+	return &AuthService{tm: tm, issuer: issuer, userRepo: userRepo}
+}
+
+// GetCaptcha 获取图形验证码（存 Redis，失败回退内存存储）
+func (s *AuthService) GetCaptcha(ctx context.Context) (*authModel.CaptchaVO, error) {
 	// 清新亮色验证码配置（浅色背景 + 无干扰线/噪点）
 	bgColor := &color.RGBA{R: 240, G: 248, B: 255, A: 255}
 	driver := base64Captcha.NewDriverString(
@@ -47,28 +57,20 @@ func GetCaptcha() (*authModel.CaptchaVO, error) {
 		nil,        // 默认字体
 	)
 
-	// 生成验证码
 	captcha := base64Captcha.NewCaptcha(driver, captchaStore)
 	id, b64s, err := captcha.Generate()
 	if err != nil {
 		return nil, errs.SystemError("生成验证码失败")
 	}
 
-	// 获取验证码答案
 	answer := captchaStore.Get(id, false)
-
-	// 生成验证码 ID
 	captchaID := uuid.New().String()
 
-	// 将验证码存储到 Redis（5分钟过期）
-	redisKey := fmt.Sprintf("captcha:image:%s", captchaID)
-	ctx := context.Background()
-	err = redis.Client.Set(ctx, redisKey, answer, 5*time.Minute).Err()
-	if err != nil {
-		// Redis 失败回退到内存存储
+	// 验证码存 Redis（5分钟过期），失败回退内存存储
+	redisKey := redis.CaptchaImagePrefix + captchaID
+	if err := redis.Client.Set(ctx, redisKey, answer, 5*time.Minute).Err(); err != nil {
 		captchaStore.Set(captchaID, answer)
 	}
-
 	captchaStore.Set(id, "")
 
 	return &authModel.CaptchaVO{
@@ -79,12 +81,12 @@ func GetCaptcha() (*authModel.CaptchaVO, error) {
 }
 
 // Login 账号密码登录
-func Login(req *authModel.LoginRequest) (*auth.AuthenticationToken, int64, error) {
-	if err := validateImageCaptcha(req.CaptchaID, req.CaptchaCode); err != nil {
+func (s *AuthService) Login(ctx context.Context, req *authModel.LoginRequest) (*auth.AuthenticationToken, int64, error) {
+	if err := validateImageCaptcha(ctx, req.CaptchaID, req.CaptchaCode); err != nil {
 		return nil, 0, err
 	}
 
-	user, err := userRepo.GetUserByUsername(req.Username)
+	user, err := s.userRepo.GetByUsername(ctx, req.Username)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, 0, errs.UserPasswordError()
@@ -100,40 +102,94 @@ func Login(req *authModel.LoginRequest) (*auth.AuthenticationToken, int64, error
 		return nil, 0, errs.BadRequest("用户已被禁用")
 	}
 
-	roles, err := userRepo.GetUserRoles(int64(user.ID))
-	if err != nil {
-		return nil, 0, errs.SystemError("查询用户角色失败")
-	}
-
-	dataScopes, err := permService.GetUserDataScopes(int64(user.ID), roles, int64(user.DeptID))
+	token, err := s.issuer.Issue(ctx, user)
 	if err != nil {
 		return nil, 0, err
-	}
-
-	userDetails := &auth.UserDetails{
-		UserID:     int64(user.ID),
-		Username:   user.Username,
-		DeptID:     user.DeptID,
-		Avatar:     user.Avatar,
-		DataScopes: dataScopes,
-		Roles:      roles,
-	}
-
-	token, err := tokenManager.GenerateToken(userDetails)
-	if err != nil {
-		return nil, 0, errs.SystemError("生成令牌失败")
 	}
 
 	return token, int64(user.ID), nil
 }
 
-func validateImageCaptcha(captchaID, captchaCode string) error {
+// LoginBySms 短信验证码登录
+func (s *AuthService) LoginBySms(ctx context.Context, req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, int64, error) {
+	redisKey := redis.CaptchaSmsPrefix + req.Mobile
+	cachedCode, err := redis.Client.Get(ctx, redisKey).Result()
+	if err != nil {
+		return nil, 0, errs.BadRequest("验证码已过期或不存在")
+	}
+
+	if cachedCode != req.Code {
+		return nil, 0, errs.BadRequest("验证码错误")
+	}
+
+	user, err := s.userRepo.GetByMobile(ctx, req.Mobile)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, 0, errs.BadRequest("用户不存在")
+		}
+		return nil, 0, errs.SystemError("查询用户失败")
+	}
+
+	if user.Status != 1 {
+		return nil, 0, errs.BadRequest("用户已被禁用")
+	}
+
+	redis.Client.Del(ctx, redisKey)
+
+	token, err := s.issuer.Issue(ctx, user)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return token, int64(user.ID), nil
+}
+
+// SendSmsLoginCode 发送登录短信验证码
+func (s *AuthService) SendSmsLoginCode(ctx context.Context, mobile string) error {
+	// 生成验证码（开发环境固定值，生产环境接入短信服务后改为随机码）
+	code := "1234"
+
+	// 缓存验证码至 Redis（5分钟过期）
+	redisKey := redis.CaptchaSmsPrefix + mobile
+	if err := redis.Client.Set(ctx, redisKey, code, 5*time.Minute).Err(); err != nil {
+		return errs.SystemError("发送短信验证码失败")
+	}
+
+	// TODO: 接入短信服务商并发送验证码
+	// smsService.SendSMS(mobile, code)
+
+	return nil
+}
+
+// Logout 退出登录（令牌为空时静默成功）
+func (s *AuthService) Logout(token string) error {
+	if token == "" {
+		return nil
+	}
+	return s.tm.InvalidateToken(token)
+}
+
+// RefreshToken 刷新令牌
+func (s *AuthService) RefreshToken(refreshToken string) (*auth.AuthenticationToken, error) {
+	if refreshToken == "" {
+		return nil, errs.BadRequest("刷新令牌不能为空")
+	}
+
+	token, err := s.tm.RefreshToken(refreshToken)
+	if err != nil {
+		return nil, errs.RefreshTokenInvalid()
+	}
+
+	return token, nil
+}
+
+// validateImageCaptcha 图形验证码校验（Redis 优先，回退内存存储）
+func validateImageCaptcha(ctx context.Context, captchaID, captchaCode string) error {
 	if captchaID == "" || captchaCode == "" {
 		return errs.BadRequest("验证码不能为空")
 	}
 
-	ctx := context.Background()
-	redisKey := fmt.Sprintf("captcha:image:%s", captchaID)
+	redisKey := redis.CaptchaImagePrefix + captchaID
 	answer, err := redis.Client.Get(ctx, redisKey).Result()
 	if err == nil {
 		redis.Client.Del(ctx, redisKey)
@@ -151,99 +207,4 @@ func validateImageCaptcha(captchaID, captchaCode string) error {
 		return errs.BadRequest("验证码错误")
 	}
 	return nil
-}
-
-// Logout 退出登录
-func Logout(token string) error {
-	if token == "" {
-		return nil
-	}
-	return tokenManager.InvalidateToken(token)
-}
-
-// RefreshToken 刷新令牌
-func RefreshToken(refreshToken string) (*auth.AuthenticationToken, error) {
-	if refreshToken == "" {
-		return nil, errs.BadRequest("刷新令牌不能为空")
-	}
-
-	token, err := tokenManager.RefreshToken(refreshToken)
-	if err != nil {
-		return nil, errs.RefreshTokenInvalid()
-	}
-
-	return token, nil
-}
-
-// SendSmsLoginCode 发送登录短信验证码
-func SendSmsLoginCode(mobile string) error {
-	// 生成验证码（开发环境固定值，生产环境接入短信服务后改为随机码）
-	code := "1234"
-
-	// 缓存验证码至 Redis（5分钟过期）
-	redisKey := fmt.Sprintf("captcha:sms:login:%s", mobile)
-	ctx := context.Background()
-	err := redis.Client.Set(ctx, redisKey, code, 5*time.Minute).Err()
-	if err != nil {
-		return errs.SystemError("发送短信验证码失败")
-	}
-
-	// TODO: 接入短信服务商并发送验证码
-	// smsService.SendSMS(mobile, code)
-
-	return nil
-}
-
-// LoginBySms 短信验证码登录
-func LoginBySms(req *authModel.SmsLoginRequest) (*auth.AuthenticationToken, int64, error) {
-	redisKey := fmt.Sprintf("captcha:sms:%s", req.Mobile)
-	ctx := context.Background()
-	cachedCode, err := redis.Client.Get(ctx, redisKey).Result()
-	if err != nil {
-		return nil, 0, errs.BadRequest("验证码已过期或不存在")
-	}
-
-	if cachedCode != req.Code {
-		return nil, 0, errs.BadRequest("验证码错误")
-	}
-
-	user, err := userRepo.GetUserByMobile(req.Mobile)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, 0, errs.BadRequest("用户不存在")
-		}
-		return nil, 0, errs.SystemError("查询用户失败")
-	}
-
-	if user.Status != 1 {
-		return nil, 0, errs.BadRequest("用户已被禁用")
-	}
-
-	roles, err := userRepo.GetUserRoles(int64(user.ID))
-	if err != nil {
-		return nil, 0, errs.SystemError("查询用户角色失败")
-	}
-
-	dataScopes, err := permService.GetUserDataScopes(int64(user.ID), roles, int64(user.DeptID))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	redis.Client.Del(ctx, redisKey)
-
-	userDetails := &auth.UserDetails{
-		UserID:     int64(user.ID),
-		Username:   user.Username,
-		DeptID:     user.DeptID,
-		Avatar:     user.Avatar,
-		DataScopes: dataScopes,
-		Roles:      roles,
-	}
-
-	token, err := tokenManager.GenerateToken(userDetails)
-	if err != nil {
-		return nil, 0, errs.SystemError("生成令牌失败")
-	}
-
-	return token, int64(user.ID), nil
 }

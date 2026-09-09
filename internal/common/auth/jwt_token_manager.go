@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+
 	permModel "youlai-gin/internal/common/permission/model"
 	redisClient "youlai-gin/internal/common/redis"
 	"youlai-gin/pkg/types"
@@ -28,14 +29,14 @@ type JwtTokenManager struct {
 
 // CustomClaims 自定义 Claims
 type CustomClaims struct {
-	UserID         int64        `json:"userId"`
-	Username       string       `json:"username"`
-	DeptID         types.BigInt `json:"deptId"`
-	Avatar         string       `json:"avatar"`
+	UserID         int64                     `json:"userId"`
+	Username       string                    `json:"username"`
+	DeptID         types.BigInt              `json:"deptId"`
+	Avatar         string                    `json:"avatar"`
 	DataScopes     []permModel.RoleDataScope `json:"dataScopes"`
-	Roles          []string     `json:"roles"`
-	IsRefreshToken bool         `json:"isRefreshToken"` // 是否为刷新令牌
-	TokenVersion   int          `json:"tokenVersion"`   // Token 版本号
+	Roles          []string                  `json:"roles"`
+	IsRefreshToken bool                      `json:"isRefreshToken"` // 是否为刷新令牌
+	TokenVersion   int                       `json:"tokenVersion"`   // Token 版本号
 	jwt.RegisteredClaims
 }
 
@@ -119,12 +120,12 @@ func (m *JwtTokenManager) ParseToken(tokenString string) (*UserDetails, error) {
 
 	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
 		return &UserDetails{
-			UserID:    claims.UserID,
-			Username:  claims.Username,
-			DeptID:    claims.DeptID,
-			Avatar:    claims.Avatar,
+			UserID:     claims.UserID,
+			Username:   claims.Username,
+			DeptID:     claims.DeptID,
+			Avatar:     claims.Avatar,
 			DataScopes: claims.DataScopes,
-			Roles:     claims.Roles,
+			Roles:      claims.Roles,
 		}, nil
 	}
 

@@ -9,8 +9,16 @@ const (
 	UserRefreshTokenPrefix = "auth:user:refresh_token:" // 用户ID -> 刷新令牌
 	BlacklistTokenPrefix   = "auth:blacklist:token:"    // Token 黑名单
 	UserTokenVersion       = "auth:user:token_version:" // 用户 Token 版本号
+	QrCodeTicketPrefix     = "auth:qr_code:"            // 扫码登录票据
+
+	// 验证码相关
+	CaptchaImagePrefix = "captcha:image:"     // 图形验证码
+	CaptchaSmsPrefix   = "captcha:sms:login:" // 短信登录验证码（发送/校验共用同一 Key）
+
+	// 微信相关
+	WechatAccessTokenPrefix = "wechat:access_token:" // 微信 AccessToken 缓存
 
 	// 限流相关
-	RateLimiterIPPrefix = "rate_limit:ip:"  // IP 限流
+	RateLimiterIPPrefix  = "rate_limit:ip:"  // IP 限流
 	RateLimiterAPIPrefix = "rate_limit:api:" // 接口限流
 )

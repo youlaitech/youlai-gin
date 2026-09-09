@@ -3,15 +3,14 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 
-	"youlai-gin/internal/system/dept/model"
-	"youlai-gin/internal/system/dept/service"
+	response "youlai-gin/internal/common"
 	"youlai-gin/internal/common/auth"
 	appContext "youlai-gin/internal/common/context"
-	"youlai-gin/internal/middleware"
-	response "youlai-gin/internal/common"
-	"youlai-gin/pkg/enums"
-	"youlai-gin/pkg/types"
 	"youlai-gin/internal/common/validator"
+	"youlai-gin/internal/middleware"
+	"youlai-gin/internal/system/dept/model"
+	"youlai-gin/internal/system/dept/service"
+	"youlai-gin/pkg/enums"
 )
 
 // Handler 部门接口层
@@ -28,17 +27,17 @@ func NewHandler(svc *service.Service) *Handler {
 func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 	depts := r.Group("/depts")
 	{
-		depts.GET("", h.GetDeptList)
-		depts.GET("/options", h.GetDeptOptions)
-		depts.POST("", auth.RequirePermission("sys:dept:create"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeInsert), h.SaveDept)
-		depts.GET("/:id/form", h.GetDeptForm)
-		depts.PUT("/:id", auth.RequirePermission("sys:dept:update"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeUpdate), h.UpdateDept)
-		depts.DELETE("/:id", auth.RequirePermission("sys:dept:delete"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeDelete), h.DeleteDept)
+		depts.GET("", h.List)
+		depts.GET("/options", h.Options)
+		depts.POST("", auth.RequirePermission("sys:dept:create"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeInsert), h.Create)
+		depts.GET("/:id/form", h.GetForm)
+		depts.PUT("/:id", auth.RequirePermission("sys:dept:update"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeUpdate), h.Update)
+		depts.DELETE("/:id", auth.RequirePermission("sys:dept:delete"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeDelete), h.Delete)
 	}
 }
 
-// GetDeptList 部门列表
-func (h *Handler) GetDeptList(c *gin.Context) {
+// List 部门列表（树形）
+func (h *Handler) List(c *gin.Context) {
 	var query model.DeptQuery
 	if err := validator.BindQuery(c, &query); err != nil {
 		c.Error(err)
@@ -51,7 +50,7 @@ func (h *Handler) GetDeptList(c *gin.Context) {
 		return
 	}
 
-	list, err := h.svc.GetDeptList(&query, currentUser)
+	list, err := h.svc.List(c.Request.Context(), &query, currentUser)
 	if err != nil {
 		c.Error(err)
 		return
@@ -60,15 +59,15 @@ func (h *Handler) GetDeptList(c *gin.Context) {
 	response.Ok(c, list)
 }
 
-// GetDeptOptions 部门下拉列表
-func (h *Handler) GetDeptOptions(c *gin.Context) {
+// Options 部门下拉列表（树形）
+func (h *Handler) Options(c *gin.Context) {
 	currentUser, err := appContext.GetCurrentUser(c)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	options, err := h.svc.GetDeptOptions(currentUser)
+	options, err := h.svc.Options(c.Request.Context(), currentUser)
 	if err != nil {
 		c.Error(err)
 		return
@@ -77,15 +76,15 @@ func (h *Handler) GetDeptOptions(c *gin.Context) {
 	response.Ok(c, options)
 }
 
-// SaveDept 新增部门
-func (h *Handler) SaveDept(c *gin.Context) {
+// Create 新增部门
+func (h *Handler) Create(c *gin.Context) {
 	var form model.DeptForm
 	if err := validator.BindJSON(c, &form); err != nil {
 		c.Error(err)
 		return
 	}
 
-	if err := h.svc.SaveDept(c, &form); err != nil {
+	if err := h.svc.Create(appContext.OperatorCtx(c), &form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -93,15 +92,15 @@ func (h *Handler) SaveDept(c *gin.Context) {
 	response.OkMsg(c, "保存成功")
 }
 
-// GetDeptForm 获取部门表单数据
-func (h *Handler) GetDeptForm(c *gin.Context) {
+// GetForm 获取部门表单数据
+func (h *Handler) GetForm(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "部门")
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	form, err := h.svc.GetDeptForm(id)
+	form, err := h.svc.GetForm(c.Request.Context(), id)
 	if err != nil {
 		c.Error(err)
 		return
@@ -110,8 +109,8 @@ func (h *Handler) GetDeptForm(c *gin.Context) {
 	response.Ok(c, form)
 }
 
-// UpdateDept 更新部门
-func (h *Handler) UpdateDept(c *gin.Context) {
+// Update 更新部门
+func (h *Handler) Update(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "部门")
 	if err != nil {
 		c.Error(err)
@@ -124,24 +123,23 @@ func (h *Handler) UpdateDept(c *gin.Context) {
 		return
 	}
 
-	form.ID = types.BigInt(id)
-	if err := h.svc.SaveDept(c, &form); err != nil {
+	if err := h.svc.Update(appContext.OperatorCtx(c), id, &form); err != nil {
 		c.Error(err)
 		return
 	}
 
-	response.OkMsg(c, "更新成功")
+	response.OkMsg(c, "修改成功")
 }
 
-// DeleteDept 删除部门
-func (h *Handler) DeleteDept(c *gin.Context) {
+// Delete 删除部门
+func (h *Handler) Delete(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "部门")
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	if err := h.svc.DeleteDept(id); err != nil {
+	if err := h.svc.Delete(appContext.OperatorCtx(c), id); err != nil {
 		c.Error(err)
 		return
 	}

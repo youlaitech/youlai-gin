@@ -7,12 +7,11 @@ import (
 	"strings"
 	"time"
 
-	deptModel "youlai-gin/internal/system/dept/model"
-	permModel "youlai-gin/internal/common/permission/model"
 	"youlai-gin/internal/common/database"
+	permModel "youlai-gin/internal/common/permission/model"
+	"youlai-gin/internal/common/redis"
 	"youlai-gin/pkg/constant"
 	"youlai-gin/pkg/errs"
-	"youlai-gin/internal/common/redis"
 	"youlai-gin/pkg/types"
 )
 
@@ -205,7 +204,7 @@ func getDeptAndChildrenIDs(deptID int64) []int64 {
 
 	// 获取部门的 tree_path
 	var treePath string
-	err := database.DB.Table(deptModel.Dept{}.TableName()).
+	err := database.DB.Table("sys_dept").
 		Select("tree_path").
 		Where("id = ? AND is_deleted = 0", deptID).
 		Scan(&treePath).Error
@@ -216,7 +215,7 @@ func getDeptAndChildrenIDs(deptID int64) []int64 {
 	// 查询部门及子部门
 	pattern := treePath + "," + strconv.FormatInt(deptID, 10) + "%"
 	var deptIDs []int64
-	err = database.DB.Table(deptModel.Dept{}.TableName()).
+	err = database.DB.Table("sys_dept").
 		Select("id").
 		Where("is_deleted = 0 AND (id = ? OR tree_path LIKE ?)", deptID, pattern).
 		Pluck("id", &deptIDs).Error

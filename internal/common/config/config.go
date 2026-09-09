@@ -20,10 +20,10 @@ type WechatConfig struct {
 
 // FileStorageConfig 文件存储配置
 type FileStorageConfig struct {
-	Type   string                 `mapstructure:"type"`   // 存储类型：s3 | aliyun | local
+	Type   string                  `mapstructure:"type"`   // 存储类型：s3 | aliyun | local
 	Upload FileStorageUploadConfig `mapstructure:"upload"` // 上传限制
-	S3     FileStorageS3Config    `mapstructure:"s3"`     // S3(RustFS) 对象存储
-	Local  FileStorageLocalConfig `mapstructure:"local"`  // 本地存储
+	S3     FileStorageS3Config     `mapstructure:"s3"`     // S3(RustFS) 对象存储
+	Local  FileStorageLocalConfig  `mapstructure:"local"`  // 本地存储
 }
 
 // FileStorageUploadConfig 上传限制

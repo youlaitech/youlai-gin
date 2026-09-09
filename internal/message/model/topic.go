@@ -1,9 +1,9 @@
-// Package message 定义 SSE 推送的消息主题与数据结构。
-package message
+// Package model 定义 SSE 推送的主题常量与数据结构。
+package model
 
 import "time"
 
-// SSE 消息主题
+// 主题常量
 const (
 	TopicDict        = "dict"         // 字典数据变更
 	TopicOnlineCount = "online-users" // 在线人数变化

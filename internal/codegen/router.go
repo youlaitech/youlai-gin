@@ -4,17 +4,13 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"youlai-gin/internal/codegen/handler"
+	"youlai-gin/internal/codegen/repository"
+	"youlai-gin/internal/codegen/service"
+	"youlai-gin/internal/common/database"
 )
 
-// RegisterRoutes 注册代码生成路由
+// RegisterRoutes 注册代码生成路由（repository → service → handler 依赖注入）
 func RegisterRoutes(router *gin.RouterGroup) {
-	codegenGroup := router.Group("/codegen")
-	{
-		codegenGroup.GET("/table", handler.GetTablePage)
-		codegenGroup.GET("/:tableName/config", handler.GetGenConfig)
-		codegenGroup.POST("/:tableName/config", handler.SaveGenConfig)
-		codegenGroup.DELETE("/:tableName/config", handler.DeleteGenConfig)
-		codegenGroup.GET("/:tableName/preview", handler.GetPreview)
-		codegenGroup.GET("/:tableName/download", handler.Download)
-	}
+	repo := repository.NewRepository(database.DB)
+	handler.NewCodegenHandler(service.NewCodegenService(repo)).RegisterRoutes(router)
 }

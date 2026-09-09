@@ -7,9 +7,9 @@ import (
 
 	"gorm.io/gorm"
 
+	"youlai-gin/internal/common/auth"
 	permModel "youlai-gin/internal/common/permission/model"
 	permService "youlai-gin/internal/common/permission/service"
-	"youlai-gin/internal/common/auth"
 	"youlai-gin/pkg/constant"
 )
 

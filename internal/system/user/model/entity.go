@@ -1,23 +1,23 @@
 package model
 
 import (
-	common "youlai-gin/pkg/model"
+	baseModel "youlai-gin/pkg/model"
 	"youlai-gin/pkg/types"
 )
 
 // User 用户实体
 type User struct {
-	ID       types.BigInt `gorm:"primaryKey;autoIncrement" json:"id"` // 主键
+	ID       types.BigInt `gorm:"primaryKey;autoIncrement" json:"id"`       // 主键
 	Username string       `gorm:"column:username;not null" json:"username"` // 用户名
 	Nickname string       `gorm:"column:nickname;not null" json:"nickname"` // 昵称
-	Gender   int          `gorm:"column:gender;default:0" json:"gender"` // 0-保密 1-男 2-女
-	Password string       `gorm:"column:password;not null" json:"-"` // 密码
-	DeptID   types.BigInt `gorm:"column:dept_id" json:"deptId"` // 部门ID
-	Avatar   string       `gorm:"column:avatar" json:"avatar"` // 头像
-	Mobile   string       `gorm:"column:mobile" json:"mobile"` // 手机号
-	Status   int          `gorm:"column:status;default:1" json:"status"` // 0-禁用 1-正常
-	Email    string       `gorm:"column:email" json:"email"` // 邮箱
-	common.BaseEntity
+	Gender   int          `gorm:"column:gender;default:0" json:"gender"`    // 0-保密 1-男 2-女
+	Password string       `gorm:"column:password;not null" json:"-"`        // 密码
+	DeptID   types.BigInt `gorm:"column:dept_id" json:"deptId"`             // 部门ID
+	Avatar   string       `gorm:"column:avatar" json:"avatar"`              // 头像
+	Mobile   string       `gorm:"column:mobile" json:"mobile"`              // 手机号
+	Status   int          `gorm:"column:status;default:1" json:"status"`    // 0-禁用 1-正常
+	Email    string       `gorm:"column:email" json:"email"`                // 邮箱
+	baseModel.BaseEntity
 }
 
 func (User) TableName() string {
@@ -53,10 +53,10 @@ type UserSocial struct {
 	OpenID     string         `gorm:"column:openid;not null;size:64" json:"openid"`
 	UnionID    string         `gorm:"column:unionid;size:64" json:"unionid"`
 	Nickname   string         `gorm:"column:nickname;size:64" json:"nickname"` // 昵称
-	Avatar     string         `gorm:"column:avatar;size:255" json:"avatar"` // 头像
+	Avatar     string         `gorm:"column:avatar;size:255" json:"avatar"`    // 头像
 	SessionKey string         `gorm:"column:session_key;size:128" json:"sessionKey"`
 	Verified   int            `gorm:"column:verified;default:1" json:"verified"` // 1-已验证 0-未验证
-	common.BaseEntity
+	baseModel.BaseEntity
 }
 
 func (UserSocial) TableName() string {

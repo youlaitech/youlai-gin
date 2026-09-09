@@ -3,7 +3,7 @@ package service
 import (
 	"archive/zip"
 	"bytes"
-	"fmt"
+	"context"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -12,13 +12,12 @@ import (
 
 	"github.com/viant/velty"
 
-	"youlai-gin/internal/common/logger"
-
-	"youlai-gin/internal/common/database"
 	"youlai-gin/internal/codegen/model"
+	"youlai-gin/internal/codegen/repository"
+	"youlai-gin/internal/common/logger"
 	menuService "youlai-gin/internal/system/menu/service"
-	commonModel "youlai-gin/pkg/model"
 	"youlai-gin/pkg/errs"
+	commonModel "youlai-gin/pkg/model"
 )
 
 type templateName string
@@ -45,210 +44,101 @@ type templateFieldConfig struct {
 	MaxLength     *int   `velty:"name=maxLength"`
 	FieldSort     *int   `velty:"name=fieldSort"`
 	DictType      string `velty:"name=dictType"`
-	JavaType      string `velty:"name=javaType"`
 	TsType        string `velty:"name=tsType"`
 	GoType        string `velty:"name=goType"`
 }
 
 const (
-	tplAPI        templateName = "API"
-	tplAPITypes   templateName = "API_TYPES"
-	tplView       templateName = "VIEW"
-	tplHandler    templateName = "Handler"
-	tplService    templateName = "Service"
-	tplRepository templateName = "Repository"
+	tplAPI         templateName = "API"
+	tplAPITypes    templateName = "API_TYPES"
+	tplView        templateName = "VIEW"
+	tplHandler     templateName = "Handler"
+	tplService     templateName = "Service"
+	tplRepository  templateName = "Repository"
 	tplModelEntity templateName = "ModelEntity"
 	tplModelForm   templateName = "ModelForm"
 	tplModelQuery  templateName = "ModelQuery"
 	tplModelVo     templateName = "ModelVo"
-	tplRouter     templateName = "Router"
+	tplRouter      templateName = "Router"
 )
 
+// codegenConfig 全局代码生成参数
 var codegenConfig = struct {
-	downloadFileName       string
-	backendAppName         string
-	frontendAppName        string
-	defaultAuthor          string
-	defaultModuleName      string
-	defaultPackageName     string
+	downloadFileName         string
+	backendAppName           string
+	frontendAppName          string
+	defaultAuthor            string
+	defaultModuleName        string
+	defaultPackageName       string
 	defaultRemoveTablePrefix string
 }{
-	downloadFileName:       "youlai-admin-code.zip",
-	backendAppName:         "youlai-gin",
-	frontendAppName:        "vue3-element-admin",
-	defaultAuthor:          "youlaitech",
-	defaultModuleName:      "system",
-	defaultPackageName:     "internal",
+	downloadFileName:         "youlai-admin-code.zip",
+	backendAppName:           "youlai-gin",
+	frontendAppName:          "vue3-element-admin",
+	defaultAuthor:            "youlaitech",
+	defaultModuleName:        "system",
+	defaultPackageName:       "internal",
 	defaultRemoveTablePrefix: "sys_",
 }
 
-// 代码模板：backend/（Go 后端）、frontend/ts/（TS 前端）、frontend/js/（JS 前端）
+// templateConfigs 各层代码模板映射：backend 为 Go 后端，frontend 为 Vue 前端
 var templateConfigs = map[templateName]templateConfig{
-	tplAPI:        {templatePath: "frontend/ts/api.ts.velty", subpackageName: "api", extension: ".ts"},
-	tplAPITypes:   {templatePath: "frontend/ts/api-types.ts.velty", subpackageName: "types", extension: ".ts"},
-	tplView:       {templatePath: "frontend/ts/index.vue.velty", subpackageName: "views", extension: ".vue"},
-	tplHandler:    {templatePath: "backend/handler.go.velty", subpackageName: "handler", extension: ".go"},
-	tplService:    {templatePath: "backend/service.go.velty", subpackageName: "service", extension: ".go"},
-	tplRepository: {templatePath: "backend/repository.go.velty", subpackageName: "repository", extension: ".go"},
-	tplModelEntity:{templatePath: "backend/model-entity.go.velty", subpackageName: "model", extension: ".go"},
-	tplModelForm:  {templatePath: "backend/model-form.go.velty", subpackageName: "model", extension: ".go"},
-	tplModelQuery: {templatePath: "backend/model-query.go.velty", subpackageName: "model", extension: ".go"},
-	tplModelVo:    {templatePath: "backend/model-vo.go.velty", subpackageName: "model", extension: ".go"},
-	tplRouter:     {templatePath: "backend/router.go.velty", subpackageName: "", extension: ".go"},
+	tplAPI:         {templatePath: "frontend/ts/api.ts.velty", subpackageName: "api", extension: ".ts"},
+	tplAPITypes:    {templatePath: "frontend/ts/api-types.ts.velty", subpackageName: "types", extension: ".ts"},
+	tplView:        {templatePath: "frontend/ts/index.vue.velty", subpackageName: "views", extension: ".vue"},
+	tplHandler:     {templatePath: "backend/handler.go.velty", subpackageName: "handler", extension: ".go"},
+	tplService:     {templatePath: "backend/service.go.velty", subpackageName: "service", extension: ".go"},
+	tplRepository:  {templatePath: "backend/repository.go.velty", subpackageName: "repository", extension: ".go"},
+	tplModelEntity: {templatePath: "backend/model-entity.go.velty", subpackageName: "model", extension: ".go"},
+	tplModelForm:   {templatePath: "backend/model-form.go.velty", subpackageName: "model", extension: ".go"},
+	tplModelQuery:  {templatePath: "backend/model-query.go.velty", subpackageName: "model", extension: ".go"},
+	tplModelVo:     {templatePath: "backend/model-vo.go.velty", subpackageName: "model", extension: ".go"},
+	tplRouter:      {templatePath: "backend/router.go.velty", subpackageName: "", extension: ".go"},
 }
 
-func resolveFrontendTemplatePath(name templateName, tc templateConfig, frontendType string) string {
-	if frontendType == "js" {
-		switch name {
-		case tplAPI:
-			return "frontend/js/api.js.velty"
-		case tplView:
-			return "frontend/js/index.vue.velty"
-		default:
-			return tc.templatePath
-		}
-	}
-
-	// 默认 TS
-	switch name {
-	case tplAPI:
-		return "frontend/ts/api.ts.velty"
-	case tplAPITypes:
-		return "frontend/ts/api-types.ts.velty"
-	case tplView:
-		return "frontend/ts/index.vue.velty"
-	default:
-		return tc.templatePath
-	}
+// CodegenService 代码生成业务逻辑层
+// 所有数据表/配置查询与生成走 Repository，模板渲染与类型映射留 service
+type CodegenService struct {
+	repo *repository.Repository
 }
 
-// resolveFrontendExtension 解析前端文件后缀
-func resolveFrontendExtension(name templateName, tc templateConfig, frontendType string) string {
-	if frontendType != "js" {
-		return tc.extension
-	}
-	if name == tplAPI {
-		return ".js"
-	}
-	return tc.extension
-}
-
-// resolveScope 解析文件范围
-func resolveScope(name templateName) string {
-	if name == tplAPI || name == tplAPITypes || name == tplView {
-		return "frontend"
-	}
-	return "backend"
-}
-
-// resolveLanguage 解析文件语言（扩展名）
-func resolveLanguage(fileName string) string {
-	ext := strings.ToLower(filepath.Ext(fileName))
-	return strings.TrimPrefix(ext, ".")
-}
-
-type genTableRow struct {
-	ID              int64  `gorm:"column:id"`
-	TableName        string `gorm:"column:table_name"`
-	ModuleName       string `gorm:"column:module_name"`
-	PackageName      string `gorm:"column:package_name"`
-	BusinessName     string `gorm:"column:business_name"`
-	EntityName       string `gorm:"column:entity_name"`
-	Author           string `gorm:"column:author"`
-	ParentMenuID     *int64 `gorm:"column:parent_menu_id"`
-	RemoveTablePrefix string `gorm:"column:remove_table_prefix"`
-	PageType         string `gorm:"column:page_type"`
-	IsDeleted        int    `gorm:"column:is_deleted"`
-}
-
-type genTableColumnRow struct {
-	ID           int64  `gorm:"column:id"`
-	TableID      int64  `gorm:"column:table_id"`
-	ColumnName   string `gorm:"column:column_name"`
-	ColumnType   string `gorm:"column:column_type"`
-	FieldName    string `gorm:"column:field_name"`
-	FieldType    string `gorm:"column:field_type"`
-	FieldSort    *int   `gorm:"column:field_sort"`
-	FieldComment string `gorm:"column:field_comment"`
-	MaxLength    *int   `gorm:"column:max_length"`
-	IsRequired   int    `gorm:"column:is_required"`
-	IsShowInList int    `gorm:"column:is_show_in_list"`
-	IsShowInForm int    `gorm:"column:is_show_in_form"`
-	IsShowInQuery int   `gorm:"column:is_show_in_query"`
-	QueryType    int    `gorm:"column:query_type"`
-	FormType     int    `gorm:"column:form_type"`
-	DictType     string `gorm:"column:dict_type"`
+// NewCodegenService 创建 CodegenService 实例
+func NewCodegenService(repo *repository.Repository) *CodegenService {
+	return &CodegenService{repo: repo}
 }
 
 // GetTablePage 分页查询可代码生成的数据表列表
-func GetTablePage(query *model.TableQuery) (*commonModel.PagedData, error) {
-	offset := query.GetOffset()
-	limit := query.GetLimit()
-
-	params := make([]interface{}, 0)
-	where := "t.TABLE_SCHEMA = DATABASE() AND t.TABLE_NAME NOT IN ('gen_table','gen_table_column')"
-	if query.Keywords != "" {
-		where += " AND t.TABLE_NAME LIKE ?"
-		params = append(params, "%"+query.Keywords+"%")
-	}
-
-	listSQL := fmt.Sprintf(`
-SELECT
-  t.TABLE_NAME AS tableName,
-  t.TABLE_COMMENT AS tableComment,
-  t.TABLE_COLLATION AS tableCollation,
-  t.ENGINE AS engine,
-  DATE_FORMAT(t.CREATE_TIME, '%%Y-%%m-%%d %%H:%%i:%%s') AS createTime,
-  IF(c.id IS NULL, 0, 1) AS isConfigured
-FROM information_schema.TABLES t
-LEFT JOIN gen_table c
-  ON c.table_name = t.TABLE_NAME AND c.is_deleted = 0
-WHERE %s
-ORDER BY t.CREATE_TIME DESC
-LIMIT ? OFFSET ?`, where)
-
-	listParams := append(params, limit, offset)
-	list := make([]model.TableInfoVO, 0)
-	if err := database.DB.Raw(listSQL, listParams...).Scan(&list).Error; err != nil {
-		return nil, errs.SystemError("查询数据表失败")
-	}
-
-	totalSQL := fmt.Sprintf(`SELECT COUNT(1) AS total FROM information_schema.TABLES t WHERE %s`, where)
-	var total int64
-	if err := database.DB.Raw(totalSQL, params...).Scan(&total).Error; err != nil {
-		return nil, errs.SystemError("查询数据表失败")
-	}
-
-	return &commonModel.PagedData{List: list, Total: total}, nil
+func (s *CodegenService) GetTablePage(ctx context.Context, query *model.TableQuery) (*commonModel.PagedData, error) {
+	return s.repo.TableListPage(ctx, query.Keywords, query.GetOffset(), query.GetLimit())
 }
 
 // GetGenConfig 读取指定表的代码生成配置，未配置时按表结构生成默认配置
-func GetGenConfig(tableName string) (*model.GenConfigForm, error) {
-	var cfg genTableRow
-	tx := database.DB.Table("gen_table").Where("table_name = ? AND is_deleted = 0", tableName).Limit(1).Find(&cfg)
-	if tx.Error != nil {
-		return nil, errs.SystemError("查询生成配置失败")
+func (s *CodegenService) GetGenConfig(ctx context.Context, tableName string) (*model.GenConfigForm, error) {
+	cfg, found, err := s.repo.GetGenTable(ctx, tableName)
+	if err != nil {
+		return nil, err
 	}
-	if tx.RowsAffected > 0 {
-		fields := make([]genTableColumnRow, 0)
-		if err := database.DB.Table("gen_table_column").Where("table_id = ?", cfg.ID).Order("field_sort ASC").Find(&fields).Error; err != nil {
-			return nil, errs.SystemError("查询字段配置失败")
+
+	if found {
+		fields, err := s.repo.GetGenColumns(ctx, cfg.ID)
+		if err != nil {
+			return nil, err
 		}
 
 		resp := &model.GenConfigForm{
-			ID:               cfg.ID,
-			TableName:        cfg.TableName,
-			ModuleName:       cfg.ModuleName,
-			PackageName:      codegenConfig.defaultPackageName,
-			BusinessName:     cfg.BusinessName,
-			EntityName:       cfg.EntityName,
-			Author:           cfg.Author,
-			ParentMenuId:     cfg.ParentMenuID,
-			BackendAppName:   codegenConfig.backendAppName,
-			FrontendAppName:  codegenConfig.frontendAppName,
-			PageType:         defaultStr(cfg.PageType, "classic"),
+			ID:                cfg.ID,
+			TableName:         cfg.TableName,
+			ModuleName:        cfg.ModuleName,
+			PackageName:       codegenConfig.defaultPackageName,
+			BusinessName:      cfg.BusinessName,
+			EntityName:        cfg.EntityName,
+			Author:            cfg.Author,
+			ParentMenuId:      cfg.ParentMenuID,
+			BackendAppName:    codegenConfig.backendAppName,
+			FrontendAppName:   codegenConfig.frontendAppName,
+			PageType:          defaultStr(cfg.PageType, "classic"),
 			RemoveTablePrefix: defaultStr(cfg.RemoveTablePrefix, codegenConfig.defaultRemoveTablePrefix),
-			FieldConfigs:     make([]model.FieldConfigForm, 0, len(fields)),
+			FieldConfigs:      make([]model.FieldConfigForm, 0, len(fields)),
 		}
 
 		for _, f := range fields {
@@ -274,8 +164,10 @@ func GetGenConfig(tableName string) (*model.GenConfigForm, error) {
 	}
 
 	// 未配置：从 information_schema 生成默认配置
-	tableComment := ""
-	_ = database.DB.Raw(`SELECT TABLE_COMMENT AS tableComment FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1`, tableName).Scan(&tableComment).Error
+	tableComment, err := s.repo.TableComment(ctx, tableName)
+	if err != nil {
+		tableComment = ""
+	}
 
 	businessName := strings.TrimSpace(strings.ReplaceAll(tableComment, "表", ""))
 	if businessName == "" {
@@ -289,33 +181,14 @@ func GetGenConfig(tableName string) (*model.GenConfigForm, error) {
 	}
 	entityName := toPascalCase(processed)
 
-	type columnRow struct {
-		ColumnName  string `gorm:"column:columnName"`
-		ColumnType  string `gorm:"column:columnType"`
-		ColumnComment string `gorm:"column:columnComment"`
-		IsNullable  string `gorm:"column:isNullable"`
-		MaxLength   *int   `gorm:"column:maxLength"`
-		OrdinalPosition int `gorm:"column:ordinalPosition"`
-	}
-
-	cols := make([]columnRow, 0)
-	if err := database.DB.Raw(`
-SELECT
-  COLUMN_NAME AS columnName,
-  DATA_TYPE AS columnType,
-  COLUMN_COMMENT AS columnComment,
-  IS_NULLABLE AS isNullable,
-  CHARACTER_MAXIMUM_LENGTH AS maxLength,
-  ORDINAL_POSITION AS ordinalPosition
-FROM information_schema.COLUMNS
-WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
-ORDER BY ORDINAL_POSITION ASC`, tableName).Scan(&cols).Error; err != nil {
-		return nil, errs.SystemError("查询表字段失败")
+	cols, err := s.repo.TableColumns(ctx, tableName)
+	if err != nil {
+		return nil, err
 	}
 
 	fieldConfigs := make([]model.FieldConfigForm, 0, len(cols))
 	for i, col := range cols {
-		javaType := getJavaTypeByColumnType(col.ColumnType)
+		fieldType := getFieldTypeByColumnType(col.ColumnType)
 		isRequired := 1
 		if strings.ToUpper(col.IsNullable) == "YES" {
 			isRequired = 0
@@ -325,7 +198,7 @@ ORDER BY ORDINAL_POSITION ASC`, tableName).Scan(&cols).Error; err != nil {
 			ColumnName:    col.ColumnName,
 			ColumnType:    col.ColumnType,
 			FieldName:     toCamelCase(col.ColumnName),
-			FieldType:     javaType,
+			FieldType:     fieldType,
 			FieldComment:  col.ColumnComment,
 			IsRequired:    isRequired,
 			FormType:      getDefaultFormTypeByColumnType(col.ColumnType),
@@ -339,32 +212,30 @@ ORDER BY ORDINAL_POSITION ASC`, tableName).Scan(&cols).Error; err != nil {
 	}
 
 	return &model.GenConfigForm{
-		TableName:        tableName,
-		BusinessName:     businessName,
-		ModuleName:       codegenConfig.defaultModuleName,
-		PackageName:      codegenConfig.defaultPackageName,
-		EntityName:       entityName,
-		Author:           codegenConfig.defaultAuthor,
-		BackendAppName:   codegenConfig.backendAppName,
-		FrontendAppName:  codegenConfig.frontendAppName,
-		PageType:         "classic",
+		TableName:         tableName,
+		BusinessName:      businessName,
+		ModuleName:        codegenConfig.defaultModuleName,
+		PackageName:       codegenConfig.defaultPackageName,
+		EntityName:        entityName,
+		Author:            codegenConfig.defaultAuthor,
+		BackendAppName:    codegenConfig.backendAppName,
+		FrontendAppName:   codegenConfig.frontendAppName,
+		PageType:          "classic",
 		RemoveTablePrefix: removePrefix,
-		FieldConfigs:     fieldConfigs,
+		FieldConfigs:      fieldConfigs,
 	}, nil
 }
 
 // SaveGenConfig 新增或更新代码生成配置及字段，并联动生成菜单
-func SaveGenConfig(tableName string, body *model.GenConfigForm) error {
+func (s *CodegenService) SaveGenConfig(ctx context.Context, tableName string, body *model.GenConfigForm) error {
 	if body == nil {
 		return errs.BadRequest("参数错误")
 	}
 
 	now := time.Now()
-
-	var existing genTableRow
-	tx := database.DB.Table("gen_table").Where("table_name = ?", tableName).Limit(1).Find(&existing)
-	if tx.Error != nil {
-		return errs.SystemError("保存配置失败")
+	cfg, found, err := s.repo.GetGenTable(ctx, tableName)
+	if err != nil {
+		return err
 	}
 
 	moduleName := defaultStr(body.ModuleName, codegenConfig.defaultModuleName)
@@ -375,90 +246,37 @@ func SaveGenConfig(tableName string, body *model.GenConfigForm) error {
 	pageType := defaultStr(body.PageType, "classic")
 	removePrefix := defaultStr(body.RemoveTablePrefix, codegenConfig.defaultRemoveTablePrefix)
 
-	if tx.RowsAffected > 0 && existing.ID > 0 {
-		updates := map[string]interface{}{
-			"module_name":        moduleName,
-			"package_name":       packageName,
-			"business_name":      businessName,
-			"entity_name":        entityName,
-			"author":             author,
-			"parent_menu_id":     body.ParentMenuId,
-			"remove_table_prefix": removePrefix,
-			"page_type":          pageType,
-			"update_time":        now,
-			"is_deleted":         0,
-		}
-		if err := database.DB.Table("gen_table").Where("id = ?", existing.ID).Updates(updates).Error; err != nil {
-			return errs.SystemError("保存配置失败")
-		}
-
-		if err := database.DB.Table("gen_table_column").Where("table_id = ?", existing.ID).Delete(&genTableColumnRow{}).Error; err != nil {
-			return errs.SystemError("保存字段配置失败")
-		}
-
-		for i := range body.FieldConfigs {
-			f := body.FieldConfigs[i]
-			sort := i + 1
-			if f.FieldSort != nil {
-				sort = *f.FieldSort
-			}
-
-			row := genTableColumnRow{
-				TableID:      existing.ID,
-				ColumnName:   f.ColumnName,
-				ColumnType:   f.ColumnType,
-				FieldName:    defaultStr(f.FieldName, toCamelCase(f.ColumnName)),
-				FieldType:    defaultStr(f.FieldType, getJavaTypeByColumnType(f.ColumnType)),
-				FieldSort:    &sort,
-				FieldComment: f.FieldComment,
-				MaxLength:    f.MaxLength,
-				IsRequired:   defaultInt(f.IsRequired, 0),
-				IsShowInList: defaultInt(f.IsShowInList, 0),
-				IsShowInForm: defaultInt(f.IsShowInForm, 0),
-				IsShowInQuery: defaultInt(f.IsShowInQuery, 0),
-				QueryType:    defaultInt(f.QueryType, 1),
-				FormType:     defaultInt(f.FormType, 1),
-				DictType:     f.DictType,
-			}
-
-			if err := database.DB.Table("gen_table_column").Create(&row).Error; err != nil {
-				return errs.SystemError("保存字段配置失败")
-			}
-		}
-
-		if body.ParentMenuId != nil && *body.ParentMenuId > 0 {
-			if err := menuService.AddMenuForCodegen(*body.ParentMenuId, tableName, moduleName, businessName, entityName); err != nil {
-				logger.Log.Sugar().Errorf("添加菜单失败: %v", err)
-			}
-		}
-
-		return nil
-	}
-
-	insert := map[string]interface{}{
-		"table_name":         tableName,
-		"module_name":        moduleName,
-		"package_name":       packageName,
-		"business_name":      businessName,
-		"entity_name":        entityName,
-		"author":             author,
-		"parent_menu_id":     body.ParentMenuId,
+	updates := map[string]interface{}{
+		"module_name":         moduleName,
+		"package_name":        packageName,
+		"business_name":       businessName,
+		"entity_name":         entityName,
+		"author":              author,
+		"parent_menu_id":      body.ParentMenuId,
 		"remove_table_prefix": removePrefix,
-		"page_type":          pageType,
-		"create_time":        now,
-		"update_time":        now,
-		"is_deleted":         0,
+		"page_type":           pageType,
+		"update_time":         now,
+		"is_deleted":          0,
 	}
 
-	if err := database.DB.Table("gen_table").Create(insert).Error; err != nil {
-		return errs.SystemError("保存配置失败")
+	var tableID int64
+	if found && cfg != nil && cfg.ID > 0 {
+		tableID = cfg.ID
+		if err := s.repo.UpdateGenTable(ctx, tableID, updates); err != nil {
+			return err
+		}
+	} else {
+		inserts := updates
+		inserts["table_name"] = tableName
+		inserts["create_time"] = now
+		newID, err := s.repo.CreateGenTable(ctx, inserts)
+		if err != nil {
+			return err
+		}
+		tableID = newID
 	}
 
-	var created genTableRow
-	if err := database.DB.Table("gen_table").Where("table_name = ?", tableName).First(&created).Error; err != nil {
-		return errs.SystemError("保存配置失败")
-	}
-
+	columns := make([]repository.GenColumn, 0, len(body.FieldConfigs))
 	for i := range body.FieldConfigs {
 		f := body.FieldConfigs[i]
 		sort := i + 1
@@ -466,27 +284,27 @@ func SaveGenConfig(tableName string, body *model.GenConfigForm) error {
 			sort = *f.FieldSort
 		}
 
-		row := genTableColumnRow{
-			TableID:      created.ID,
-			ColumnName:   f.ColumnName,
-			ColumnType:   f.ColumnType,
-			FieldName:    defaultStr(f.FieldName, toCamelCase(f.ColumnName)),
-			FieldType:    defaultStr(f.FieldType, getJavaTypeByColumnType(f.ColumnType)),
-			FieldSort:    &sort,
-			FieldComment: f.FieldComment,
-			MaxLength:    f.MaxLength,
-			IsRequired:   defaultInt(f.IsRequired, 0),
-			IsShowInList: defaultInt(f.IsShowInList, 0),
-			IsShowInForm: defaultInt(f.IsShowInForm, 0),
+		columns = append(columns, repository.GenColumn{
+			TableID:       tableID,
+			ColumnName:    f.ColumnName,
+			ColumnType:    f.ColumnType,
+			FieldName:     defaultStr(f.FieldName, toCamelCase(f.ColumnName)),
+			FieldType:     defaultStr(f.FieldType, getFieldTypeByColumnType(f.ColumnType)),
+			FieldSort:     &sort,
+			FieldComment:  f.FieldComment,
+			MaxLength:     f.MaxLength,
+			IsRequired:    defaultInt(f.IsRequired, 0),
+			IsShowInList:  defaultInt(f.IsShowInList, 0),
+			IsShowInForm:  defaultInt(f.IsShowInForm, 0),
 			IsShowInQuery: defaultInt(f.IsShowInQuery, 0),
-			QueryType:    defaultInt(f.QueryType, 1),
-			FormType:     defaultInt(f.FormType, 1),
-			DictType:     f.DictType,
-		}
+			QueryType:     defaultInt(f.QueryType, 1),
+			FormType:      defaultInt(f.FormType, 1),
+			DictType:      f.DictType,
+		})
+	}
 
-		if err := database.DB.Table("gen_table_column").Create(&row).Error; err != nil {
-			return errs.SystemError("保存字段配置失败")
-		}
+	if err := s.repo.ReplaceGenColumns(ctx, tableID, columns); err != nil {
+		return err
 	}
 
 	if body.ParentMenuId != nil && *body.ParentMenuId > 0 {
@@ -499,29 +317,17 @@ func SaveGenConfig(tableName string, body *model.GenConfigForm) error {
 }
 
 // DeleteGenConfig 逻辑删除代码生成配置（置 is_deleted=1）
-func DeleteGenConfig(tableName string) error {
-	var cfg genTableRow
-	if err := database.DB.Table("gen_table").Where("table_name = ? AND is_deleted = 0", tableName).First(&cfg).Error; err != nil {
-		return nil
-	}
-
-	if err := database.DB.Table("gen_table_column").Where("table_id = ?", cfg.ID).Delete(&genTableColumnRow{}).Error; err != nil {
-		return errs.SystemError("删除失败")
-	}
-
-	if err := database.DB.Table("gen_table").Where("id = ?", cfg.ID).Updates(map[string]interface{}{"is_deleted": 1, "update_time": time.Now()}).Error; err != nil {
-		return errs.SystemError("删除失败")
-	}
-
-	return nil
+func (s *CodegenService) DeleteGenConfig(ctx context.Context, tableName string) error {
+	return s.repo.DeleteGenConfig(ctx, tableName)
 }
 
 // GetPreview 按模板渲染指定表的各层代码预览
-func GetPreview(tableName string, pageType string, typeParam string) ([]model.CodegenPreviewVO, error) {
-	cfg, err := GetGenConfig(tableName)
+func (s *CodegenService) GetPreview(ctx context.Context, tableName string, pageType string, typeParam string) ([]model.CodegenPreviewVO, error) {
+	cfg, err := s.GetGenConfig(ctx, tableName)
 	if err != nil {
 		return nil, err
 	}
+
 	frontendType := "ts"
 	if strings.ToLower(strings.TrimSpace(typeParam)) == "js" {
 		frontendType = "js"
@@ -556,12 +362,12 @@ func GetPreview(tableName string, pageType string, typeParam string) ([]model.Co
 }
 
 // DownloadZip 生成多表代码压缩包，返回文件名与压缩内容
-func DownloadZip(tableNames []string, pageType string, typeParam string) (string, []byte, error) {
+func (s *CodegenService) DownloadZip(ctx context.Context, tableNames []string, pageType string, typeParam string) (string, []byte, error) {
 	buf := new(bytes.Buffer)
 	zw := zip.NewWriter(buf)
 
 	for _, t := range tableNames {
-		list, err := GetPreview(t, pageType, typeParam)
+		list, err := s.GetPreview(ctx, t, pageType, typeParam)
 		if err != nil {
 			_ = zw.Close()
 			return "", nil, err
@@ -583,6 +389,52 @@ func DownloadZip(tableNames []string, pageType string, typeParam string) (string
 	}
 
 	return codegenConfig.downloadFileName, buf.Bytes(), nil
+}
+
+func resolveFrontendTemplatePath(name templateName, tc templateConfig, frontendType string) string {
+	if frontendType == "js" {
+		switch name {
+		case tplAPI:
+			return "frontend/js/api.js.velty"
+		case tplView:
+			return "frontend/js/index.vue.velty"
+		default:
+			return tc.templatePath
+		}
+	}
+
+	switch name {
+	case tplAPI:
+		return "frontend/ts/api.ts.velty"
+	case tplAPITypes:
+		return "frontend/ts/api-types.ts.velty"
+	case tplView:
+		return "frontend/ts/index.vue.velty"
+	default:
+		return tc.templatePath
+	}
+}
+
+func resolveFrontendExtension(name templateName, tc templateConfig, frontendType string) string {
+	if frontendType != "js" {
+		return tc.extension
+	}
+	if name == tplAPI {
+		return ".js"
+	}
+	return tc.extension
+}
+
+func resolveScope(name templateName) string {
+	if name == tplAPI || name == tplAPITypes || name == tplView {
+		return "frontend"
+	}
+	return "backend"
+}
+
+func resolveLanguage(fileName string) string {
+	ext := strings.ToLower(filepath.Ext(fileName))
+	return strings.TrimPrefix(ext, ".")
 }
 
 func renderTemplate(
@@ -652,14 +504,14 @@ func renderTemplate(
 	fields := make([]templateFieldConfig, 0, len(cfg.FieldConfigs))
 	for i := range cfg.FieldConfigs {
 		f := cfg.FieldConfigs[i]
-		javaType := defaultStr(f.FieldType, getJavaTypeByColumnType(f.ColumnType))
+		fieldType := defaultStr(f.FieldType, getFieldTypeByColumnType(f.ColumnType))
 		goType := getGoTypeByColumnType(f.ColumnType)
 		fields = append(fields, templateFieldConfig{
 			ColumnName:    f.ColumnName,
 			ColumnType:    f.ColumnType,
 			FieldName:     f.FieldName,
 			GoFieldName:   toGoFieldName(f.FieldName),
-			FieldType:     javaType,
+			FieldType:     fieldType,
 			FieldComment:  f.FieldComment,
 			IsShowInList:  f.IsShowInList,
 			IsShowInForm:  f.IsShowInForm,
@@ -670,8 +522,7 @@ func renderTemplate(
 			MaxLength:     f.MaxLength,
 			FieldSort:     f.FieldSort,
 			DictType:      f.DictType,
-			JavaType:      javaType,
-			TsType:        getTsTypeByJavaType(javaType),
+			TsType:        getTsTypeByFieldType(fieldType),
 			GoType:        goType,
 		})
 	}
@@ -910,7 +761,10 @@ func normalizeColumnType(columnType string) string {
 	return t
 }
 
-func getJavaTypeByColumnType(columnType string) string {
+// getFieldTypeByColumnType 将数据库列类型映射为通用字段类型（前端表单项与 TS 类型的推导基础）。
+// 该类型表示"字段在业务域的抽象类型"，而非底层语言的类型——生成器据此派生 tsType，
+// 后端 Go 字段类型由 getGoTypeByColumnType 单独映射，避免 Go/TS 类型耦合在同一处。
+func getFieldTypeByColumnType(columnType string) string {
 	t := normalizeColumnType(columnType)
 	switch t {
 	case "varchar", "char", "text", "json":
@@ -938,8 +792,8 @@ func getJavaTypeByColumnType(columnType string) string {
 	}
 }
 
-func getTsTypeByJavaType(javaType string) string {
-	switch javaType {
+func getTsTypeByFieldType(fieldType string) string {
+	switch fieldType {
 	case "String":
 		return "string"
 	case "Integer", "Long", "Float", "Double", "BigDecimal":

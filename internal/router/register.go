@@ -5,10 +5,10 @@ import (
 
 	"youlai-gin/internal/auth"
 	"youlai-gin/internal/codegen"
-	"youlai-gin/internal/file"
-	"youlai-gin/internal/system"
 	pkgAuth "youlai-gin/internal/common/auth"
+	"youlai-gin/internal/file"
 	"youlai-gin/internal/message"
+	"youlai-gin/internal/system"
 )
 
 // Register 注册所有业务路由

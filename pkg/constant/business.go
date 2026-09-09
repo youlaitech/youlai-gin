@@ -12,8 +12,12 @@ const (
 
 // 角色编码
 const (
-	RoleCodeRoot = "ROOT" // 超级管理员
+	RoleCodeRoot  = "ROOT" // 超级管理员
+	RoleCodeGuest = "GUEST" // 游客（微信等第三方自助注册默认角色）
 )
+
+// 角色 ID（对应 sys_role 表固定记录；配合 RoleCodeGuest 使用）
+const RoleGuestID int64 = 3
 
 // Redis Key
 const (

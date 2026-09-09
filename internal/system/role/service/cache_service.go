@@ -3,21 +3,21 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
-	"youlai-gin/internal/system/role/repository"
 	pkgRedis "youlai-gin/internal/common/redis"
 	"youlai-gin/pkg/constant"
 )
 
 var rolePermsKey = constant.RedisKeyRolePerms
 
-// RefreshRolePermsCacheByCode 刷新单个角色的权限缓存
-func RefreshRolePermsCacheByCode(roleCode string) error {
+// RefreshPermsCacheByCode 刷新单个角色的权限缓存
+func (s *Service) RefreshPermsCacheByCode(roleCode string) error {
 	ctx := context.Background()
 
-	rolePerms, err := repository.GetRolePermsByCode(roleCode)
+	rolePerms, err := s.repo.PermsByCode(ctx, roleCode)
 	if err != nil {
 		log.Printf("查询角色[%s]权限失败: %v", roleCode, err)
 		return err
@@ -51,15 +51,15 @@ func RefreshRolePermsCacheByCode(roleCode string) error {
 	return nil
 }
 
-// RefreshRolePermsCacheByCodes 批量刷新多个角色的权限缓存
-func RefreshRolePermsCacheByCodes(roleCodes []string) error {
+// RefreshPermsCacheByCodes 批量刷新多个角色的权限缓存
+func (s *Service) RefreshPermsCacheByCodes(roleCodes []string) error {
 	if len(roleCodes) == 0 {
 		return nil
 	}
 
 	ctx := context.Background()
 
-	rolePermsList, err := repository.GetRolePermsByCodes(roleCodes)
+	rolePermsList, err := s.repo.PermsByCodes(ctx, roleCodes)
 	if err != nil {
 		log.Printf("查询角色权限失败: %v", err)
 		return err
@@ -70,7 +70,6 @@ func RefreshRolePermsCacheByCodes(roleCodes []string) error {
 	successCount := 0
 	for _, rolePerms := range rolePermsList {
 		var permsJSON []byte
-		var err error
 
 		if len(rolePerms.Perms) == 0 {
 			permsJSON = []byte("[]")
@@ -92,5 +91,26 @@ func RefreshRolePermsCacheByCodes(roleCodes []string) error {
 	}
 
 	log.Printf("批量刷新角色权限缓存完成: %d/%d 个角色", successCount, len(roleCodes))
+	return nil
+}
+
+// RefreshPermsCacheByMenus 批量刷新受菜单变更影响的角色权限缓存（供菜单模块调用）
+func (s *Service) RefreshPermsCacheByMenus(menuIds []int64) error {
+	if len(menuIds) == 0 {
+		return nil
+	}
+
+	roleCodes, err := s.repo.CodesByMenuIds(context.Background(), menuIds)
+	if err != nil {
+		return fmt.Errorf("查询受影响的角色失败: %w", err)
+	}
+	if len(roleCodes) == 0 {
+		return nil
+	}
+
+	if err := s.RefreshPermsCacheByCodes(roleCodes); err != nil {
+		return fmt.Errorf("批量刷新角色权限缓存失败: %w", err)
+	}
+
 	return nil
 }

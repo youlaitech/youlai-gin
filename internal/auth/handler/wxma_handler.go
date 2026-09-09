@@ -6,16 +6,26 @@ import (
 	"youlai-gin/internal/auth/model"
 	"youlai-gin/internal/auth/service"
 	response "youlai-gin/internal/common"
+	"youlai-gin/internal/common/validator"
+	"youlai-gin/pkg/errs"
 )
 
-// RegisterWxMaRoutes 注册微信小程序认证路由
-func RegisterWxMaRoutes(r *gin.RouterGroup) {
-	r.POST("/wxma/auth/silent-login", WxMaSilentLogin)
-	r.POST("/wxma/auth/phone-login", WxMaPhoneLogin)
-	r.POST("/wxma/auth/bind-mobile", WxMaBindMobile)
+// WxMaHandler 微信小程序认证接口层
+type WxMaHandler struct {
+	svc *service.WxMaService
 }
 
-// WxMaSilentLogin 静默登录
+// NewWxMaHandler 创建 WxMaHandler 实例
+func NewWxMaHandler(svc *service.WxMaService) *WxMaHandler { return &WxMaHandler{svc: svc} }
+
+// RegisterRoutes 注册微信小程序认证路由
+func (h *WxMaHandler) RegisterRoutes(r *gin.RouterGroup) {
+	r.POST("/wxma/auth/silent-login", h.SilentLogin)
+	r.POST("/wxma/auth/phone-login", h.PhoneLogin)
+	r.POST("/wxma/auth/bind-mobile", h.BindMobile)
+}
+
+// SilentLogin 静默登录
 // @Summary 静默登录
 // @Description 微信小程序静默登录
 // @Tags 12.微信小程序认证
@@ -24,19 +34,19 @@ func RegisterWxMaRoutes(r *gin.RouterGroup) {
 // @Param body body model.WxMaSilentLoginRequest true "登录信息"
 // @Success 200 {object} map[string]interface{} "code/msg/data"
 // @Router /api/v1/wxma/auth/silent-login [post]
-func WxMaSilentLogin(c *gin.Context) {
+func (h *WxMaHandler) SilentLogin(c *gin.Context) {
 	var req model.WxMaSilentLoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "请求参数错误: "+err.Error())
+	if err := validator.BindJSON(c, &req); err != nil {
+		c.Error(err)
 		return
 	}
 
 	if req.Code == "" {
-		response.BadRequest(c, "code不能为空")
+		c.Error(errs.BadRequest("code 不能为空"))
 		return
 	}
 
-	result, err := service.SilentLogin(req.Code)
+	result, err := h.svc.SilentLogin(c.Request.Context(), req.Code)
 	if err != nil {
 		c.Error(err)
 		return
@@ -45,7 +55,7 @@ func WxMaSilentLogin(c *gin.Context) {
 	response.Ok(c, result)
 }
 
-// WxMaPhoneLogin 手机号快捷登录
+// PhoneLogin 手机号快捷登录
 // @Summary 手机号快捷登录
 // @Description 微信小程序手机号快捷登录
 // @Tags 12.微信小程序认证
@@ -54,19 +64,19 @@ func WxMaSilentLogin(c *gin.Context) {
 // @Param body body model.WxMaPhoneLoginRequest true "登录信息"
 // @Success 200 {object} map[string]interface{} "code/msg/data"
 // @Router /api/v1/wxma/auth/phone-login [post]
-func WxMaPhoneLogin(c *gin.Context) {
+func (h *WxMaHandler) PhoneLogin(c *gin.Context) {
 	var req model.WxMaPhoneLoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "请求参数错误: "+err.Error())
+	if err := validator.BindJSON(c, &req); err != nil {
+		c.Error(err)
 		return
 	}
 
 	if req.LoginCode == "" || req.PhoneCode == "" {
-		response.BadRequest(c, "loginCode和phoneCode不能为空")
+		c.Error(errs.BadRequest("loginCode 和 phoneCode 不能为空"))
 		return
 	}
 
-	result, err := service.PhoneLogin(req.LoginCode, req.PhoneCode)
+	result, err := h.svc.PhoneLogin(c.Request.Context(), req.LoginCode, req.PhoneCode)
 	if err != nil {
 		c.Error(err)
 		return
@@ -75,7 +85,7 @@ func WxMaPhoneLogin(c *gin.Context) {
 	response.Ok(c, result)
 }
 
-// WxMaBindMobile 绑定手机号
+// BindMobile 绑定手机号
 // @Summary 绑定手机号
 // @Description 微信小程序绑定手机号
 // @Tags 12.微信小程序认证
@@ -84,19 +94,19 @@ func WxMaPhoneLogin(c *gin.Context) {
 // @Param body body model.WxMaBindMobileRequest true "绑定信息"
 // @Success 200 {object} map[string]interface{} "code/msg/data"
 // @Router /api/v1/wxma/auth/bind-mobile [post]
-func WxMaBindMobile(c *gin.Context) {
+func (h *WxMaHandler) BindMobile(c *gin.Context) {
 	var req model.WxMaBindMobileRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "请求参数错误: "+err.Error())
+	if err := validator.BindJSON(c, &req); err != nil {
+		c.Error(err)
 		return
 	}
 
 	if req.OpenID == "" || req.Mobile == "" || req.SmsCode == "" {
-		response.BadRequest(c, "openId、mobile和smsCode不能为空")
+		c.Error(errs.BadRequest("openId、mobile 和 smsCode 不能为空"))
 		return
 	}
 
-	result, err := service.BindMobile(req.OpenID, req.Mobile, req.SmsCode)
+	result, err := h.svc.BindMobile(c.Request.Context(), req.OpenID, req.Mobile, req.SmsCode)
 	if err != nil {
 		c.Error(err)
 		return

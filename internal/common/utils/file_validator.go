@@ -12,10 +12,10 @@ import (
 
 // FileValidator 文件验证器
 type FileValidator struct {
-	MaxSize        int64    // 最大文件大小（字节）
-	AllowedExts    []string // 允许的文件扩展名
-	AllowedMimes   []string // 允许的 MIME 类型
-	ForbiddenExts  []string // 禁止的文件扩展名
+	MaxSize       int64    // 最大文件大小（字节）
+	AllowedExts   []string // 允许的文件扩展名
+	AllowedMimes  []string // 允许的 MIME 类型
+	ForbiddenExts []string // 禁止的文件扩展名
 }
 
 // ImageValidator 图片验证器

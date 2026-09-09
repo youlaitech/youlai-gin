@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
 	"youlai-gin/internal/common/auth"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/gormx"
@@ -28,20 +29,6 @@ func GetCurrentUser(c *gin.Context) (*auth.UserDetails, error) {
 		return nil, errs.Unauthorized("未登录或登录已过期")
 	}
 	return user, nil
-}
-
-// MustGetCurrentUserID 从上下文获取当前用户ID（必须存在，否则panic）
-func MustGetCurrentUserID(c *gin.Context) int64 {
-	userID, err := GetCurrentUserID(c)
-	if err != nil {
-		panic(err)
-	}
-	return userID
-}
-
-// GetUserIDMust GetCurrentUserID 的别名函数，返回用户ID和错误
-func GetUserIDMust(c *gin.Context) (int64, error) {
-	return GetCurrentUserID(c)
 }
 
 // OperatorCtx 从 gin 上下文取出当前操作人 ID 并注入 context，供 GORM 审计钩子填充

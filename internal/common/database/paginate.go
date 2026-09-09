@@ -6,10 +6,10 @@ import (
 
 // PaginateConfig 分页配置
 type PaginateConfig struct {
-	Page         int // 页码，从 1 开始
-	PageSize     int // 每页大小
-	MaxPageSize  int // 最大每页大小，0 表示不限制
-	DefaultSize  int // 默认每页大小
+	Page        int // 页码，从 1 开始
+	PageSize    int // 每页大小
+	MaxPageSize int // 最大每页大小，0 表示不限制
+	DefaultSize int // 默认每页大小
 }
 
 // DefaultPaginateConfig 默认分页配置

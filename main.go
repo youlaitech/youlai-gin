@@ -19,7 +19,7 @@ import (
 	"youlai-gin/internal/common/logger"
 	"youlai-gin/internal/common/redis"
 	"youlai-gin/internal/common/storage"
-	"youlai-gin/internal/message"
+	sse "youlai-gin/internal/message/service"
 	"youlai-gin/internal/middleware"
 	"youlai-gin/internal/router"
 
@@ -75,7 +75,7 @@ const swaggerIndexHTML = `<!DOCTYPE html>
 </html>
 `
 
-const Version = "0.4.0"
+const Version = "4.2.0"
 
 func main() {
 	// 加载配置（APP_ENV 或默认 dev）
@@ -122,7 +122,7 @@ func main() {
 	logger.Log.Sugar().Infof("文件存储已初始化: type=%s", storageCfg.Type)
 
 	// 初始化 SSE 服务
-	message.InitSseService()
+	sse.InitSseService()
 
 	// 初始化 TokenManager
 	tokenManager, err := auth.CreateTokenManager(&config.Cfg.Security)
@@ -133,7 +133,7 @@ func main() {
 	// 启动 Gin 服务
 	youlaDocs.SwaggerInfo.Title = "youlai-gin"
 	youlaDocs.SwaggerInfo.Description = "youlai 全家桶（Go/Gin）权限管理后台接口文档"
-	youlaDocs.SwaggerInfo.Version = "4.2.0"
+	youlaDocs.SwaggerInfo.Version = Version
 	r := gin.New()
 	r.Use(logger.RequestIDMiddleware())
 	r.Use(logger.Middleware())
@@ -157,7 +157,7 @@ func main() {
 	})
 
 	addr := fmt.Sprintf(":%d", config.Cfg.Server.Port)
-	logger.Log.Sugar().Infof("服务启动在 %s [环境: %s]", addr, config.GetEnv())
+	logger.Log.Sugar().Infof("服务启动在 %s [环境: %s, 版本: %s]", addr, config.GetEnv(), Version)
 
 	srv := &http.Server{
 		Addr:    addr,
@@ -178,7 +178,7 @@ func main() {
 	logger.Log.Sugar().Info("正在关闭服务器...")
 
 	// 主动断开所有 SSE 连接
-	message.GetSseService().CloseAll()
+	sse.GetSseService().CloseAll()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

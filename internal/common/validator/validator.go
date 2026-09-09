@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
-	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/constant"
+	"youlai-gin/pkg/errs"
 )
 
 var validate *validator.Validate

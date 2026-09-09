@@ -10,29 +10,29 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"youlai-gin/internal/common/database"
 	appContext "youlai-gin/internal/common/context"
+	"youlai-gin/internal/common/database"
 	"youlai-gin/internal/common/logger"
 	"youlai-gin/pkg/enums"
 )
 
 // OperationLogEntity 操作日志实体
 type OperationLogEntity struct {
-	ID            int64      `gorm:"primaryKey;autoIncrement" json:"id"`
-	Module        int        `gorm:"column:module" json:"module"`
-	ActionType    int        `gorm:"column:action_type" json:"actionType"`
-	Title         string     `gorm:"column:title;size:100" json:"title"`
-	Content       string     `gorm:"column:content;type:text" json:"content"`
-	OperatorID    int64      `gorm:"column:operator_id" json:"operatorId"`
-	OperatorName  string     `gorm:"column:operator_name;size:50" json:"operatorName"`
-	RequestURI    string     `gorm:"column:request_uri;size:255" json:"requestUri"`
-	RequestMethod string     `gorm:"column:request_method;size:10" json:"requestMethod"`
-	IP            string     `gorm:"column:ip;size:45" json:"ip"`
-	Province      string     `gorm:"column:province;size:100" json:"province"`
-	City          string     `gorm:"column:city;size:100" json:"city"`
-	Device        string     `gorm:"column:device;size:100" json:"device"`
-	OS            string     `gorm:"column:os;size:100" json:"os"`
-	Browser       string     `gorm:"column:browser;size:100" json:"browser"`
+	ID            int64     `gorm:"primaryKey;autoIncrement" json:"id"`
+	Module        int       `gorm:"column:module" json:"module"`
+	ActionType    int       `gorm:"column:action_type" json:"actionType"`
+	Title         string    `gorm:"column:title;size:100" json:"title"`
+	Content       string    `gorm:"column:content;type:text" json:"content"`
+	OperatorID    int64     `gorm:"column:operator_id" json:"operatorId"`
+	OperatorName  string    `gorm:"column:operator_name;size:50" json:"operatorName"`
+	RequestURI    string    `gorm:"column:request_uri;size:255" json:"requestUri"`
+	RequestMethod string    `gorm:"column:request_method;size:10" json:"requestMethod"`
+	IP            string    `gorm:"column:ip;size:45" json:"ip"`
+	Province      string    `gorm:"column:province;size:100" json:"province"`
+	City          string    `gorm:"column:city;size:100" json:"city"`
+	Device        string    `gorm:"column:device;size:100" json:"device"`
+	OS            string    `gorm:"column:os;size:100" json:"os"`
+	Browser       string    `gorm:"column:browser;size:100" json:"browser"`
 	Status        int       `gorm:"column:status" json:"status"`
 	ErrorMsg      string    `gorm:"column:error_msg;size:255" json:"errorMsg"`
 	ExecutionTime int       `gorm:"column:execution_time" json:"executionTime"`
@@ -45,13 +45,13 @@ func (OperationLogEntity) TableName() string {
 
 // OperationLogConfig 操作日志配置
 type OperationLogConfig struct {
-	Module           enums.LogModule
-	ActionType       enums.ActionType
-	Title            string
-	Content          string
-	SaveRequestBody  bool
-	SaveResponse     bool
-	MaxBodySize      int
+	Module          enums.LogModule
+	ActionType      enums.ActionType
+	Title           string
+	Content         string
+	SaveRequestBody bool
+	SaveResponse    bool
+	MaxBodySize     int
 }
 
 // DefaultOperationLogConfig 默认配置
@@ -94,7 +94,7 @@ func OperationLogWithConfig(config OperationLogConfig) gin.HandlerFunc {
 		if config.SaveResponse {
 			writer := &responseWriter{
 				ResponseWriter: c.Writer,
-				body:          &bytes.Buffer{},
+				body:           &bytes.Buffer{},
 			}
 			c.Writer = writer
 			defer func() {
@@ -185,38 +185,6 @@ func (w *responseWriter) Write(b []byte) (int, error) {
 func (w *responseWriter) WriteString(s string) (int, error) {
 	w.body.WriteString(s)
 	return w.ResponseWriter.WriteString(s)
-}
-
-// OperationLogJSON JSON 日志中间件
-func OperationLogJSON(actionType string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		start := time.Now()
-
-		userID, _ := appContext.GetCurrentUserID(c)
-
-		c.Next()
-
-		duration := time.Since(start)
-
-		logger.Info(
-			"[操作日志]",
-			zap.String("actionType", actionType),
-			zap.Int64("userId", userID),
-			zap.String("path", c.Request.URL.Path),
-			zap.String("method", c.Request.Method),
-			zap.Int("status", c.Writer.Status()),
-			zap.Duration("duration", duration),
-		)
-	}
-}
-
-// OperationLogQuery 操作日志查询参数
-type OperationLogQuery struct {
-	ActionType string `form:"actionType"`
-	StartTime  string `form:"startTime"`
-	EndTime    string `form:"endTime"`
-	PageNum    int    `form:"pageNum" binding:"required,min=1"`
-	PageSize   int    `form:"pageSize" binding:"required,min=1,max=100"`
 }
 
 // ParseBrowser 从 User-Agent 字符串中提取浏览器名称和版本

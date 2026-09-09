@@ -1,30 +1,33 @@
-﻿package repository
+package repository
 
 import (
 	"context"
 
-	roleRepo "youlai-gin/internal/system/role/repository"
-	"youlai-gin/internal/common/permission/datascope"
-	"youlai-gin/internal/system/user/model"
+	"gorm.io/gorm"
+
 	"youlai-gin/internal/common/auth"
 	"youlai-gin/internal/common/database"
-	pkgDatabase "youlai-gin/internal/common/database"
+	"youlai-gin/internal/common/permission/datascope"
+	"youlai-gin/internal/system/user/model"
 	"youlai-gin/pkg/constant"
 	"youlai-gin/pkg/gormx"
 	"youlai-gin/pkg/types"
 )
 
-// GetRolePermsByCodes 从数据库查询角色权限（降级用）
-func GetRolePermsByCodes(roleCodes []string) ([]roleRepo.RolePerms, error) {
-	return roleRepo.GetRolePermsByCodes(roleCodes)
+// Repository 用户数据访问层
+type Repository struct {
+	db *gorm.DB
 }
 
-// GetUserPage 用户分页查询
-func GetUserPage(query *model.UserQuery, currentUser *auth.UserDetails) ([]model.UserPageVO, int64, error) {
+// NewRepository 创建 Repository 实例
+func NewRepository(db *gorm.DB) *Repository { return &Repository{db: db} }
+
+// Page 用户分页查询（数据权限按当前用户多角色并集过滤）
+func (r *Repository) Page(ctx context.Context, query *model.UserQuery, currentUser *auth.UserDetails) ([]model.UserPageVO, int64, error) {
 	var users []model.UserPageVO
 	var total int64
 
-	db := database.DB.Table("sys_user u").
+	db := r.db.WithContext(ctx).Table("sys_user u").
 		Select(`u.id, u.username, u.nickname, u.mobile, u.gender, u.avatar, u.email, u.status,
 			u.create_time, d.name as dept_name,
 			GROUP_CONCAT(r.name ORDER BY r.id SEPARATOR ',') as role_names`).
@@ -80,46 +83,45 @@ func GetUserPage(query *model.UserQuery, currentUser *auth.UserDetails) ([]model
 		return nil, 0, err
 	}
 
-	// 使用通用分页函数
-	if err := db.Scopes(pkgDatabase.PaginateFromQuery(query)).Order("u.create_time DESC").Find(&users).Error; err != nil {
+	if err := db.Scopes(database.PaginateFromQuery(query)).Order("u.create_time DESC").Find(&users).Error; err != nil {
 		return nil, 0, err
 	}
 
 	return users, total, nil
 }
 
-// GetUserByID 根据ID查询用户
-func GetUserByID(id int64) (*model.User, error) {
+// Get 根据ID查询用户
+func (r *Repository) Get(ctx context.Context, id int64) (*model.User, error) {
 	var user model.User
-	err := database.DB.Where("id = ? AND is_deleted = 0", id).First(&user).Error
+	err := r.db.WithContext(ctx).Where("id = ? AND is_deleted = 0", id).First(&user).Error
 	return &user, err
 }
 
-// GetUserByUsername 根据用户名查询用户（用于登录认证）
-func GetUserByUsername(username string) (*model.User, error) {
+// GetByUsername 根据用户名查询用户（用于登录认证）
+func (r *Repository) GetByUsername(ctx context.Context, username string) (*model.User, error) {
 	var user model.User
-	err := database.DB.Where("username = ? AND is_deleted = 0", username).First(&user).Error
+	err := r.db.WithContext(ctx).Where("username = ? AND is_deleted = 0", username).First(&user).Error
 	return &user, err
 }
 
-// GetUserByMobile 根据手机号查询用户
-func GetUserByMobile(mobile string) (*model.User, error) {
+// GetByMobile 根据手机号查询用户
+func (r *Repository) GetByMobile(ctx context.Context, mobile string) (*model.User, error) {
 	var user model.User
-	err := database.DB.Where("mobile = ? AND is_deleted = 0", mobile).First(&user).Error
+	err := r.db.WithContext(ctx).Where("mobile = ? AND is_deleted = 0", mobile).First(&user).Error
 	return &user, err
 }
 
-// GetUserByEmail 根据邮箱查询用户
-func GetUserByEmail(email string) (*model.User, error) {
+// GetByEmail 根据邮箱查询用户
+func (r *Repository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	var user model.User
-	err := database.DB.Where("email = ? AND is_deleted = 0", email).First(&user).Error
+	err := r.db.WithContext(ctx).Where("email = ? AND is_deleted = 0", email).First(&user).Error
 	return &user, err
 }
 
-// GetUserRoles 获取用户角色编码列表
-func GetUserRoles(userID int64) ([]string, error) {
+// RoleCodes 获取用户启用角色的编码列表
+func (r *Repository) RoleCodes(ctx context.Context, userID int64) ([]string, error) {
 	var roleCodes []string
-	err := database.DB.Table("sys_user_role ur").
+	err := r.db.WithContext(ctx).Table("sys_user_role ur").
 		Select("r.code").
 		Joins("INNER JOIN sys_role r ON ur.role_id = r.id").
 		Where("ur.user_id = ? AND r.is_deleted = 0 AND r.status = 1", userID).
@@ -127,60 +129,54 @@ func GetUserRoles(userID int64) ([]string, error) {
 	return roleCodes, err
 }
 
-// CreateUser 创建用户（ctx 携带操作人，由审计钩子填充 create_by/update_by）
-func CreateUser(ctx context.Context, user *model.User) error {
-	return database.DB.WithContext(ctx).Create(user).Error
+// Create 创建用户（ctx 携带操作人，由审计钩子填充 create_by/update_by）
+func (r *Repository) Create(ctx context.Context, user *model.User) error {
+	return r.db.WithContext(ctx).Create(user).Error
 }
 
-// UpdateUser 更新用户
-// 用 BuildPatchMap(form) 生成「列名→值」映射：指针字段 nil 跳过、非 nil（含 0）写入，
-// 从根上解决 GORM Updates(struct) 默认跳过零值字段的问题。
-func UpdateUser(ctx context.Context, form *model.UserForm) error {
-	return database.DB.WithContext(ctx).
+// Update 更新用户
+// 用 BuildPatchMap(form) 生成「列名→值」映射，从根上解决 GORM Updates(struct) 默认跳过零值字段的问题。
+func (r *Repository) Update(ctx context.Context, form *model.UserForm) error {
+	return r.db.WithContext(ctx).
 		Model(&model.User{}).
 		Where("id = ?", form.ID).
 		Updates(gormx.BuildPatchMap(form)).Error
 }
 
-// DeleteUser 删除用户（逻辑删除）
-func DeleteUser(id int64) error {
-	return database.DB.Model(&model.User{}).Where("id = ?", id).Update("is_deleted", 1).Error
+// BatchDelete 批量逻辑删除用户
+func (r *Repository) BatchDelete(ctx context.Context, ids []int64) error {
+	return r.db.WithContext(ctx).Model(&model.User{}).Where("id IN ?", ids).Update("is_deleted", 1).Error
 }
 
-// DeleteUsersByIDs 批量删除用户
-func DeleteUsersByIDs(ids []int64) error {
-	return database.DB.Model(&model.User{}).Where("id IN ?", ids).Update("is_deleted", 1).Error
+// UpdateStatus 更新用户状态
+func (r *Repository) UpdateStatus(ctx context.Context, userId int64, status int) error {
+	return r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", userId).Update("status", status).Error
 }
 
-// UpdateUserStatus 更新用户状态
-func UpdateUserStatus(userId int64, status int) error {
-	return database.DB.Model(&model.User{}).Where("id = ?", userId).Update("status", status).Error
-}
-
-// CheckUsernameExists 检查用户名是否存在
-func CheckUsernameExists(username string, excludeId int64) (bool, error) {
+// UsernameExists 检查用户名是否存在（排除指定ID）
+func (r *Repository) UsernameExists(ctx context.Context, username string, excludeID int64) (bool, error) {
 	var count int64
-	db := database.DB.Model(&model.User{}).Where("username = ? AND is_deleted = 0", username)
-	if excludeId > 0 {
-		db = db.Where("id != ?", excludeId)
+	db := r.db.WithContext(ctx).Model(&model.User{}).Where("username = ? AND is_deleted = 0", username)
+	if excludeID > 0 {
+		db = db.Where("id != ?", excludeID)
 	}
 	err := db.Count(&count).Error
 	return count > 0, err
 }
 
-// GetUserRoleIDs 获取用户角色ID列表
-func GetUserRoleIDs(userId int64) ([]int64, error) {
+// RoleIDs 获取用户已分配的角色ID列表
+func (r *Repository) RoleIDs(ctx context.Context, userId int64) ([]int64, error) {
 	var roleIds []int64
-	err := database.DB.Model(&model.UserRole{}).
+	err := r.db.WithContext(ctx).Model(&model.UserRole{}).
 		Where("user_id = ?", userId).
 		Pluck("role_id", &roleIds).Error
 	return roleIds, err
 }
 
-// ListUserIDsByRoleID 获取角色绑定的用户ID集合
-func ListUserIDsByRoleID(roleId int64) ([]int64, error) {
+// ListIDsByRoleID 获取角色绑定的用户ID集合
+func (r *Repository) ListIDsByRoleID(ctx context.Context, roleId int64) ([]int64, error) {
 	var userIds []int64
-	err := database.DB.Table("sys_user_role").
+	err := r.db.WithContext(ctx).Table("sys_user_role").
 		Select("user_id").
 		Where("role_id = ?", roleId).
 		Distinct().
@@ -188,23 +184,17 @@ func ListUserIDsByRoleID(roleId int64) ([]int64, error) {
 	return userIds, err
 }
 
-// SaveUserRoles 保存用户角色关联（事务：先删除再新增）
-func SaveUserRoles(userId int64, roleIds []int64) error {
-	tx := database.DB.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
+// UpdateRoles 更新用户角色关联（事务：先删后增）
+func (r *Repository) UpdateRoles(ctx context.Context, userId int64, roleIds []int64) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("user_id = ?", userId).Delete(&model.UserRole{}).Error; err != nil {
+			return err
 		}
-	}()
 
-	// 删除旧的角色关联
-	if err := tx.Where("user_id = ?", userId).Delete(&model.UserRole{}).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
+		if len(roleIds) == 0 {
+			return nil
+		}
 
-	// 新增角色关联
-	if len(roleIds) > 0 {
 		userRoles := make([]model.UserRole, len(roleIds))
 		for i, roleId := range roleIds {
 			userRoles[i] = model.UserRole{
@@ -212,19 +202,14 @@ func SaveUserRoles(userId int64, roleIds []int64) error {
 				RoleID: types.BigInt(roleId),
 			}
 		}
-		if err := tx.Create(&userRoles).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-
-	return tx.Commit().Error
+		return tx.Create(&userRoles).Error
+	})
 }
 
-// GetUserProfile 获取用户个人信息
-func GetUserProfile(userId int64) (*model.UserProfileVO, error) {
+// Profile 获取个人中心用户信息（含部门与角色名）
+func (r *Repository) Profile(ctx context.Context, userId int64) (*model.UserProfileVO, error) {
 	var profile model.UserProfileVO
-	err := database.DB.Table("sys_user u").
+	err := r.db.WithContext(ctx).Table("sys_user u").
 		Select(`u.id, u.username, u.nickname, u.avatar, u.gender, u.mobile, u.email,
 			d.name as dept_name,
 			GROUP_CONCAT(r.name ORDER BY r.id SEPARATOR ',') as role_names`).
@@ -237,53 +222,82 @@ func GetUserProfile(userId int64) (*model.UserProfileVO, error) {
 	return &profile, err
 }
 
-// UpdateUserProfile 更新用户个人信息
-func UpdateUserProfile(userId int64, req *model.UserProfileForm) error {
+// UpdateProfile 更新个人中心信息（仅非空字段）
+func (r *Repository) UpdateProfile(ctx context.Context, userId int64, form *model.UserProfileForm) error {
 	updates := map[string]interface{}{}
-	if req.Nickname != "" {
-		updates["nickname"] = req.Nickname
+	if form.Nickname != "" {
+		updates["nickname"] = form.Nickname
 	}
-	if req.Avatar != "" {
-		updates["avatar"] = req.Avatar
+	if form.Avatar != "" {
+		updates["avatar"] = form.Avatar
 	}
-	if req.Gender != nil {
-		updates["gender"] = *req.Gender
+	if form.Gender != nil {
+		updates["gender"] = *form.Gender
 	}
-	return database.DB.Model(&model.User{}).Where("id = ?", userId).Updates(updates).Error
+	return r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", userId).Updates(updates).Error
 }
 
-// UpdateUserPassword 更新用户密码
-func UpdateUserPassword(userId int64, password string) error {
-	return database.DB.Model(&model.User{}).Where("id = ?", userId).Update("password", password).Error
+// UpdatePassword 更新用户密码
+func (r *Repository) UpdatePassword(ctx context.Context, userId int64, password string) error {
+	return r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", userId).Update("password", password).Error
 }
 
-// UpdateUserMobile 更新用户手机号
-func UpdateUserMobile(userId int64, mobile string) error {
-	return database.DB.Model(&model.User{}).Where("id = ?", userId).Update("mobile", mobile).Error
+// UpdateMobile 更新用户手机号
+func (r *Repository) UpdateMobile(ctx context.Context, userId int64, mobile string) error {
+	return r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", userId).Update("mobile", mobile).Error
 }
 
-// UnbindUserMobile 解绑用户手机号
-func UnbindUserMobile(userId int64) error {
-	return database.DB.Model(&model.User{}).Where("id = ?", userId).Update("mobile", nil).Error
+// UnbindMobile 解绑用户手机号
+func (r *Repository) UnbindMobile(ctx context.Context, userId int64) error {
+	return r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", userId).Update("mobile", nil).Error
 }
 
-// UpdateUserEmail 更新用户邮箱
-func UpdateUserEmail(userId int64, email string) error {
-	return database.DB.Model(&model.User{}).Where("id = ?", userId).Update("email", email).Error
+// UpdateEmail 更新用户邮箱
+func (r *Repository) UpdateEmail(ctx context.Context, userId int64, email string) error {
+	return r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", userId).Update("email", email).Error
 }
 
-// UnbindUserEmail 解绑用户邮箱
-func UnbindUserEmail(userId int64) error {
-	return database.DB.Model(&model.User{}).Where("id = ?", userId).Update("email", nil).Error
+// UnbindEmail 解绑用户邮箱
+func (r *Repository) UnbindEmail(ctx context.Context, userId int64) error {
+	return r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", userId).Update("email", nil).Error
 }
 
-// GetUserOptions 获取用户下拉选项
-func GetUserOptions() ([]model.User, error) {
+// Options 获取启用状态的用户下拉选项
+func (r *Repository) Options(ctx context.Context) ([]model.User, error) {
 	var users []model.User
-	err := database.DB.Model(&model.User{}).
+	err := r.db.WithContext(ctx).Model(&model.User{}).
 		Select("id, username, nickname").
 		Where("status = 1 AND is_deleted = 0").
 		Order("id ASC").
 		Find(&users).Error
 	return users, err
+}
+
+// GetSocial 查询第三方账号绑定（platform + openid 唯一）
+func (r *Repository) GetSocial(ctx context.Context, platform model.SocialPlatform, openID string) (*model.UserSocial, error) {
+	var social model.UserSocial
+	err := r.db.WithContext(ctx).Where("platform = ? AND openid = ?", platform, openID).First(&social).Error
+	return &social, err
+}
+
+// UpsertSocial 保存第三方账号绑定：已存在则更新绑定的用户与会话密钥，否则新增
+func (r *Repository) UpsertSocial(ctx context.Context, social *model.UserSocial) error {
+	err := r.db.WithContext(ctx).
+		Where("platform = ? AND openid = ?", social.Platform, social.OpenID).
+		Assign(social).
+		FirstOrCreate(social).Error
+	return err
+}
+
+// CreateUserWithGuestRole 事务创建用户并分配游客(GUEST)角色
+func (r *Repository) CreateUserWithGuestRole(ctx context.Context, user *model.User) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(user).Error; err != nil {
+			return err
+		}
+		return tx.Create(&model.UserRole{
+			UserID: user.ID,
+			RoleID: types.BigInt(constant.RoleGuestID),
+		}).Error
+	})
 }

@@ -1,4 +1,4 @@
-package message
+package handler
 
 import (
 	"net/http"
@@ -6,20 +6,30 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"youlai-gin/internal/common/auth"
 	response "youlai-gin/internal/common"
+	"youlai-gin/internal/common/auth"
+	sseService "youlai-gin/internal/message/service"
 )
 
+// SseHandler SSE 连接接口层
 type SseHandler struct {
-	sseService  *SseService
+	sseService  *sseService.SseService
 	tokenParser auth.TokenManager
 }
 
+// NewSseHandler 创建 SseHandler 实例
 func NewSseHandler(tokenParser auth.TokenManager) *SseHandler {
 	return &SseHandler{
-		sseService:  GetSseService(),
+		sseService:  sseService.GetSseService(),
 		tokenParser: tokenParser,
 	}
+}
+
+// RegisterRoutes 注册 SSE 连接路由，基础路径 /api/v1/sse
+func (h *SseHandler) RegisterRoutes(r *gin.RouterGroup) {
+	sseGroup := r.Group("/sse")
+	sseGroup.GET("/connect", h.Connect)
+	sseGroup.GET("/online-count", h.GetOnlineCount)
 }
 
 // Connect SSE连接接口
@@ -101,13 +111,4 @@ func (h *SseHandler) Connect(c *gin.Context) {
 // @Router /api/v1/sse/online-count [get]
 func (h *SseHandler) GetOnlineCount(c *gin.Context) {
 	c.JSON(http.StatusOK, response.Result{Code: "00000", Msg: "操作成功", Data: h.sseService.GetOnlineUserCount()})
-}
-
-func RegisterRoutes(r *gin.RouterGroup, tokenParser auth.TokenManager) {
-	handler := NewSseHandler(tokenParser)
-	sseGroup := r.Group("/sse")
-	{
-		sseGroup.GET("/connect", handler.Connect)
-		sseGroup.GET("/online-count", handler.GetOnlineCount)
-	}
 }

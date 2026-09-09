@@ -15,22 +15,22 @@ type AuthenticationToken struct {
 
 // UserDetails 用户详情
 type UserDetails struct {
-	UserID     int64                   `json:"userId"`
-	Username   string                  `json:"username"`
-	DeptID     types.BigInt            `json:"deptId"`
-	Avatar     string                  `json:"avatar"`      // 头像
+	UserID     int64                     `json:"userId"`
+	Username   string                    `json:"username"`
+	DeptID     types.BigInt              `json:"deptId"`
+	Avatar     string                    `json:"avatar"`     // 头像
 	DataScopes []permModel.RoleDataScope `json:"dataScopes"` // 数据权限列表（支持多角色）
-	Roles      []string                `json:"roles"`        // 角色列表
+	Roles      []string                  `json:"roles"`      // 角色列表
 }
 
 // UserSession Redis-Token 模式下的用户会话快照
 type UserSession struct {
-	UserID     int64                    `json:"userId"`
-	Username   string                   `json:"username"`
-	DeptID     types.BigInt             `json:"deptId"`
-	Avatar     string                   `json:"avatar"`      // 头像
+	UserID     int64                     `json:"userId"`
+	Username   string                    `json:"username"`
+	DeptID     types.BigInt              `json:"deptId"`
+	Avatar     string                    `json:"avatar"`     // 头像
 	DataScopes []permModel.RoleDataScope `json:"dataScopes"` // 数据权限列表
-	Roles      []string                 `json:"roles"`       // 角色权限集合
+	Roles      []string                  `json:"roles"`      // 角色权限集合
 }
 
 // ToUserDetails 转换为 UserDetails

@@ -170,11 +170,6 @@ func SystemError(c *gin.Context, msg string) {
 	})
 }
 
-// InternalServerError 内部服务器错误（SystemError 的别名）
-func InternalServerError(c *gin.Context, msg string) {
-	SystemError(c, msg)
-}
-
 // ForbiddenWrite 演示环境禁止写入
 func ForbiddenWrite(c *gin.Context) {
 	c.JSON(http.StatusForbidden, Result{
@@ -191,5 +186,4 @@ func HandleError(c *gin.Context, err error) {
 	} else {
 		SystemError(c, err.Error())
 	}
-	return
 }

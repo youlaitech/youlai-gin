@@ -1,4 +1,4 @@
-package message
+package service
 
 import (
 	"encoding/json"
@@ -8,6 +8,7 @@ import (
 
 	"go.uber.org/zap"
 
+	msgModel "youlai-gin/internal/message/model"
 	"youlai-gin/internal/common/logger"
 )
 
@@ -96,7 +97,7 @@ func (s *SseService) CreateConnection(username string, w http.ResponseWriter) (*
 	s.registry.UserConnected(username, emitter)
 
 	// 发送初始在线人数
-	if err := emitter.Send(TopicOnlineCount, s.registry.GetOnlineUserCount()); err != nil {
+	if err := emitter.Send(msgModel.TopicOnlineCount, s.registry.GetOnlineUserCount()); err != nil {
 		logger.Warn("发送初始在线用户数失败", zap.Error(err))
 	}
 
@@ -113,14 +114,14 @@ func (s *SseService) SendDictChange(dictCode string) {
 	if dictCode == "" {
 		return
 	}
-	event := NewDictChangeEvent(dictCode)
-	s.broadcast(TopicDict, event)
+	event := msgModel.NewDictChangeEvent(dictCode)
+	s.broadcast(msgModel.TopicDict, event)
 	logger.Debug("字典变更通知已发送", zap.String("dictCode", dictCode))
 }
 
 func (s *SseService) SendOnlineCount() {
 	count := s.registry.GetOnlineUserCount()
-	s.broadcast(TopicOnlineCount, count)
+	s.broadcast(msgModel.TopicOnlineCount, count)
 }
 
 // SendToUser 向指定用户的全部连接推送事件
@@ -138,7 +139,7 @@ func (s *SseService) SendToUser(username string, eventName string, data interfac
 	logger.Debug("SSE事件已发送给用户", zap.String("username", username), zap.String("event", eventName))
 }
 
-func (s *SseService) GetOnlineUsers() []*OnlineUserDTO {
+func (s *SseService) GetOnlineUsers() []*msgModel.OnlineUserDTO {
 	return s.registry.GetOnlineUsers()
 }
 
@@ -153,7 +154,7 @@ func (s *SseService) SendSystemMessage(message string) {
 		"content":   message,
 		"timestamp": time.Now().UnixMilli(),
 	}
-	s.broadcast(TopicSystem, systemMessage)
+	s.broadcast(msgModel.TopicSystem, systemMessage)
 	logger.Debug("系统消息已发送", zap.String("message", message))
 }
 

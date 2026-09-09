@@ -10,27 +10,32 @@ import (
 
 	"youlai-gin/internal/auth/model"
 	"youlai-gin/internal/auth/service"
+	response "youlai-gin/internal/common"
 	pkgAuth "youlai-gin/internal/common/auth"
 	"youlai-gin/internal/common/redis"
+	"youlai-gin/internal/common/validator"
+	"youlai-gin/internal/middleware"
 	"youlai-gin/pkg/constant"
 	"youlai-gin/pkg/enums"
 	"youlai-gin/pkg/errs"
-	"youlai-gin/internal/middleware"
-	response "youlai-gin/internal/common"
-	"youlai-gin/internal/common/validator"
 )
 
-// RegisterAuthRoutes 注册认证相关 HTTP 路由
-func RegisterAuthRoutes(r *gin.RouterGroup, tokenManager pkgAuth.TokenManager) {
-	r.GET("/auth/captcha", GetCaptcha)
-	r.POST("/auth/login", middleware.OperationLog(enums.LogModuleLogin, enums.ActionTypeLogin), Login)
-	r.POST("/auth/login/sms", middleware.OperationLog(enums.LogModuleLogin, enums.ActionTypeLogin), LoginBySms)
-	r.POST("/auth/sms/code", SendSmsCode)
-	r.DELETE("/auth/logout", middleware.OperationLog(enums.LogModuleLogin, enums.ActionTypeLogout), Logout)
-	r.POST("/auth/refresh-token", RefreshToken)
+// AuthHandler 认证接口层（账号密码 / 短信验证码登录）
+type AuthHandler struct {
+	svc *service.AuthService
+}
 
-	// 扫码登录路由
-	RegisterQrCodeRoutes(r, tokenManager)
+// NewAuthHandler 创建 AuthHandler 实例
+func NewAuthHandler(svc *service.AuthService) *AuthHandler { return &AuthHandler{svc: svc} }
+
+// RegisterRoutes 注册账号密码与短信登录相关路由
+func (h *AuthHandler) RegisterRoutes(r *gin.RouterGroup) {
+	r.GET("/auth/captcha", h.GetCaptcha)
+	r.POST("/auth/login", middleware.OperationLog(enums.LogModuleLogin, enums.ActionTypeLogin), h.Login)
+	r.POST("/auth/login/sms", middleware.OperationLog(enums.LogModuleLogin, enums.ActionTypeLogin), h.LoginBySms)
+	r.POST("/auth/sms/code", h.SendSmsCode)
+	r.DELETE("/auth/logout", middleware.OperationLog(enums.LogModuleLogin, enums.ActionTypeLogout), h.Logout)
+	r.POST("/auth/refresh-token", h.RefreshToken)
 }
 
 // GetCaptcha 获取验证码
@@ -40,8 +45,8 @@ func RegisterAuthRoutes(r *gin.RouterGroup, tokenManager pkgAuth.TokenManager) {
 // @Produce json
 // @Success 200 {object} map[string]interface{} "code/msg/data，data 为 CaptchaVO"
 // @Router /api/v1/auth/captcha [get]
-func GetCaptcha(c *gin.Context) {
-	captcha, err := service.GetCaptcha()
+func (h *AuthHandler) GetCaptcha(c *gin.Context) {
+	captcha, err := h.svc.GetCaptcha(c.Request.Context())
 	if err != nil {
 		c.Error(err)
 		return
@@ -59,7 +64,7 @@ func GetCaptcha(c *gin.Context) {
 // @Param body body model.LoginRequest true "登录信息"
 // @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
 // @Router /api/v1/auth/login [post]
-func Login(c *gin.Context) {
+func (h *AuthHandler) Login(c *gin.Context) {
 	var req model.LoginRequest
 	if err := validator.BindJSON(c, &req); err != nil {
 		c.Error(err)
@@ -71,7 +76,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	token, userID, err := service.Login(&req)
+	token, userID, err := h.svc.Login(c.Request.Context(), &req)
 	if err != nil {
 		c.Error(err)
 		return
@@ -92,12 +97,12 @@ func Login(c *gin.Context) {
 // @Security Bearer
 // @Success 200 {object} map[string]interface{} "code/msg"
 // @Router /api/v1/auth/logout [delete]
-func Logout(c *gin.Context) {
+func (h *AuthHandler) Logout(c *gin.Context) {
 	// 从 Header 中获取 Token
 	authHeader := c.GetHeader(pkgAuth.AuthorizationHeader)
 	token := strings.TrimPrefix(authHeader, pkgAuth.BearerPrefix)
 
-	if err := service.Logout(token); err != nil {
+	if err := h.svc.Logout(token); err != nil {
 		c.Error(err)
 		return
 	}
@@ -114,14 +119,14 @@ func Logout(c *gin.Context) {
 // @Param refreshToken formData string true "刷新令牌"
 // @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
 // @Router /api/v1/auth/refresh-token [post]
-func RefreshToken(c *gin.Context) {
+func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	refreshToken := c.PostForm("refreshToken")
 	if refreshToken == "" {
 		c.Error(errs.BadRequest("刷新令牌不能为空"))
 		return
 	}
 
-	token, err := service.RefreshToken(refreshToken)
+	token, err := h.svc.RefreshToken(refreshToken)
 	if err != nil {
 		c.Error(err)
 		return
@@ -139,7 +144,7 @@ func RefreshToken(c *gin.Context) {
 // @Param body body map[string]string true "手机号信息 {\"mobile\":\"手机号\"}"
 // @Success 200 {object} map[string]interface{} "code/msg"
 // @Router /api/v1/auth/sms/code [post]
-func SendSmsCode(c *gin.Context) {
+func (h *AuthHandler) SendSmsCode(c *gin.Context) {
 	// mobile 从 URL 查询参数读取（如 ?mobile=138xxxx）
 	mobile := c.Query("mobile")
 	if mobile == "" {
@@ -163,7 +168,7 @@ func SendSmsCode(c *gin.Context) {
 		return
 	}
 
-	err := service.SendSmsLoginCode(mobile)
+	err := h.svc.SendSmsLoginCode(c.Request.Context(), mobile)
 	if err != nil {
 		c.Error(err)
 		return
@@ -176,12 +181,12 @@ func SendSmsCode(c *gin.Context) {
 // @Summary 短信验证码登录
 // @Description 使用手机号和短信验证码登录
 // @Tags 01.认证中心
-// @Accept json
+// @Accept application/json
 // @Produce json
 // @Param body body model.SmsLoginRequest true "短信登录信息"
 // @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
 // @Router /api/v1/auth/login/sms [post]
-func LoginBySms(c *gin.Context) {
+func (h *AuthHandler) LoginBySms(c *gin.Context) {
 	var req model.SmsLoginRequest
 	if err := validator.BindJSON(c, &req); err != nil {
 		c.Error(err)
@@ -193,7 +198,7 @@ func LoginBySms(c *gin.Context) {
 		return
 	}
 
-	token, userID, err := service.LoginBySms(&req)
+	token, userID, err := h.svc.LoginBySms(c.Request.Context(), &req)
 	if err != nil {
 		c.Error(err)
 		return
@@ -220,4 +225,3 @@ func saveLoginLog(c *gin.Context, userID int64, requestURI string) {
 
 	middleware.SaveOperationLog(logEntry)
 }
-

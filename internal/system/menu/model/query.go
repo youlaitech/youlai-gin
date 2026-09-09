@@ -4,6 +4,6 @@ package model
 type MenuQuery struct {
 	Keywords string `form:"keywords"` // 关键字
 
-	Status   *int   `form:"status"` // 状态
+	Status *int `form:"status"` // 状态
 
 }

@@ -1,43 +1,53 @@
 package handler
 
 import (
+	"context"
+
 	"github.com/gin-gonic/gin"
 
+	response "youlai-gin/internal/common"
+	appContext "youlai-gin/internal/common/context"
+	"youlai-gin/internal/common/validator"
 	"youlai-gin/internal/system/notice/model"
 	"youlai-gin/internal/system/notice/service"
-	appContext "youlai-gin/internal/common/context"
-	response "youlai-gin/internal/common"
 	"youlai-gin/pkg/types"
-	"youlai-gin/internal/common/validator"
 )
 
-// RegisterRoutes 注册通知公告路由
-func RegisterRoutes(r *gin.RouterGroup) {
-	r.GET("/notices", GetNoticePage)
-	r.POST("/notices", SaveNotice)
-	r.GET("/notices/:id/form", GetNoticeForm)
-	r.GET("/notices/:id/detail", GetNoticeDetail)
-	r.PUT("/notices/:id", UpdateNotice)
-	r.PUT("/notices/:id/publish", PublishNotice)
-	r.PUT("/notices/:id/revoke", RevokeNotice)
-	r.DELETE("/notices/:ids", DeleteNotices)
-	r.GET("/notices/my", GetMyNoticePage)
-	r.PUT("/notices/read-all", ReadAllNotices)
-	r.GET("/notices/unread-count", GetUnreadCount)
+// Handler 通知公告 HTTP 处理器
+type Handler struct {
+	svc *service.Service
 }
 
-// GetNoticePage 通知公告分页列表
+// NewHandler 创建 Handler 实例
+func NewHandler(svc *service.Service) *Handler { return &Handler{svc: svc} }
+
+// RegisterRoutes 注册通知公告路由
+func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
+	r.GET("/notices", h.Page)
+	r.POST("/notices", h.Create)
+	r.GET("/notices/:id/form", h.GetForm)
+	r.GET("/notices/:id/detail", h.GetDetail)
+	r.PUT("/notices/:id", h.Update)
+	r.PUT("/notices/:id/publish", h.Publish)
+	r.PUT("/notices/:id/revoke", h.Revoke)
+	r.DELETE("/notices/:ids", h.Delete)
+	r.GET("/notices/my", h.MyPage)
+	r.PUT("/notices/read-all", h.ReadAll)
+	r.GET("/notices/unread-count", h.UnreadCount)
+}
+
+// Page 通知公告分页列表
 // @Summary 通知公告分页
 // @Tags 08.通知公告
 // @Router /api/v1/notices [get]
-func GetNoticePage(c *gin.Context) {
+func (h *Handler) Page(c *gin.Context) {
 	var query model.NoticeQuery
 	if err := validator.BindQuery(c, &query); err != nil {
 		c.Error(err)
 		return
 	}
 
-	result, err := service.GetNoticePage(&query)
+	result, err := h.svc.Page(c.Request.Context(), &query)
 	if err != nil {
 		c.Error(err)
 		return
@@ -46,18 +56,18 @@ func GetNoticePage(c *gin.Context) {
 	response.OkPaged(c, result)
 }
 
-// SaveNotice 新增通知公告
+// Create 新增通知公告
 // @Summary 新增通知公告
 // @Tags 08.通知公告
 // @Router /api/v1/notices [post]
-func SaveNotice(c *gin.Context) {
+func (h *Handler) Create(c *gin.Context) {
 	var form model.NoticeForm
 	if err := validator.BindJSON(c, &form); err != nil {
 		c.Error(err)
 		return
 	}
 
-	if err := service.SaveNotice(c, &form); err != nil {
+	if err := h.svc.Create(appContext.OperatorCtx(c), &form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -65,19 +75,19 @@ func SaveNotice(c *gin.Context) {
 	response.OkMsg(c, "保存成功")
 }
 
-// GetNoticeForm 获取通知公告表单数据
+// GetForm 获取通知公告表单数据
 // @Summary 通知公告表单
 // @Tags 08.通知公告
 // @Param id path int true "公告ID"
 // @Router /api/v1/notices/{id}/form [get]
-func GetNoticeForm(c *gin.Context) {
+func (h *Handler) GetForm(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "通知")
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	notice, err := service.GetNoticeByID(id)
+	notice, err := h.svc.Get(c.Request.Context(), id)
 	if err != nil {
 		c.Error(err)
 		return
@@ -86,12 +96,12 @@ func GetNoticeForm(c *gin.Context) {
 	response.Ok(c, notice)
 }
 
-// GetNoticeDetail 阅读获取通知公告详情
+// GetDetail 阅读获取通知公告详情（自动标记已读）
 // @Summary 通知公告详情
 // @Tags 08.通知公告
 // @Param id path int true "公告ID"
 // @Router /api/v1/notices/{id}/detail [get]
-func GetNoticeDetail(c *gin.Context) {
+func (h *Handler) GetDetail(c *gin.Context) {
 	noticeID, err := appContext.ParsePathParam(c, "id", "通知")
 	if err != nil {
 		c.Error(err)
@@ -104,23 +114,24 @@ func GetNoticeDetail(c *gin.Context) {
 		return
 	}
 
-	notice, err := service.GetNoticeByID(noticeID)
+	notice, err := h.svc.Get(c.Request.Context(), noticeID)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	go service.MarkNoticeAsRead(noticeID, userID)
+	// 标记已读独立于请求上下文，避免异步执行时请求上下文已取消
+	go h.svc.MarkRead(context.Background(), noticeID, userID)
 
 	response.Ok(c, notice)
 }
 
-// UpdateNotice 修改通知公告
+// Update 修改通知公告
 // @Summary 修改通知公告
 // @Tags 08.通知公告
 // @Param id path int true "公告ID"
 // @Router /api/v1/notices/{id} [put]
-func UpdateNotice(c *gin.Context) {
+func (h *Handler) Update(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "通知")
 	if err != nil {
 		c.Error(err)
@@ -134,7 +145,7 @@ func UpdateNotice(c *gin.Context) {
 	}
 
 	form.ID = types.BigInt(id)
-	if err := service.SaveNotice(c, &form); err != nil {
+	if err := h.svc.Update(appContext.OperatorCtx(c), id, &form); err != nil {
 		c.Error(err)
 		return
 	}
@@ -142,12 +153,12 @@ func UpdateNotice(c *gin.Context) {
 	response.OkMsg(c, "修改成功")
 }
 
-// PublishNotice 发布通知公告
+// Publish 发布通知公告
 // @Summary 发布通知公告
 // @Tags 08.通知公告
 // @Param id path int true "公告ID"
 // @Router /api/v1/notices/{id}/publish [put]
-func PublishNotice(c *gin.Context) {
+func (h *Handler) Publish(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "通知")
 	if err != nil {
 		c.Error(err)
@@ -160,7 +171,7 @@ func PublishNotice(c *gin.Context) {
 		return
 	}
 
-	if err := service.PublishNotice(id, userID); err != nil {
+	if err := h.svc.Publish(appContext.OperatorCtx(c), id, userID); err != nil {
 		c.Error(err)
 		return
 	}
@@ -168,19 +179,19 @@ func PublishNotice(c *gin.Context) {
 	response.OkMsg(c, "发布成功")
 }
 
-// RevokeNotice 撤回通知公告
+// Revoke 撤回通知公告
 // @Summary 撤回通知公告
 // @Tags 08.通知公告
 // @Param id path int true "公告ID"
 // @Router /api/v1/notices/{id}/revoke [put]
-func RevokeNotice(c *gin.Context) {
+func (h *Handler) Revoke(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "通知")
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	if err := service.RevokeNotice(id); err != nil {
+	if err := h.svc.Revoke(appContext.OperatorCtx(c), id); err != nil {
 		c.Error(err)
 		return
 	}
@@ -188,34 +199,31 @@ func RevokeNotice(c *gin.Context) {
 	response.OkMsg(c, "撤回成功")
 }
 
-// DeleteNotices 删除通知公告（支持批量）
+// Delete 删除通知公告（支持批量）
 // @Summary 删除通知公告
 // @Tags 08.通知公告
 // @Param ids path string true "公告ID列表"
 // @Router /api/v1/notices/{ids} [delete]
-func DeleteNotices(c *gin.Context) {
-	idsStr := c.Param("ids")
-	ids, err := appContext.ParseIntList(idsStr, "通知")
+func (h *Handler) Delete(c *gin.Context) {
+	ids, err := appContext.ParseIntList(c.Param("ids"), "通知")
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	for _, id := range ids {
-		if err := service.DeleteNotice(id); err != nil {
-			c.Error(err)
-			return
-		}
+	if err := h.svc.Delete(appContext.OperatorCtx(c), ids); err != nil {
+		c.Error(err)
+		return
 	}
 
 	response.OkMsg(c, "删除成功")
 }
 
-// GetMyNoticePage 获取我的通知公告分页列表
+// MyPage 获取我的通知公告分页列表
 // @Summary 我的通知公告
 // @Tags 08.通知公告
 // @Router /api/v1/notices/my [get]
-func GetMyNoticePage(c *gin.Context) {
+func (h *Handler) MyPage(c *gin.Context) {
 	userID, err := appContext.GetCurrentUserID(c)
 	if err != nil {
 		c.Error(err)
@@ -228,7 +236,7 @@ func GetMyNoticePage(c *gin.Context) {
 		return
 	}
 
-	result, err := service.GetUserNoticePage(userID, &query)
+	result, err := h.svc.UserPage(c.Request.Context(), userID, &query)
 	if err != nil {
 		c.Error(err)
 		return
@@ -237,33 +245,26 @@ func GetMyNoticePage(c *gin.Context) {
 	response.OkPaged(c, result)
 }
 
-// ReadAllNotices 全部已读
+// ReadAll 全部已读
 // @Summary 通知全部已读
 // @Tags 08.通知公告
 // @Router /api/v1/notices/read-all [put]
-func ReadAllNotices(c *gin.Context) {
-	userID, err := appContext.GetCurrentUserID(c)
-	if err != nil {
-		c.Error(err)
-		return
-	}
-
-	_ = userID
+func (h *Handler) ReadAll(c *gin.Context) {
 	response.OkMsg(c, "全部已读成功")
 }
 
-// GetUnreadCount 获取未读通知数量
+// UnreadCount 获取未读通知数量
 // @Summary 未读通知数量
 // @Tags 08.通知公告
 // @Router /api/v1/notices/unread-count [get]
-func GetUnreadCount(c *gin.Context) {
+func (h *Handler) UnreadCount(c *gin.Context) {
 	userID, err := appContext.GetCurrentUserID(c)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	count, err := service.GetUnreadCount(userID)
+	count, err := h.svc.UnreadCount(c.Request.Context(), userID)
 	if err != nil {
 		c.Error(err)
 		return

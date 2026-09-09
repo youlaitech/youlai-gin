@@ -4,16 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	appContext "youlai-gin/internal/common/context"
-	"youlai-gin/internal/system/config/model"
-	"youlai-gin/internal/system/config/repository"
-	common "youlai-gin/pkg/model"
-	"youlai-gin/pkg/errs"
 	"youlai-gin/internal/common/redis"
+	"youlai-gin/internal/system/config/model"
+	"youlai-gin/pkg/errs"
+	baseModel "youlai-gin/pkg/model"
 )
 
 const (
@@ -21,46 +17,50 @@ const (
 	configCacheExpire = 24 * time.Hour
 )
 
-// GetConfigList 获取配置列表
-func GetConfigList(query *model.ConfigListQuery) ([]model.Config, error) {
-	return repository.GetConfigList(query)
+// Repository 配置数据访问接口（依赖倒置：Service 定义接口）
+type Repository interface {
+	Page(ctx context.Context, query *model.ConfigQuery) ([]model.Config, int64, error)
+	GetByKey(ctx context.Context, configKey string) (*model.Config, error)
+	Get(ctx context.Context, id int64) (*model.Config, error)
+	Create(ctx context.Context, config *model.Config) error
+	Update(ctx context.Context, form *model.ConfigForm) error
+	Delete(ctx context.Context, id int64) error
+	BatchDelete(ctx context.Context, ids []int64) error
 }
 
-// GetConfigPage 获取配置分页列表
-func GetConfigPage(query *model.ConfigQuery) (*common.PagedData, error) {
-	configs, total, err := repository.GetConfigPage(query)
+// Service 配置业务逻辑层
+type Service struct {
+	repo Repository
+}
+
+// NewService 创建 Service 实例
+func NewService(repo Repository) *Service { return &Service{repo: repo} }
+
+// Page 配置分页列表
+func (s *Service) Page(ctx context.Context, query *model.ConfigQuery) (*baseModel.PagedData, error) {
+	configs, total, err := s.repo.Page(ctx, query)
 	if err != nil {
 		return nil, errs.SystemError("查询配置列表失败")
 	}
 
-	return &common.PagedData{List: configs, Total: total}, nil
+	return &baseModel.PagedData{List: configs, Total: total}, nil
 }
 
-// GetAllConfigs 获取所有配置
-func GetAllConfigs() ([]model.Config, error) {
-	return repository.GetConfigList(&model.ConfigListQuery{})
-}
-
-// GetConfigByKey 根据Key获取配置（带缓存）
-func GetConfigByKey(configKey string) (*model.Config, error) {
-	// 先从缓存获取
+// GetByKey 根据 Key 获取配置（带缓存）
+func (s *Service) GetByKey(ctx context.Context, configKey string) (*model.Config, error) {
 	cacheKey := configCachePrefix + configKey
-	cached, err := redis.Client.Get(context.Background(), cacheKey).Result()
-
-	if err == nil && cached != "" {
+	if cached, err := redis.Client.Get(ctx, cacheKey).Result(); err == nil && cached != "" {
 		var config model.Config
 		if err := json.Unmarshal([]byte(cached), &config); err == nil {
 			return &config, nil
 		}
 	}
 
-	// 缓存未命中，从数据库查询
-	config, err := repository.GetConfigByKey(configKey)
+	config, err := s.repo.GetByKey(ctx, configKey)
 	if err != nil {
 		return nil, err
 	}
 
-	// 写入缓存
 	if data, err := json.Marshal(config); err == nil {
 		redis.Client.Set(context.Background(), cacheKey, string(data), configCacheExpire)
 	}
@@ -68,50 +68,14 @@ func GetConfigByKey(configKey string) (*model.Config, error) {
 	return config, nil
 }
 
-// GetConfigValue 获取配置值（字符串）
-func GetConfigValue(configKey string) (string, error) {
-	config, err := GetConfigByKey(configKey)
-	if err != nil {
-		return "", err
-	}
-	return config.ConfigValue, nil
+// Get 根据 ID 获取配置详情
+func (s *Service) Get(ctx context.Context, id int64) (*model.Config, error) {
+	return s.repo.Get(ctx, id)
 }
 
-// GetConfigValueWithDefault 获取配置值（不存在时返回缺省值）
-func GetConfigValueWithDefault(configKey, defaultValue string) string {
-	value, err := GetConfigValue(configKey)
-	if err != nil {
-		return defaultValue
-	}
-	return value
-}
-
-// GetConfigInt 获取配置值（整数）
-func GetConfigInt(configKey string) (int, error) {
-	value, err := GetConfigValue(configKey)
-	if err != nil {
-		return 0, err
-	}
-	return strconv.Atoi(value)
-}
-
-// GetConfigBool 获取配置值（布尔）
-func GetConfigBool(configKey string) (bool, error) {
-	value, err := GetConfigValue(configKey)
-	if err != nil {
-		return false, err
-	}
-	return strconv.ParseBool(value)
-}
-
-// GetConfigByID 根据ID获取配置
-func GetConfigByID(id int64) (*model.Config, error) {
-	return repository.GetConfigByID(id)
-}
-
-// GetConfigFormData 获取配置表单数据
-func GetConfigFormData(id int64) (*model.ConfigForm, error) {
-	config, err := repository.GetConfigByID(id)
+// GetForm 获取配置表单数据
+func (s *Service) GetForm(ctx context.Context, id int64) (*model.ConfigForm, error) {
+	config, err := s.repo.Get(ctx, id)
 	if err != nil {
 		return nil, errs.NotFound("配置不存在")
 	}
@@ -125,88 +89,74 @@ func GetConfigFormData(id int64) (*model.ConfigForm, error) {
 	}, nil
 }
 
-// SaveConfig 新增或更新系统配置
-func SaveConfig(c *gin.Context, form *model.ConfigForm) error {
+// Create 新增配置
+func (s *Service) Create(ctx context.Context, form *model.ConfigForm) error {
+	existing, _ := s.repo.GetByKey(ctx, form.ConfigKey)
+	if existing != nil && existing.ID > 0 {
+		return errs.Business(fmt.Sprintf("配置Key [%s] 已存在", form.ConfigKey))
+	}
+
 	config := &model.Config{
-		ID:          form.ID,
 		ConfigKey:   form.ConfigKey,
 		ConfigValue: form.ConfigValue,
 		ConfigName:  form.ConfigName,
 		Remark:      form.Remark,
 	}
+	if err := s.repo.Create(ctx, config); err != nil {
+		return errs.SystemError("新增配置失败")
+	}
 
-	ctx := appContext.OperatorCtx(c)
+	s.clearCache(form.ConfigKey)
+	return nil
+}
 
-	var err error
-	if config.ID > 0 {
-		// 更新
-		err = repository.UpdateConfig(ctx, form)
-	} else {
-		// 新增 - 检查Key是否已存在
-		existing, _ := repository.GetConfigByKey(config.ConfigKey)
-		if existing != nil && existing.ID > 0 {
-			return errs.Business(fmt.Sprintf("配置Key [%s] 已存在", config.ConfigKey))
+// Update 更新配置
+func (s *Service) Update(ctx context.Context, form *model.ConfigForm) error {
+	if err := s.repo.Update(ctx, form); err != nil {
+		return errs.SystemError("更新配置失败")
+	}
+
+	s.clearCache(form.ConfigKey)
+	return nil
+}
+
+// Delete 删除配置（单个或批量）
+func (s *Service) Delete(ctx context.Context, ids []int64) error {
+	if len(ids) == 1 {
+		config, err := s.repo.Get(ctx, ids[0])
+		if err != nil {
+			return errs.NotFound("配置不存在")
 		}
-		err = repository.CreateConfig(ctx, config)
+		if err := s.repo.Delete(ctx, ids[0]); err != nil {
+			return errs.SystemError("删除配置失败")
+		}
+		s.clearCache(config.ConfigKey)
+		return nil
 	}
 
-	if err != nil {
-		return errs.SystemError("保存配置失败")
-	}
-
-	// 清除缓存
-	ClearConfigCache(config.ConfigKey)
-
-	return nil
-}
-
-// DeleteConfig 删除配置
-func DeleteConfig(id int64) error {
-	config, err := repository.GetConfigByID(id)
-	if err != nil {
-		return errs.NotFound("配置不存在")
-	}
-
-	if err := repository.DeleteConfig(id); err != nil {
-		return errs.SystemError("删除配置失败")
-	}
-
-	// 清除缓存
-	ClearConfigCache(config.ConfigKey)
-
-	return nil
-}
-
-// BatchDeleteConfig 批量删除配置
-func BatchDeleteConfig(ids []int64) error {
-	if err := repository.BatchDeleteConfig(ids); err != nil {
+	if err := s.repo.BatchDelete(ctx, ids); err != nil {
 		return errs.SystemError("批量删除配置失败")
 	}
-
-	// 清除所有配置缓存
-	ClearAllConfigCache()
-
+	s.ClearAllCache(ctx)
 	return nil
 }
 
-// ClearConfigCache 清除指定配置的缓存
-func ClearConfigCache(configKey string) {
-	cacheKey := configCachePrefix + configKey
-	redis.Client.Del(context.Background(), cacheKey)
+// RefreshCache 刷新指定配置缓存
+func (s *Service) RefreshCache(ctx context.Context, configKey string) error {
+	s.clearCache(configKey)
+	_, err := s.GetByKey(ctx, configKey)
+	return err
 }
 
-// ClearAllConfigCache 清除所有配置缓存
-func ClearAllConfigCache() {
-	ctx := context.Background()
+// ClearAllCache 清除所有配置缓存
+func (s *Service) ClearAllCache(ctx context.Context) {
 	keys, err := redis.Client.Keys(ctx, configCachePrefix+"*").Result()
 	if err == nil && len(keys) > 0 {
 		redis.Client.Del(ctx, keys...)
 	}
 }
 
-// RefreshConfigCache 刷新配置缓存
-func RefreshConfigCache(configKey string) error {
-	ClearConfigCache(configKey)
-	_, err := GetConfigByKey(configKey)
-	return err
+// clearCache 清除指定配置的缓存（缓存失效用独立上下文，避免请求上下文取消导致残留）
+func (s *Service) clearCache(configKey string) {
+	redis.Client.Del(context.Background(), configCachePrefix+configKey)
 }

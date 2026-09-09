@@ -41,12 +41,12 @@ func ValidateFile(file *multipart.FileHeader, maxSize int64, allowedExts []strin
 			FormatFileSize(maxSize),
 		)
 	}
-	
+
 	// 验证文件扩展名
 	if len(allowedExts) > 0 {
 		ext := strings.ToLower(filepath.Ext(file.Filename))
 		ext = strings.TrimPrefix(ext, ".")
-		
+
 		allowed := false
 		for _, allowedExt := range allowedExts {
 			if ext == strings.ToLower(allowedExt) {
@@ -54,12 +54,12 @@ func ValidateFile(file *multipart.FileHeader, maxSize int64, allowedExts []strin
 				break
 			}
 		}
-		
+
 		if !allowed {
 			return fmt.Errorf("不允许的文件类型：%s（允许：%s）", ext, strings.Join(allowedExts, ", "))
 		}
 	}
-	
+
 	return nil
 }
 
@@ -72,7 +72,7 @@ func FormatFileSize(size int64) string {
 		GB
 		TB
 	)
-	
+
 	s := float64(size)
 	switch {
 	case s >= TB:
@@ -91,7 +91,7 @@ func FormatFileSize(size int64) string {
 // GetContentType 根据扩展名获取Content-Type
 func GetContentType(filename string) string {
 	ext := strings.ToLower(filepath.Ext(filename))
-	
+
 	contentTypes := map[string]string{
 		// 图片
 		".jpg":  "image/jpeg",
@@ -101,7 +101,7 @@ func GetContentType(filename string) string {
 		".bmp":  "image/bmp",
 		".webp": "image/webp",
 		".svg":  "image/svg+xml",
-		
+
 		// 文档
 		".pdf":  "application/pdf",
 		".doc":  "application/msword",
@@ -110,26 +110,26 @@ func GetContentType(filename string) string {
 		".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 		".ppt":  "application/vnd.ms-powerpoint",
 		".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-		
+
 		// 视频
-		".mp4":  "video/mp4",
-		".avi":  "video/x-msvideo",
-		".mov":  "video/quicktime",
-		".wmv":  "video/x-ms-wmv",
-		".flv":  "video/x-flv",
-		
+		".mp4": "video/mp4",
+		".avi": "video/x-msvideo",
+		".mov": "video/quicktime",
+		".wmv": "video/x-ms-wmv",
+		".flv": "video/x-flv",
+
 		// 音频
-		".mp3":  "audio/mpeg",
-		".wav":  "audio/wav",
-		".ogg":  "audio/ogg",
-		
+		".mp3": "audio/mpeg",
+		".wav": "audio/wav",
+		".ogg": "audio/ogg",
+
 		// 压缩包
-		".zip":  "application/zip",
-		".rar":  "application/x-rar-compressed",
-		".7z":   "application/x-7z-compressed",
-		".tar":  "application/x-tar",
-		".gz":   "application/gzip",
-		
+		".zip": "application/zip",
+		".rar": "application/x-rar-compressed",
+		".7z":  "application/x-7z-compressed",
+		".tar": "application/x-tar",
+		".gz":  "application/gzip",
+
 		// 文本
 		".txt":  "text/plain",
 		".html": "text/html",
@@ -138,10 +138,10 @@ func GetContentType(filename string) string {
 		".json": "application/json",
 		".xml":  "application/xml",
 	}
-	
+
 	if ct, ok := contentTypes[ext]; ok {
 		return ct
 	}
-	
+
 	return "application/octet-stream"
 }

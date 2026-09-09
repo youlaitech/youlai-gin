@@ -19,19 +19,19 @@ type GenConfigForm struct {
 
 // FieldConfigForm 字段配置（表单子结构）
 type FieldConfigForm struct {
-	ID           int64  `json:"id"`
-	ColumnName   string `json:"columnName"`
-	ColumnType   string `json:"columnType"`
-	FieldName    string `json:"fieldName"`
-	FieldType    string `json:"fieldType"`
-	FieldComment string `json:"fieldComment"`
-	IsShowInList int    `json:"isShowInList"`
-	IsShowInForm int    `json:"isShowInForm"`
-	IsShowInQuery int   `json:"isShowInQuery"`
-	IsRequired   int    `json:"isRequired"`
-	FormType     int    `json:"formType"`
-	QueryType    int    `json:"queryType"`
-	MaxLength    *int   `json:"maxLength"`
-	FieldSort    *int   `json:"fieldSort"`
-	DictType     string `json:"dictType"`
+	ID            int64  `json:"id"`
+	ColumnName    string `json:"columnName"`
+	ColumnType    string `json:"columnType"`
+	FieldName     string `json:"fieldName"`
+	FieldType     string `json:"fieldType"`
+	FieldComment  string `json:"fieldComment"`
+	IsShowInList  int    `json:"isShowInList"`
+	IsShowInForm  int    `json:"isShowInForm"`
+	IsShowInQuery int    `json:"isShowInQuery"`
+	IsRequired    int    `json:"isRequired"`
+	FormType      int    `json:"formType"`
+	QueryType     int    `json:"queryType"`
+	MaxLength     *int   `json:"maxLength"`
+	FieldSort     *int   `json:"fieldSort"`
+	DictType      string `json:"dictType"`
 }
