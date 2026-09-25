@@ -13,7 +13,6 @@ type MenuVO struct {
 	Component   string          `json:"component"`          // 前端组件
 	ExternalURL string          `json:"externalUrl"`        // 外链地址
 	Perm        string          `json:"perm"`               // 权限标识
-	AlwaysShow  int             `json:"alwaysShow"`         // 始终显示
 	KeepAlive   int             `json:"keepAlive"`          // 页面缓存
 	Visible     int             `json:"visible"`            // 是否可见
 	Sort        int             `json:"sort"`               // 排序
@@ -39,7 +38,6 @@ type RouteMeta struct {
 	Title       string         `json:"title"`
 	Icon        string         `json:"icon,omitempty"` // 图标
 	Hidden      bool           `json:"hidden,omitempty"`
-	AlwaysShow  bool           `json:"alwaysShow,omitempty"`  // 始终显示
 	KeepAlive   bool           `json:"keepAlive,omitempty"`   // 页面缓存
 	Params      map[string]any `json:"params,omitempty"`      // 路由参数
 	ExternalURL string         `json:"externalUrl,omitempty"` // 外链地址

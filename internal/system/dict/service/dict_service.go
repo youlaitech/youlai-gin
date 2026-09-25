@@ -29,6 +29,8 @@ type Repository interface {
 	UpdateItem(ctx context.Context, form *model.DictItemForm) error
 	DeleteItem(ctx context.Context, id int64) error
 	BatchDeleteItems(ctx context.Context, ids []int64) error
+	BatchDeleteItemsByCode(ctx context.Context, dictCode string) error
+	ItemValueExists(ctx context.Context, dictCode, value string, excludeID int64) (bool, error)
 	ItemsCount(ctx context.Context, dictCode string) (int64, error)
 }
 
@@ -147,7 +149,7 @@ func (s *Service) GetForm(ctx context.Context, id int64) (*model.DictForm, error
 	}, nil
 }
 
-// Delete 删除字典（存在字典项时拒绝）
+// Delete 删除字典（级联逻辑删除其字典项，保留历史数据）
 func (s *Service) Delete(ctx context.Context, id int64) error {
 	dict, err := s.repo.Get(ctx, id)
 	if err != nil {
@@ -157,12 +159,9 @@ func (s *Service) Delete(ctx context.Context, id int64) error {
 		return errs.SystemError("查询字典失败")
 	}
 
-	count, err := s.repo.ItemsCount(ctx, dict.DictCode)
-	if err != nil {
-		return errs.SystemError("查询字典项失败")
-	}
-	if count > 0 {
-		return errs.BadRequest("请先删除该字典下的所有字典项")
+	// 级联逻辑删除字典项：父字典删除后子项随之不可见
+	if err := s.repo.BatchDeleteItemsByCode(ctx, dict.DictCode); err != nil {
+		return errs.SystemError("删除字典项失败")
 	}
 
 	if err := s.repo.Delete(ctx, id); err != nil {
@@ -205,6 +204,14 @@ func (s *Service) ItemPage(ctx context.Context, query *model.DictItemQuery) (*ba
 
 // CreateItem 新增字典项
 func (s *Service) CreateItem(ctx context.Context, form *model.DictItemForm) error {
+	exists, err := s.repo.ItemValueExists(ctx, form.DictCode, form.Value, 0)
+	if err != nil {
+		return errs.SystemError("校验字典项失败")
+	}
+	if exists {
+		return errs.BadRequest("字典项值已存在")
+	}
+
 	item := &model.DictItem{
 		ID:       form.ID,
 		DictCode: form.DictCode,
@@ -227,6 +234,14 @@ func (s *Service) CreateItem(ctx context.Context, form *model.DictItemForm) erro
 // UpdateItem 更新字典项
 func (s *Service) UpdateItem(ctx context.Context, id int64, form *model.DictItemForm) error {
 	form.ID = types.BigInt(id)
+
+	exists, err := s.repo.ItemValueExists(ctx, form.DictCode, form.Value, id)
+	if err != nil {
+		return errs.SystemError("校验字典项失败")
+	}
+	if exists {
+		return errs.BadRequest("字典项值已存在")
+	}
 
 	if err := s.repo.UpdateItem(ctx, form); err != nil {
 		return errs.SystemError("更新字典项失败")

@@ -11,6 +11,14 @@ import (
 )
 
 // WechatConfig 微信配置
+// AIConfig AI 对话配置（OpenAI 兼容协议，默认关闭）
+type AIConfig struct {
+	Enabled bool   `mapstructure:"enabled"`
+	BaseURL string `mapstructure:"baseUrl"`
+	ApiKey  string `mapstructure:"apiKey"`
+	Model   string `mapstructure:"model"`
+}
+
 type WechatConfig struct {
 	Miniapp struct {
 		AppID     string `mapstructure:"appId"`
@@ -74,6 +82,7 @@ type ServerConfig struct {
 
 // Config 全局配置
 type Config struct {
+	AI          AIConfig            `mapstructure:"ai"`
 	Server      ServerConfig        `mapstructure:"server"`
 	Database    database.Config     `mapstructure:"database"`
 	Logger      logger.Config       `mapstructure:"logger"`

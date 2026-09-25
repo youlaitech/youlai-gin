@@ -25,7 +25,7 @@ type Repository interface {
 	Create(ctx context.Context, menu *model.Menu) error
 	Update(ctx context.Context, form *model.MenuForm) error
 	Delete(ctx context.Context, id int64) error
-	Options(ctx context.Context, onlyParent bool) ([]model.Menu, error)
+	Options(ctx context.Context, types []string) ([]model.Menu, error)
 	UserMenus(ctx context.Context, userId int64) ([]model.Menu, error)
 	NameExists(ctx context.Context, name string, parentId int64, excludeId int64) (bool, error)
 	RouteNameExists(ctx context.Context, routeName string, excludeId int64) (bool, error)
@@ -71,7 +71,6 @@ func (s *Service) List(ctx context.Context, query *model.MenuQuery) ([]*model.Me
 			Component:   menu.Component,
 			ExternalURL: menu.ExternalURL,
 			Perm:        menu.Perm,
-			AlwaysShow:  menu.AlwaysShow,
 			KeepAlive:   menu.KeepAlive,
 			Visible:     menu.Visible,
 			Sort:        menu.Sort,
@@ -90,9 +89,9 @@ func (s *Service) List(ctx context.Context, query *model.MenuQuery) ([]*model.Me
 	), nil
 }
 
-// Options 菜单下拉选项（树形结构）
-func (s *Service) Options(ctx context.Context, onlyParent bool) ([]baseModel.Option[int64], error) {
-	menus, err := s.repo.Options(ctx, onlyParent)
+// Options 菜单下拉选项（树形结构），types 非空时按菜单类型过滤
+func (s *Service) Options(ctx context.Context, types []string) ([]baseModel.Option[int64], error) {
+	menus, err := s.repo.Options(ctx, types)
 	if err != nil {
 		return nil, errs.SystemError("查询菜单选项失败")
 	}
@@ -148,11 +147,10 @@ func (s *Service) buildRoutes(menus []model.Menu, parentId int64) []*model.Route
 		}
 
 		meta := &model.RouteMeta{
-			Title:      menu.Name,
-			Icon:       menu.Icon,
-			Hidden:     menu.Visible == 0,
-			AlwaysShow: menu.AlwaysShow == 1,
-			Params:     menu.Params,
+			Title:  menu.Name,
+			Icon:   menu.Icon,
+			Hidden: menu.Visible == 0,
+			Params: menu.Params,
 		}
 		if (menu.Type == "M" || isEmbedded) && menu.KeepAlive == 1 {
 			meta.KeepAlive = true
@@ -178,6 +176,16 @@ func (s *Service) buildRoutes(menus []model.Menu, parentId int64) []*model.Route
 
 // Create 新增菜单（按钮类菜单带权限标识时刷新角色权限缓存）
 func (s *Service) Create(ctx context.Context, form *model.MenuForm) error {
+	// 父级层级校验：按钮只能挂在菜单下，其他类型只能挂在顶级或目录下
+	if err := s.validateMenuParent(ctx, form); err != nil {
+		return err
+	}
+
+	// 新增菜单未指定排序时排到同级末尾
+	if form.Sort == 0 {
+		form.Sort = s.resolveNextSort(ctx, int64(form.ParentID))
+	}
+
 	if err := s.prepareForm(ctx, form); err != nil {
 		return err
 	}
@@ -193,6 +201,11 @@ func (s *Service) Create(ctx context.Context, form *model.MenuForm) error {
 		return errs.SystemError("创建菜单失败")
 	}
 	form.ID = menu.ID
+
+	// 新增页面菜单时按需生成增删改查按钮
+	if form.GenerateCrudButtons && strings.TrimSpace(form.ButtonPermPrefix) != "" {
+		s.saveCrudButtons(ctx, int64(menu.ID), strings.TrimSpace(form.ButtonPermPrefix), menu.TreePath)
+	}
 
 	if form.Type == "B" && form.Perm != "" {
 		if err := s.refreshAffectedRolesCache([]int64{int64(menu.ID)}); err != nil {
@@ -315,7 +328,6 @@ func (s *Service) buildMenuEntity(form *model.MenuForm) *model.Menu {
 		Component:   form.Component,
 		ExternalURL: form.ExternalURL,
 		Perm:        form.Perm,
-		AlwaysShow:  form.AlwaysShow,
 		KeepAlive:   form.KeepAlive,
 		Visible:     form.Visible,
 		Sort:        form.Sort,
@@ -345,7 +357,6 @@ func (s *Service) GetForm(ctx context.Context, id int64) (*model.MenuForm, error
 		Component:   menu.Component,
 		ExternalURL: menu.ExternalURL,
 		Perm:        menu.Perm,
-		AlwaysShow:  menu.AlwaysShow,
 		KeepAlive:   menu.KeepAlive,
 		Visible:     menu.Visible,
 		Sort:        menu.Sort,
@@ -389,6 +400,64 @@ func (s *Service) Delete(ctx context.Context, id int64) error {
 // refreshAffectedRolesCache 刷新受影响角色的权限缓存
 func (s *Service) refreshAffectedRolesCache(menuIds []int64) error {
 	return s.roleCache.RefreshPermsCacheByMenus(menuIds)
+}
+
+// validateMenuParent 校验上级菜单层级：按钮只能挂在菜单下，其他类型只能挂在顶级或目录下
+func (s *Service) validateMenuParent(ctx context.Context, form *model.MenuForm) error {
+	parentID := int64(form.ParentID)
+	isButton := form.Type == "B"
+
+	if parentID == 0 {
+		if isButton {
+			return errs.BadRequest("按钮权限只能挂在菜单下")
+		}
+		return nil
+	}
+
+	parent, err := s.repo.Get(ctx, parentID)
+	if err != nil {
+		return errs.NotFound("上级菜单不存在")
+	}
+
+	parentIsMenu := parent.Type == "M"
+	if isButton && !parentIsMenu {
+		return errs.BadRequest("按钮权限只能挂在菜单下")
+	}
+	if !isButton && parentIsMenu {
+		return errs.BadRequest("菜单下只能挂按钮权限")
+	}
+	return nil
+}
+
+// resolveNextSort 同级菜单的最大排序 + 1
+func (s *Service) resolveNextSort(ctx context.Context, parentID int64) int {
+	if maxSortMenu, err := s.repo.MaxSortMenu(ctx, parentID); err == nil && maxSortMenu != nil {
+		return int(maxSortMenu.Sort) + 1
+	}
+	return 1
+}
+
+// saveCrudButtons 生成增删改查按钮权限
+func (s *Service) saveCrudButtons(ctx context.Context, menuID int64, permPrefix, menuTreePath string) {
+	names := []string{"查询", "新增", "修改", "删除"}
+	actions := []string{"list", "create", "update", "delete"}
+	// 树路径记录祖先链，等于所属菜单的树路径加上所属菜单ID，删除菜单时据此级联
+	buttonTreePath := fmt.Sprintf("%s,%d", menuTreePath, menuID)
+
+	for i, name := range names {
+		button := &model.Menu{
+			ParentID: types.BigInt(menuID),
+			Type:     "B",
+			Name:     name,
+			Perm:     permPrefix + ":" + actions[i],
+			Sort:     i + 1,
+			Visible:  1,
+			TreePath: buttonTreePath,
+		}
+		if err := s.repo.Create(ctx, button); err != nil {
+			logger.Log.Sugar().Infof("创建 CRUD 按钮菜单失败: %v", err)
+		}
+	}
 }
 
 // AddMenuForCodegen 代码生成时追加菜单及按钮权限

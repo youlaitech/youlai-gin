@@ -2,6 +2,7 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
+	"strings"
 
 	response "youlai-gin/internal/common"
 	"youlai-gin/internal/common/auth"
@@ -61,9 +62,17 @@ func (h *Handler) List(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/menus/options [get]
 func (h *Handler) Options(c *gin.Context) {
-	onlyParent := c.Query("onlyParent") == "true"
+	// 前端可传 types=C,M（逗号分隔）；不传返回全部类型
+	var types []string
+	if raw := strings.TrimSpace(c.Query("types")); raw != "" {
+		for _, part := range strings.Split(raw, ",") {
+			if part = strings.TrimSpace(part); part != "" {
+				types = append(types, part)
+			}
+		}
+	}
 
-	options, err := h.svc.Options(c.Request.Context(), onlyParent)
+	options, err := h.svc.Options(c.Request.Context(), types)
 	if err != nil {
 		c.Error(err)
 		return

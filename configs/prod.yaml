@@ -120,3 +120,10 @@ rate-limit:
 #   export APP_LOGGER_LEVEL="info"                   # 覆盖日志级别
 #   export APP_REDIS_HOST="remote-redis.com"         # 覆盖 Redis 地址
 #   export APP_SECURITY_JWT_SECRETKEY="new-secret"   # 覆盖 JWT 密钥
+
+# AI 对话（OpenAI 兼容协议，默认关闭；动态表单/菜单的 AI 辅助接口依赖它）
+ai:
+  enabled: false
+  baseUrl: https://dashscope.aliyuncs.com/compatible-mode/v1
+  apiKey: ""
+  model: qwen-plus

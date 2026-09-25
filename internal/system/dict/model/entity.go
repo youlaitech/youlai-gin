@@ -34,6 +34,7 @@ type DictItem struct {
 	CreateTime types.LocalTime `gorm:"column:create_time;autoCreateTime" json:"createTime,omitempty"` // 创建时间
 	UpdateBy   *types.BigInt   `gorm:"column:update_by" json:"updateBy,omitempty"`
 	UpdateTime types.LocalTime `gorm:"column:update_time;autoUpdateTime" json:"updateTime,omitempty"` // 更新时间
+	IsDeleted  int             `gorm:"column:is_deleted;default:0" json:"isDeleted"`                  // 逻辑删除(0未删除1已删除)
 }
 
 // TableName 返回字典项表名

@@ -58,12 +58,12 @@ func (r *Repository) Delete(ctx context.Context, id int64) error {
 	return r.db.WithContext(ctx).Delete(&model.Menu{}, id).Error
 }
 
-// Options 菜单下拉选项（可见项；onlyParent 时仅目录与菜单类型）
-func (r *Repository) Options(ctx context.Context, onlyParent bool) ([]model.Menu, error) {
+// Options 菜单下拉选项（可见项；types 非空时按菜单类型过滤，如 C/M）
+func (r *Repository) Options(ctx context.Context, types []string) ([]model.Menu, error) {
 	var menus []model.Menu
 	db := r.db.WithContext(ctx).Model(&model.Menu{}).Where("visible = 1")
-	if onlyParent {
-		db = db.Where("type IN ('C','M')")
+	if len(types) > 0 {
+		db = db.Where("type IN ?", types)
 	}
 	err := db.Order("sort ASC").Find(&menus).Error
 	return menus, err

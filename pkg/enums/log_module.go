@@ -15,6 +15,7 @@ const (
 	LogModuleNotice  LogModule = 9
 	LogModuleLog     LogModule = 10
 	LogModuleCodegen LogModule = 11
+	LogModuleForm    LogModule = 12
 	LogModuleOther   LogModule = 99
 )
 
@@ -31,6 +32,7 @@ var LogModuleDesc = map[LogModule]string{
 	LogModuleNotice:  "通知公告",
 	LogModuleLog:     "日志管理",
 	LogModuleCodegen: "代码生成",
+	LogModuleForm:    "动态表单",
 	LogModuleOther:   "其他",
 }
 

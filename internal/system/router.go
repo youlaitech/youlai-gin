@@ -14,6 +14,9 @@ import (
 	dictHandler "youlai-gin/internal/system/dict/handler"
 	dictRepo "youlai-gin/internal/system/dict/repository"
 	dictService "youlai-gin/internal/system/dict/service"
+	formHandler "youlai-gin/internal/system/form/handler"
+	formRepo "youlai-gin/internal/system/form/repository"
+	formService "youlai-gin/internal/system/form/service"
 	logHandler "youlai-gin/internal/system/log/handler"
 	logRepo "youlai-gin/internal/system/log/repository"
 	logService "youlai-gin/internal/system/log/service"
@@ -42,6 +45,7 @@ func RegisterRoutes(r *gin.RouterGroup) {
 	deptHandler.NewHandler(deptService.NewService(deptRepo.NewRepository(db))).RegisterRoutes(r)
 	dictHandler.NewHandler(dictService.NewService(dictRepo.NewRepository(db))).RegisterRoutes(r)
 	menuHandler.NewHandler(menuService.NewService(menuRepo.NewRepository(db), roleSvc)).RegisterRoutes(r)
+	formHandler.NewHandler(formService.NewService(formRepo.NewRepository(db))).RegisterRoutes(r)
 	configHandler.NewHandler(configService.NewService(configRepo.NewRepository(db))).RegisterRoutes(r)
 	noticeHandler.NewHandler(noticeService.NewService(noticeRepo.NewRepository(db))).RegisterRoutes(r)
 	logHandler.NewHandler(logService.NewService(logRepo.NewRepository(db))).RegisterRoutes(r)

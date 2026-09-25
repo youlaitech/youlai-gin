@@ -130,3 +130,10 @@ rate-limit:
     enabled: true
     limit: 1000
     window: 60s
+
+# AI 对话（OpenAI 兼容协议，默认关闭；动态表单/菜单的 AI 辅助接口依赖它）
+ai:
+  enabled: false
+  baseUrl: https://dashscope.aliyuncs.com/compatible-mode/v1
+  apiKey: ""
+  model: qwen-plus

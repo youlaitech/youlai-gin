@@ -91,7 +91,7 @@ func (r *Repository) CodeExists(ctx context.Context, dictCode string, excludeId 
 func (r *Repository) Items(ctx context.Context, dictCode string) ([]model.DictItem, error) {
 	var items []model.DictItem
 	err := r.db.WithContext(ctx).Model(&model.DictItem{}).
-		Where("dict_code = ?", dictCode).
+		Where("dict_code = ? AND is_deleted = 0", dictCode).
 		Order("sort ASC, id ASC").
 		Find(&items).Error
 	return items, err
@@ -102,7 +102,7 @@ func (r *Repository) ItemPage(ctx context.Context, query *model.DictItemQuery) (
 	var items []model.DictItem
 	var total int64
 
-	db := r.db.WithContext(ctx).Model(&model.DictItem{})
+	db := r.db.WithContext(ctx).Model(&model.DictItem{}).Where("is_deleted = 0")
 	if query.DictCode != "" {
 		db = db.Where("dict_code = ?", query.DictCode)
 	}
@@ -125,7 +125,7 @@ func (r *Repository) ItemPage(ctx context.Context, query *model.DictItemQuery) (
 // GetItem 根据ID查询字典项
 func (r *Repository) GetItem(ctx context.Context, id int64) (*model.DictItem, error) {
 	var item model.DictItem
-	err := r.db.WithContext(ctx).Where("id = ?", id).First(&item).Error
+	err := r.db.WithContext(ctx).Where("id = ? AND is_deleted = 0", id).First(&item).Error
 	return &item, err
 }
 
@@ -143,19 +143,44 @@ func (r *Repository) UpdateItem(ctx context.Context, form *model.DictItemForm) e
 		Updates(gormx.BuildPatchMap(form)).Error
 }
 
-// DeleteItem 删除字典项（物理删除）
+// DeleteItem 删除字典项（逻辑删除，保留历史数据）
 func (r *Repository) DeleteItem(ctx context.Context, id int64) error {
-	return r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.DictItem{}).Error
+	return r.db.WithContext(ctx).Model(&model.DictItem{}).
+		Where("id = ? AND is_deleted = 0", id).
+		Update("is_deleted", 1).Error
 }
 
-// BatchDeleteItems 批量删除字典项（物理删除）
+// BatchDeleteItems 批量删除字典项（逻辑删除，保留历史数据）
 func (r *Repository) BatchDeleteItems(ctx context.Context, ids []int64) error {
-	return r.db.WithContext(ctx).Where("id IN ?", ids).Delete(&model.DictItem{}).Error
+	return r.db.WithContext(ctx).Model(&model.DictItem{}).
+		Where("id IN ?", ids).
+		Update("is_deleted", 1).Error
+}
+
+// BatchDeleteItemsByCode 按字典编码级联逻辑删除字典项（删除字典时调用）
+func (r *Repository) BatchDeleteItemsByCode(ctx context.Context, dictCode string) error {
+	return r.db.WithContext(ctx).Model(&model.DictItem{}).
+		Where("dict_code = ? AND is_deleted = 0", dictCode).
+		Update("is_deleted", 1).Error
+}
+
+// ItemValueExists 同字典下值是否已存在（excludeID > 0 时排除自身，用于唯一性校验）
+func (r *Repository) ItemValueExists(ctx context.Context, dictCode, value string, excludeID int64) (bool, error) {
+	var count int64
+	db := r.db.WithContext(ctx).Model(&model.DictItem{}).
+		Where("dict_code = ? AND value = ? AND is_deleted = 0", dictCode, value)
+	if excludeID > 0 {
+		db = db.Where("id <> ?", excludeID)
+	}
+	if err := db.Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 // ItemsCount 获取字典项数量（用于删除前校验）
 func (r *Repository) ItemsCount(ctx context.Context, dictCode string) (int64, error) {
 	var count int64
-	err := r.db.WithContext(ctx).Model(&model.DictItem{}).Where("dict_code = ?", dictCode).Count(&count).Error
+	err := r.db.WithContext(ctx).Model(&model.DictItem{}).Where("dict_code = ? AND is_deleted = 0", dictCode).Count(&count).Error
 	return count, err
 }
