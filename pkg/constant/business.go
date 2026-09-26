@@ -12,7 +12,7 @@ const (
 
 // 角色编码
 const (
-	RoleCodeRoot  = "ROOT" // 超级管理员
+	RoleCodeRoot  = "ROOT"  // 超级管理员
 	RoleCodeGuest = "GUEST" // 游客（微信等第三方自助注册默认角色）
 )
 

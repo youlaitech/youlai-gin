@@ -8,8 +8,8 @@ import (
 
 	"go.uber.org/zap"
 
-	msgModel "youlai-gin/internal/message/model"
 	"youlai-gin/internal/common/logger"
+	msgModel "youlai-gin/internal/message/model"
 )
 
 // SseEmitter 单个 SSE 连接，封装响应写入与关闭信号

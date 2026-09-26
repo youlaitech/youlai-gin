@@ -6,8 +6,8 @@ import (
 
 	"go.uber.org/zap"
 
-	msgModel "youlai-gin/internal/message/model"
 	"youlai-gin/internal/common/logger"
+	msgModel "youlai-gin/internal/message/model"
 )
 
 // SessionInfo 单条 SSE 会话信息

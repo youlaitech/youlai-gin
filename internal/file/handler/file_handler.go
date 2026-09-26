@@ -19,7 +19,7 @@ func NewFileHandler(svc *service.FileService) *FileHandler { return &FileHandler
 // RegisterRoutes 注册文件管理路由，基础路径 /api/v1/files
 func (h *FileHandler) RegisterRoutes(r *gin.RouterGroup) {
 	fileGroup := r.Group("/files")
-	fileGroup.POST("", h.UploadFile)       // 单文件上传
+	fileGroup.POST("", h.UploadFile)        // 单文件上传
 	fileGroup.POST("/batch", h.UploadFiles) // 批量上传
 	fileGroup.POST("/image", h.UploadImage) // 图片上传
 	fileGroup.DELETE("", h.DeleteFile)      // 删除文件

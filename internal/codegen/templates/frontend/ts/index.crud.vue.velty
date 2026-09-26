@@ -1,21 +1,23 @@
 <template>
   <div class="page-container h-full flex flex-1 flex-col">
     <!-- 搜索 -->
-    <PageSearch
+    <CrudSearch
       ref="searchRef"
       :search-config="searchConfig"
       @query-click="handleQueryClick"
       @reset-click="handleResetClick"
     >
-#foreach($fieldConfig in $fieldConfigsInQuery)#if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
+#foreach($fieldConfig in $fieldConfigs)
+#if($fieldConfig.isShowInQuery == 1 and $fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
       <template #$fieldConfig.fieldName="scope">
         <DictSelect v-model="scope.formData[scope.prop]" code="$fieldConfig.dictType" v-bind="scope.attrs" />
       </template>
-#end#end
-    </PageSearch>
+#end
+#end
+    </CrudSearch>
 
     <!-- 列表 -->
-    <PageContent
+    <CrudTable
       ref="contentRef"
       :content-config="contentConfig"
       @add-click="handleAddClick"
@@ -25,41 +27,60 @@
       @operate-click="handleOperateClick"
       @filter-change="handleFilterChange"
     >
-#foreach($fieldConfig in $fieldConfigsInList)#if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
+#foreach($fieldConfig in $fieldConfigsInList)
+#if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
       <template #$fieldConfig.fieldName="scope">
         <DictTag v-model="scope.row[scope.prop]" code="$fieldConfig.dictType" />
       </template>
-#end#end
-    </PageContent>
+#else
+      <template #$fieldConfig.fieldName="scope">
+        {{ scope.row[$fieldConfig.fieldName] }}
+      </template>
+#end
+#end
+    </CrudTable>
 
     <!-- 新增 -->
-    <PageModal ref="addModalRef" :modal-config="addModalConfig" @submit-click="handleSubmitClick">
-#foreach($fieldConfig in $fieldConfigsInForm)#if($fieldConfig.formType != "HIDDEN" and $fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
+    <CrudModal ref="addModalRef" :modal-config="addModalConfig" @submit-click="handleSubmitClick">
+#foreach($fieldConfig in $fieldConfigsInForm)
+#if($fieldConfig.formType != "HIDDEN" and $fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
       <template #$fieldConfig.fieldName="scope">
         <DictSelect v-model="scope.formData[scope.prop]" code="$fieldConfig.dictType" v-bind="scope.attrs" />
       </template>
-#end#end
-    </PageModal>
+#else
+      <template #$fieldConfig.fieldName="scope">
+        <el-input v-model="scope.formData[scope.prop]" :placeholder="$fieldConfig.fieldComment" clearable style="width: 100%" />
+      </template>
+#end
+#end
+    </CrudModal>
 
     <!-- 编辑 -->
-    <PageModal ref="editModalRef" :modal-config="editModalConfig" @submit-click="handleSubmitClick">
-#foreach($fieldConfig in $fieldConfigsInForm)#if($fieldConfig.formType != "HIDDEN" and $fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
+    <CrudModal ref="editModalRef" :modal-config="editModalConfig" @submit-click="handleSubmitClick">
+#foreach($fieldConfig in $fieldConfigsInForm)
+#if($fieldConfig.formType != "HIDDEN" and $fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
       <template #$fieldConfig.fieldName="scope">
         <DictSelect v-model="scope.formData[scope.prop]" code="$fieldConfig.dictType" v-bind="scope.attrs" />
       </template>
-#end#end
-    </PageModal>
+#else
+      <template #$fieldConfig.fieldName="scope">
+        <el-input v-model="scope.formData[scope.prop]" :placeholder="$fieldConfig.fieldComment" clearable style="width: 100%" />
+      </template>
+#end
+#end
+    </CrudModal>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 defineOptions({
-  name: "$entityName",
   inheritAttrs: false,
-});
+  name: "$entityName" });
 
 import ${entityName}API from "@/api/${moduleName}/${entityKebab}";
-import usePage from "@/components/CURD/usePage";
+import type { ${entityName}Form, ${entityName}QueryParams } from "@/api/${moduleName}/${entityKebab}";
+import type { IObject, IModalConfig, ICrudTableConfig, ISearchConfig } from "@/components/Crud/types";
+import useCrudPage from "@/components/Crud/useCrudPage";
 
 // 组合式 CRUD
 const {
@@ -75,11 +96,11 @@ const {
   handleExportClick,
   handleSearchClick,
   handleFilterChange,
-} = usePage();
+} = useCrudPage();
 
 // 搜索配置
-const searchConfig = reactive({
-  pageName: "${moduleName}:${entityKebab}",
+const searchConfig: ISearchConfig = reactive({
+  permPrefix: "${moduleName}:${entityKebab}",
   formItems: [
 #foreach($fieldConfig in $fieldConfigsInQuery)
 #if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
@@ -126,9 +147,9 @@ const searchConfig = reactive({
 });
 
 // 列表配置
-const contentConfig = reactive({
+const contentConfig: ICrudTableConfig<${entityName}QueryParams> = reactive({
   // 权限前缀
-  pageName: "${moduleName}:${entityKebab}",
+  permPrefix: "${moduleName}:${entityKebab}",
   table: {
     border: true,
     highlightCurrentRow: true,
@@ -167,7 +188,6 @@ const contentConfig = reactive({
     {
       label: "操作",
       prop: "operation",
-      width: 180,
       templet: "tool",
       operat: ["edit", "delete"],
     },
@@ -175,9 +195,9 @@ const contentConfig = reactive({
 });
 
 // 新增配置
-const addModalConfig = reactive({
+const addModalConfig: IModalConfig<${entityName}Form> = reactive({
   // 权限前缀
-  pageName: "${moduleName}:${entityKebab}",
+  permPrefix: "${moduleName}:${entityKebab}",
   // 主键
   pk: "id",
   // 弹窗配置
@@ -191,7 +211,8 @@ const addModalConfig = reactive({
   },
   // 表单项配置
   formItems: [
-#foreach($fieldConfig in $fieldConfigsInForm)#if($fieldConfig.formType != "HIDDEN")
+#foreach($fieldConfig in $fieldConfigsInForm)
+#if($fieldConfig.formType != "HIDDEN")
 #if($fieldConfig.dictType != "" and $fieldConfig.dictType.trim() != "")
     {
       type: "custom",
@@ -251,6 +272,7 @@ const addModalConfig = reactive({
 #if($fieldConfig.isRequired == 1)
       rules: [{ required: true, message: "$fieldConfig.fieldComment不能为空", trigger: "blur" }],
 #end
+#end
 #elseif($fieldConfig.fieldType == "Integer" or $fieldConfig.fieldType == "Long")
       type: "input-number",
       attrs: {
@@ -308,10 +330,10 @@ const addModalConfig = reactive({
 #end
   ],
   // 提交函数
-  formAction(data) {
+  formAction: (data: ${entityName}Form) => {
     if (data.id) {
       // 编辑
-      return ${entityName}API.update(data.id, data);
+      return ${entityName}API.update(data.id as string, data);
     } else {
       // 新增
       return ${entityName}API.create(data);
@@ -320,22 +342,22 @@ const addModalConfig = reactive({
 });
 
 // 编辑配置
-const editModalConfig = reactive({
-  pageName: "${moduleName}:${entityKebab}",
+const editModalConfig: IModalConfig<${entityName}Form> = reactive({
+  permPrefix: "${moduleName}:${entityKebab}",
   component: "drawer",
   drawer: {
     title: "编辑${entityComment}",
     size: 500,
   },
   pk: "id",
-  formAction(data) {
-    return ${entityName}API.update(data.id, data);
+  formAction(data: any) {
+    return ${entityName}API.update(data.id as string, data);
   },
   formItems: addModalConfig.formItems, // 复用新增的表单项
 });
 
 // 处理操作按钮点击
-const handleOperateClick = (data) => {
+const handleOperateClick = (data: IObject) => {
   if (data.name === "edit") {
     handleEditClick(data.row, async () => {
       return await ${entityName}API.getFormData(String(data.row.id));
@@ -344,7 +366,7 @@ const handleOperateClick = (data) => {
 };
 
 // 处理工具栏按钮点击（删除等）
-const handleToolbarClick = (name) => {
+const handleToolbarClick = (name: string) => {
   console.log(name);
 };
 

@@ -445,9 +445,9 @@ func renderTemplate(
 	pageType string,
 ) (string, error) {
 	effectivePath := templatePath
-	if name == tplView && pageType == "curd" {
+	if name == tplView && pageType == "crud" {
 		if strings.HasSuffix(effectivePath, "index.vue.velty") {
-			effectivePath = strings.Replace(effectivePath, "index.vue.velty", "index.curd.vue.velty", 1)
+			effectivePath = strings.Replace(effectivePath, "index.vue.velty", "index.crud.vue.velty", 1)
 		}
 	}
 
