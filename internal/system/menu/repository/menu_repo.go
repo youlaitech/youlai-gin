@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"gorm.io/gorm"
 
@@ -145,9 +146,45 @@ func (r *Repository) Children(ctx context.Context, parentId int64) ([]model.Menu
 	return children, err
 }
 
+// Siblings 获取同级菜单（按排序升序，limit > 0 时限制条数）
+func (r *Repository) Siblings(ctx context.Context, parentId int64, limit int) ([]model.Menu, error) {
+	var menus []model.Menu
+	db := r.db.WithContext(ctx).Where("parent_id = ?", parentId).Order("sort ASC")
+	if limit > 0 {
+		db = db.Limit(limit)
+	}
+	err := db.Find(&menus).Error
+	return menus, err
+}
+
 // UpdateTreePathByParent 批量更新子节点树路径
 func (r *Repository) UpdateTreePathByParent(ctx context.Context, parentId int64, treePath string) error {
 	return r.db.WithContext(ctx).Model(&model.Menu{}).Where("parent_id = ?", parentId).Update("tree_path", treePath).Error
+}
+
+// DeleteWithDescendants 级联删除菜单及其后代（tree_path 记录祖先链），并解绑角色菜单关联
+func (r *Repository) DeleteWithDescendants(ctx context.Context, id int64) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var ids []int64
+		if err := tx.Model(&model.Menu{}).
+			Where(
+				"id = ? OR tree_path LIKE ? OR tree_path LIKE ? OR tree_path LIKE ?",
+				id,
+				fmt.Sprintf("%d,%%", id),
+				fmt.Sprintf("%%,%d,%%", id),
+				fmt.Sprintf("%%,%d", id),
+			).
+			Pluck("id", &ids).Error; err != nil {
+			return err
+		}
+		if len(ids) == 0 {
+			return nil
+		}
+		if err := tx.Exec("DELETE FROM sys_role_menu WHERE menu_id IN ?", ids).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&model.Menu{}, ids).Error
+	})
 }
 
 // UpdateTreePath 更新单个菜单的树路径（父级变更时调用）

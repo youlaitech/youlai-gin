@@ -25,8 +25,7 @@ type Handler struct {
 func NewHandler(svc *service.Service) *Handler { return &Handler{svc: svc} }
 
 // RegisterRoutes 注册动态表单模块路由。
-// 说明：gin 同一路径位置不允许出现不同参数名，故 id 段与 formKey 段统一使用 :id，
-// 由 handler 内 resolveFormKey 判定「纯数字按主键、其余按 formKey」。
+// id 段与 formKey 段统一使用 :id，纯数字按主键、其余按 formKey
 func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 	forms := r.Group("/forms")
 	{

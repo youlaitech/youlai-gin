@@ -23,6 +23,13 @@ type MenuVO struct {
 	Children    []*MenuVO       `json:"children,omitempty"` // 子节点
 }
 
+// MenuAiFillVO AI 推断的菜单配置
+type MenuAiFillVO struct {
+	RoutePath    string   `json:"routePath"`    // 访问路径
+	Perm         string   `json:"perm"`         // 权限标识
+	IconKeywords []string `json:"iconKeywords"` // 建议的图标关键词，按贴切程度排列
+}
+
 // RouteVO 路由视图对象（前端路由配置）
 type RouteVO struct {
 	Path      string     `json:"path"`

@@ -13,12 +13,12 @@ type DictForm struct {
 
 // DictItemForm 字典项表单
 type DictItemForm struct {
-	ID       types.BigInt `json:"id"`                          // 主键
-	DictCode string       `json:"dictCode" binding:"required"` // 字典编码
-	Value    string       `json:"value" binding:"required"`    // 值
-	Label    string       `json:"label" binding:"required"`    // 标签
-	TagType  string       `json:"tagType"`                     // 标签类型
-	Sort     int          `json:"sort"`                        // 排序
-	Status   int          `json:"status" binding:"oneof=0 1"`  // 状态(1启用0禁用)
-	Remark   string       `json:"remark"`                      // 备注
+	ID       types.BigInt `json:"id"`                         // 主键
+	DictCode string       `json:"dictCode"`                   // 字典编码（由路径参数注入，请求体可不带）
+	Value    string       `json:"value" binding:"required"`   // 值
+	Label    string       `json:"label" binding:"required"`   // 标签
+	TagType  string       `json:"tagType"`                    // 标签类型
+	Sort     int          `json:"sort"`                       // 排序
+	Status   int          `json:"status" binding:"oneof=0 1"` // 状态(1启用0禁用)
+	Remark   string       `json:"remark"`                     // 备注
 }

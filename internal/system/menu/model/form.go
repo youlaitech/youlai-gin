@@ -16,12 +16,19 @@ type MenuForm struct {
 	Component           string               `json:"component"`                             // 前端组件
 	ExternalURL         string               `json:"externalUrl"`                           // 外链地址
 	Perm                string               `json:"perm"`                                  // 权限标识
-	GenerateCrudButtons bool                 `json:"generateCrudButtons"`                   // 新增页面菜单时是否生成增删改查按钮
-	ButtonPermPrefix    string               `json:"buttonPermPrefix"`                      // 按钮权限标识前缀，如 sys:user
+	GenerateCrudButtons bool                 `json:"generateCrudButtons" gorm:"-"`          // 新增页面菜单时是否生成增删改查按钮
+	ButtonPermPrefix    string               `json:"buttonPermPrefix" gorm:"-"`             // 按钮权限标识前缀，如 sys:user
 	KeepAlive           int                  `json:"keepAlive"`                             // 页面缓存(0/1)
 	Visible             int                  `json:"visible" binding:"oneof=0 1"`           // 是否可见(0/1)
 	Sort                int                  `json:"sort"`                                  // 排序
 	Icon                string               `json:"icon"`                                  // 图标
 	Redirect            string               `json:"redirect"`                              // 重定向
 	Params              []baseModel.KeyValue `json:"params"`                                // 路由参数
+}
+
+// MenuAiFillForm AI 推断菜单配置入参
+type MenuAiFillForm struct {
+	Name     string       `json:"name" binding:"required"` // 菜单名称
+	Type     string       `json:"type"`                    // 类型(C目录/M菜单/E外链/B按钮)
+	ParentID types.BigInt `json:"parentId"`                // 上级菜单ID，用于参考同级菜单的命名风格
 }

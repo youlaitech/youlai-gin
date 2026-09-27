@@ -29,6 +29,7 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 	{
 		menus.GET("", h.List)
 		menus.GET("/options", h.Options)
+		menus.POST("/ai-fill", h.AiFill)
 		menus.GET("/routes", h.UserRoutes)
 		menus.POST("", auth.RequirePermission("sys:menu:create"), middleware.OperationLog(enums.LogModuleMenu, enums.ActionTypeInsert), h.Create)
 		menus.GET("/:id/form", auth.RequirePermission("sys:menu:update"), h.GetForm)
@@ -79,6 +80,27 @@ func (h *Handler) Options(c *gin.Context) {
 	}
 
 	response.Ok(c, options)
+}
+
+// @Summary AI 推断菜单的访问路径与权限标识
+// @Tags 04.菜单接口
+// @Param body body model.MenuAiFillForm true "菜单信息"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/menus/ai-fill [post]
+func (h *Handler) AiFill(c *gin.Context) {
+	var form model.MenuAiFillForm
+	if err := validator.BindJSON(c, &form); err != nil {
+		c.Error(err)
+		return
+	}
+
+	vo, err := h.svc.AiFill(c.Request.Context(), &form)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.Ok(c, vo)
 }
 
 // @Summary 获取当前用户路由

@@ -1702,10 +1702,6 @@ const docTemplate = `{
                 "type"
             ],
             "properties": {
-                "alwaysShow": {
-                    "description": "始终显示",
-                    "type": "integer"
-                },
                 "component": {
                     "description": "前端组件",
                     "type": "string"

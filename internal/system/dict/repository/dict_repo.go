@@ -90,8 +90,9 @@ func (r *Repository) CodeExists(ctx context.Context, dictCode string, excludeId 
 // Items 根据字典编码获取字典项列表
 func (r *Repository) Items(ctx context.Context, dictCode string) ([]model.DictItem, error) {
 	var items []model.DictItem
+	// 下拉只返回启用项与未删除项
 	err := r.db.WithContext(ctx).Model(&model.DictItem{}).
-		Where("dict_code = ? AND is_deleted = 0", dictCode).
+		Where("dict_code = ? AND is_deleted = 0 AND status = 1", dictCode).
 		Order("sort ASC, id ASC").
 		Find(&items).Error
 	return items, err

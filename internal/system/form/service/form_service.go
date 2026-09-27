@@ -1,19 +1,17 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
 	"gorm.io/gorm"
 
-	"youlai-gin/internal/common/config"
+	"youlai-gin/internal/common/ai"
 	cRedis "youlai-gin/internal/common/redis"
 	"youlai-gin/internal/system/form/model"
 	"youlai-gin/internal/system/form/repository"
@@ -731,7 +729,7 @@ func (s *Service) DeleteData(ctx context.Context, ids []int64) error {
 
 // AiGenerateRule 用 AI 把需求描述转成 form-create 规则，产出经结构校验后才返回
 func (s *Service) AiGenerateRule(ctx context.Context, description string) ([]any, error) {
-	content, err := chat(ctx, formSystemPrompt, "需求描述：\n"+description)
+	content, err := ai.Chat(ctx, formSystemPrompt, "需求描述：\n"+description)
 	if err != nil {
 		return nil, err
 	}
@@ -744,63 +742,4 @@ func (s *Service) AiGenerateRule(ctx context.Context, description string) ([]any
 		return nil, err
 	}
 	return rules, nil
-}
-
-func chat(ctx context.Context, systemPrompt, userPrompt string) (string, error) {
-	ai := config.Cfg.AI
-	if !ai.Enabled || ai.ApiKey == "" {
-		return "", errs.BadRequest("AI 功能未开启，请配置 ai 段与 apiKey")
-	}
-
-	body, err := json.Marshal(map[string]any{
-		"model": ai.Model,
-		"messages": []map[string]string{
-			{"role": "system", "content": systemPrompt},
-			{"role": "user", "content": userPrompt},
-		},
-		"response_format": map[string]string{"type": "json_object"},
-	})
-	if err != nil {
-		return "", errs.SystemError("组装 AI 请求失败")
-	}
-
-	url := strings.TrimRight(ai.BaseURL, "/") + "/chat/completions"
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return "", errs.SystemError("构建 AI 请求失败")
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+ai.ApiKey)
-
-	client := &http.Client{Timeout: 60 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", errs.ThirdPartyError("AI 服务调用失败")
-	}
-	defer resp.Body.Close()
-
-	var parsed struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil || len(parsed.Choices) == 0 {
-		return "", errs.ThirdPartyError("AI 返回内容解析失败")
-	}
-	return stripCodeFence(parsed.Choices[0].Message.Content), nil
-}
-
-func stripCodeFence(content string) string {
-	text := strings.TrimSpace(content)
-	if !strings.HasPrefix(text, "```") {
-		return text
-	}
-	start := strings.Index(text, "\n")
-	end := strings.LastIndex(text, "```")
-	if start == -1 || end <= start {
-		return text
-	}
-	return strings.TrimSpace(text[start+1 : end])
 }

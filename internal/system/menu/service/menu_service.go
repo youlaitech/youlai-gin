@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"fmt"
 	"strings"
 
 	"gorm.io/gorm"
 
+	"youlai-gin/internal/common/ai"
 	"youlai-gin/internal/common/database"
 	"youlai-gin/internal/common/logger"
 	"youlai-gin/internal/common/utils"
@@ -32,6 +34,8 @@ type Repository interface {
 	ChildrenCount(ctx context.Context, parentId int64) (int64, error)
 	MaxSortMenu(ctx context.Context, parentId int64) (*model.Menu, error)
 	Children(ctx context.Context, parentId int64) ([]model.Menu, error)
+	Siblings(ctx context.Context, parentId int64, limit int) ([]model.Menu, error)
+	DeleteWithDescendants(ctx context.Context, id int64) error
 	UpdateTreePathByParent(ctx context.Context, parentId int64, treePath string) error
 	UpdateTreePath(ctx context.Context, id int64, treePath string) error
 }
@@ -51,6 +55,12 @@ type Service struct {
 func NewService(repo Repository, roleCache RoleCacheRefresher) *Service {
 	return &Service{repo: repo, roleCache: roleCache}
 }
+
+//go:embed prompts/menu/system.md
+var menuSystemPrompt string
+
+// siblingSampleLimit 同级菜单取样条数，样本只用于让模型沿用既有命名风格
+const siblingSampleLimit = 10
 
 // List 菜单列表（树形结构）
 func (s *Service) List(ctx context.Context, query *model.MenuQuery) ([]*model.MenuVO, error) {
@@ -220,6 +230,20 @@ func (s *Service) Create(ctx context.Context, form *model.MenuForm) error {
 func (s *Service) Update(ctx context.Context, id int64, form *model.MenuForm) error {
 	form.ID = types.BigInt(id)
 
+	// 父级层级校验：父级变更时才校验，未变更时放行历史遗留的非法层级
+	current, err := s.repo.Get(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.BadRequest("菜单不存在")
+		}
+		return errs.SystemError("查询菜单失败")
+	}
+	if int64(current.ParentID) != int64(form.ParentID) {
+		if err := s.validateMenuParent(ctx, form); err != nil {
+			return err
+		}
+	}
+
 	if err := s.prepareForm(ctx, form); err != nil {
 		return err
 	}
@@ -366,7 +390,7 @@ func (s *Service) GetForm(ctx context.Context, id int64) (*model.MenuForm, error
 	}, nil
 }
 
-// Delete 删除菜单（存在子菜单时拒绝；按钮类菜单删除后刷新角色权限缓存）
+// Delete 删除菜单（级联删除子菜单并解绑角色关联；按钮类菜单删除后刷新角色权限缓存）
 func (s *Service) Delete(ctx context.Context, id int64) error {
 	menu, err := s.repo.Get(ctx, id)
 	if err != nil {
@@ -376,15 +400,7 @@ func (s *Service) Delete(ctx context.Context, id int64) error {
 		return errs.SystemError("查询菜单失败")
 	}
 
-	count, err := s.repo.ChildrenCount(ctx, id)
-	if err != nil {
-		return errs.SystemError("查询子菜单失败")
-	}
-	if count > 0 {
-		return errs.BadRequest("请先删除子菜单")
-	}
-
-	if err := s.repo.Delete(ctx, id); err != nil {
+	if err := s.repo.DeleteWithDescendants(ctx, id); err != nil {
 		return errs.SystemError("删除菜单失败")
 	}
 
@@ -458,6 +474,84 @@ func (s *Service) saveCrudButtons(ctx context.Context, menuID int64, permPrefix,
 			logger.Log.Sugar().Infof("创建 CRUD 按钮菜单失败: %v", err)
 		}
 	}
+}
+
+// ── AI ────────────────────────────────────────────────────────
+
+// AiFill 用 AI 推断菜单的访问路径、权限标识与图标，命名风格参照同级菜单
+func (s *Service) AiFill(ctx context.Context, form *model.MenuAiFillForm) (*model.MenuAiFillVO, error) {
+	userPrompt, err := s.buildAiUserPrompt(ctx, form)
+	if err != nil {
+		return nil, err
+	}
+
+	var vo model.MenuAiFillVO
+	if err := ai.ChatJSON(ctx, menuSystemPrompt, userPrompt, &vo); err != nil {
+		return nil, err
+	}
+	if vo.IconKeywords == nil {
+		vo.IconKeywords = []string{}
+	}
+	return &vo, nil
+}
+
+// buildAiUserPrompt 构造用户提示词，附带同级菜单样本供模型沿用既有命名风格
+func (s *Service) buildAiUserPrompt(ctx context.Context, form *model.MenuAiFillForm) (string, error) {
+	parentID := int64(form.ParentID)
+
+	parentName := "顶级"
+	if parentID > 0 {
+		if parent, err := s.repo.Get(ctx, parentID); err == nil && parent != nil {
+			parentName = parent.Name
+		}
+	}
+
+	siblings, err := s.repo.Siblings(ctx, parentID, siblingSampleLimit)
+	if err != nil {
+		return "", errs.SystemError("查询同级菜单失败")
+	}
+
+	var builder strings.Builder
+	builder.WriteString("菜单名称：" + form.Name + "\n")
+	builder.WriteString("菜单类型：" + menuTypeLabel(form.Type) + "\n")
+	builder.WriteString("上级菜单：" + parentName + "\n")
+	builder.WriteString("同级菜单示例：\n")
+	if len(siblings) == 0 {
+		builder.WriteString("（无）\n")
+	} else {
+		for _, menu := range siblings {
+			builder.WriteString(fmt.Sprintf(
+				"- %s（类型 %s，路径片段 %s，权限 %s）\n",
+				menu.Name, menuTypeLabel(menu.Type), blankDefault(menu.RoutePath, "无"), blankDefault(menu.Perm, "无")))
+		}
+	}
+	return builder.String(), nil
+}
+
+// menuTypeLabel 菜单类型取中文名称，无匹配时沿用原值
+func menuTypeLabel(menuType string) string {
+	switch menuType {
+	case "C":
+		return "目录"
+	case "M":
+		return "菜单"
+	case "E":
+		return "外链"
+	case "B":
+		return "按钮"
+	case "":
+		return "未指定"
+	default:
+		return menuType
+	}
+}
+
+// blankDefault 值为空时取默认文案
+func blankDefault(value, fallback string) string {
+	if strings.TrimSpace(value) == "" {
+		return fallback
+	}
+	return value
 }
 
 // AddMenuForCodegen 代码生成时追加菜单及按钮权限
