@@ -4,6 +4,9 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	_ "embed"
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -14,6 +17,7 @@ import (
 
 	"youlai-gin/internal/codegen/model"
 	"youlai-gin/internal/codegen/repository"
+	"youlai-gin/internal/common/ai"
 	"youlai-gin/internal/common/logger"
 	menuService "youlai-gin/internal/system/menu/service"
 	"youlai-gin/pkg/errs"
@@ -319,6 +323,110 @@ func (s *CodegenService) SaveGenConfig(ctx context.Context, tableName string, bo
 // DeleteGenConfig 逻辑删除代码生成配置（置 is_deleted=1）
 func (s *CodegenService) DeleteGenConfig(ctx context.Context, tableName string) error {
 	return s.repo.DeleteGenConfig(ctx, tableName)
+}
+
+//go:embed prompts/codegen/system.md
+var codegenSystemPrompt string
+
+// AiFillConfig 用 AI 推断代码生成配置，未推断出的字段沿用原有默认值
+func (s *CodegenService) AiFillConfig(ctx context.Context, tableName string, requirement string) (*model.GenConfigForm, error) {
+	config, err := s.GetGenConfig(ctx, tableName)
+	if err != nil {
+		return nil, err
+	}
+
+	var aiConfig model.GenConfigAiVO
+	if err := ai.ChatJSON(ctx, codegenSystemPrompt, buildCodegenUserPrompt(config, requirement), &aiConfig); err != nil {
+		return nil, err
+	}
+
+	if strings.TrimSpace(aiConfig.BusinessName) != "" {
+		config.BusinessName = strings.TrimSpace(aiConfig.BusinessName)
+	}
+	applyAiFieldConfigs(config, aiConfig.FieldConfigs)
+	return config, nil
+}
+
+// buildCodegenUserPrompt 构造用户提示词，附带表结构与字段清单
+func buildCodegenUserPrompt(config *model.GenConfigForm, requirement string) string {
+	columns := make([]map[string]any, 0, len(config.FieldConfigs))
+	for _, field := range config.FieldConfigs {
+		columns = append(columns, map[string]any{
+			"columnName":   field.ColumnName,
+			"columnType":   field.ColumnType,
+			"fieldComment": field.FieldComment,
+			"isRequired":   field.IsRequired,
+		})
+	}
+	payload, _ := json.Marshal(columns)
+	return fmt.Sprintf("表名：%s\n当前业务名：%s\n补充说明：%s\n字段列表：\n%s\n",
+		config.TableName, config.BusinessName, defaultStr(requirement, "无"), string(payload))
+}
+
+// applyAiFieldConfigs 按列名匹配回填字段配置
+func applyAiFieldConfigs(config *model.GenConfigForm, aiFields []model.GenConfigAiField) {
+	if len(aiFields) == 0 || len(config.FieldConfigs) == 0 {
+		return
+	}
+
+	aiFieldMap := make(map[string]model.GenConfigAiField, len(aiFields))
+	for _, field := range aiFields {
+		if strings.TrimSpace(field.ColumnName) != "" {
+			aiFieldMap[field.ColumnName] = field
+		}
+	}
+
+	for i := range config.FieldConfigs {
+		field := &config.FieldConfigs[i]
+		aiField, ok := aiFieldMap[field.ColumnName]
+		if !ok {
+			continue
+		}
+		if strings.TrimSpace(aiField.FieldComment) != "" {
+			field.FieldComment = strings.TrimSpace(aiField.FieldComment)
+		}
+		if strings.TrimSpace(aiField.DictType) != "" {
+			field.DictType = strings.TrimSpace(aiField.DictType)
+		}
+		if value, ok := formTypeValue(aiField.FormType); ok {
+			field.FormType = value
+		}
+		if value, ok := queryTypeValue(aiField.QueryType); ok {
+			field.QueryType = value
+		}
+		field.IsRequired = pickAiInt(aiField.IsRequired, field.IsRequired)
+		field.IsShowInList = pickAiInt(aiField.IsShowInList, field.IsShowInList)
+		field.IsShowInForm = pickAiInt(aiField.IsShowInForm, field.IsShowInForm)
+		field.IsShowInQuery = pickAiInt(aiField.IsShowInQuery, field.IsShowInQuery)
+	}
+}
+
+// pickAiInt AI 未给出时沿用原值
+func pickAiInt(value *int, fallback int) int {
+	if value == nil {
+		return fallback
+	}
+	return *value
+}
+
+// formTypeValue 表单类型枚举名转为存储值
+func formTypeValue(name string) (int, bool) {
+	values := map[string]int{
+		"INPUT": 1, "SELECT": 2, "RADIO": 3, "CHECK_BOX": 4, "INPUT_NUMBER": 5,
+		"SWITCH": 6, "TEXT_AREA": 7, "DATE": 8, "DATE_TIME": 9, "HIDDEN": 10,
+	}
+	value, ok := values[strings.ToUpper(strings.TrimSpace(name))]
+	return value, ok
+}
+
+// queryTypeValue 查询类型枚举名转为存储值
+func queryTypeValue(name string) (int, bool) {
+	values := map[string]int{
+		"EQ": 1, "LIKE": 2, "IN": 3, "BETWEEN": 4, "GT": 5,
+		"GE": 6, "LT": 7, "LE": 8, "NE": 9, "LIKE_LEFT": 10,
+	}
+	value, ok := values[strings.ToUpper(strings.TrimSpace(name))]
+	return value, ok
 }
 
 // GetPreview 按模板渲染指定表的各层代码预览

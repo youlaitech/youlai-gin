@@ -94,6 +94,24 @@ func (s *Service) Options(ctx context.Context) ([]baseModel.Option[types.BigInt]
 	return options, nil
 }
 
+// CodeOptions 角色编码下拉选项
+func (s *Service) CodeOptions(ctx context.Context) ([]baseModel.Option[string], error) {
+	roles, err := s.repo.Options(ctx)
+	if err != nil {
+		return nil, errs.SystemError("查询角色编码选项失败")
+	}
+
+	options := make([]baseModel.Option[string], len(roles))
+	for i, role := range roles {
+		options[i] = baseModel.Option[string]{
+			Value: role.Code,
+			Label: role.Name,
+		}
+	}
+
+	return options, nil
+}
+
 // Create 新增角色
 func (s *Service) Create(ctx context.Context, form *model.RoleForm) error {
 	if err := s.checkUnique(ctx, form.Name, form.Code, 0); err != nil {

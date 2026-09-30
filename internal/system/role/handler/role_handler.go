@@ -25,8 +25,9 @@ func NewHandler(svc *service.Service) *Handler { return &Handler{svc: svc} }
 func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 	roles := r.Group("/roles")
 	{
-		roles.GET("", middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeList), h.Page)
+		roles.GET("", auth.RequirePermission("sys:role:list"), middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeList), h.Page)
 		roles.GET("/options", h.Options)
+		roles.GET("/code-options", h.CodeOptions)
 		roles.POST("", auth.RequirePermission("sys:role:create"), middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeInsert), h.Create)
 		roles.GET("/:id/form", auth.RequirePermission("sys:role:update"), h.GetForm)
 		roles.PUT("/:id", auth.RequirePermission("sys:role:update"), middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeUpdate), h.Update)
@@ -34,7 +35,6 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 		roles.GET("/:id/menu-ids", auth.RequirePermission("sys:role:update"), h.MenuIds)
 		roles.PUT("/:id/menus", auth.RequirePermission("sys:role:assign"), middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeGrant), h.AssignMenus)
 		roles.GET("/:id/dept-ids", h.DeptIds)
-		roles.PUT("/:id/depts", auth.RequirePermission("sys:role:update"), middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeGrant), h.AssignDepts)
 	}
 }
 
@@ -69,6 +69,21 @@ func (h *Handler) Page(c *gin.Context) {
 // @Router /api/v1/roles/options [get]
 func (h *Handler) Options(c *gin.Context) {
 	options, err := h.svc.Options(c.Request.Context())
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.Ok(c, options)
+}
+
+// CodeOptions 角色编码下拉列表
+// @Summary 角色编码下拉列表
+// @Tags 03.角色接口
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/roles/code-options [get]
+func (h *Handler) CodeOptions(c *gin.Context) {
+	options, err := h.svc.CodeOptions(c.Request.Context())
 	if err != nil {
 		c.Error(err)
 		return
@@ -241,30 +256,4 @@ func (h *Handler) DeptIds(c *gin.Context) {
 	response.Ok(c, deptIds)
 }
 
-// AssignDepts 分配角色自定义部门
-// @Summary 分配角色自定义部门
-// @Tags 03.角色接口
-// @Param id path int true "角色ID"
-// @Param body body []int64 true "部门ID列表"
-// @Success 200 {object} map[string]interface{}
-// @Router /api/v1/roles/{id}/depts [put]
-func (h *Handler) AssignDepts(c *gin.Context) {
-	id, err := appContext.ParsePathParam(c, "id", "角色")
-	if err != nil {
-		c.Error(err)
-		return
-	}
 
-	var deptIds []int64
-	if err := validator.BindJSON(c, &deptIds); err != nil {
-		c.Error(err)
-		return
-	}
-
-	if err := h.svc.AssignDepts(appContext.OperatorCtx(c), id, deptIds); err != nil {
-		c.Error(err)
-		return
-	}
-
-	response.OkMsg(c, "分配成功")
-}

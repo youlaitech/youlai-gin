@@ -90,11 +90,11 @@ storage:
       - jpeg
       - png
       - gif
-  # S3（RustFS）对象存储
+  # S3（RustFS）对象存储（生产实际地址通过部署环境覆盖）
   s3:
-    endpoint: http://111.229.83.153:9000
-    access-key: bybaddp7zyARpgNbEGKf
-    secret-key: p9rBdQZPBIJcMH23iyFkZkXmmawbmwPlk3JLlaaj
+    endpoint: http://127.0.0.1:9000
+    access-key: rustfs-admin
+    secret-key: rustfs-admin
     bucket: public
     domain:
     path-no-bucket-name: false

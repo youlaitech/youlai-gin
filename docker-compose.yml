@@ -37,7 +37,7 @@ services:
       timeout: 3s
       retries: 5
 
-  # RustFS：S3 协议兼容的对象存储服务（MinIO 停止维护后的开源替代）
+  # RustFS：S3 协议兼容的对象存储服务
   rustfs:
     image: rustfs/rustfs:latest
     container_name: youlai-gin-rustfs

@@ -7,21 +7,6 @@ definitions:
       msg:
         type: string
     type: object
-  handler.UploadResult:
-    properties:
-      name:
-        description: 原始文件名
-        type: string
-      path:
-        description: 存储路径
-        type: string
-      size:
-        description: 文件大小
-        type: integer
-      url:
-        description: 访问URL
-        type: string
-    type: object
   model.KeyValue:
     properties:
       key:
@@ -53,11 +38,34 @@ definitions:
     - password
     - username
     type: object
+  model.MenuAiFillForm:
+    properties:
+      name:
+        description: 菜单名称
+        type: string
+      parentId:
+        description: 上级菜单ID，用于参考同级菜单的命名风格
+        type: integer
+      type:
+        description: 类型(C目录/M菜单/E外链/B按钮)
+        type: string
+    required:
+    - name
+    type: object
   model.MenuForm:
     properties:
+      buttonPermPrefix:
+        description: 按钮权限标识前缀，如 sys:user
+        type: string
       component:
         description: 前端组件
         type: string
+      externalUrl:
+        description: 外链地址
+        type: string
+      generateCrudButtons:
+        description: 新增页面菜单时是否生成增删改查按钮
+        type: boolean
       icon:
         description: 图标
         type: string
@@ -65,7 +73,7 @@ definitions:
         description: 主键
         type: integer
       keepAlive:
-        description: 页面缓存
+        description: 页面缓存(0/1)
         type: integer
       name:
         description: 名称
@@ -94,14 +102,15 @@ definitions:
         description: 排序
         type: integer
       type:
-        description: 类型(C目录/M菜单/B按钮)
+        description: 类型(C目录/M菜单/E外链/B按钮)
         enum:
         - C
         - M
         - B
+        - E
         type: string
       visible:
-        description: 是否可见
+        description: 是否可见(0/1)
         enum:
         - 0
         - 1
@@ -109,6 +118,14 @@ definitions:
     required:
     - name
     - type
+    type: object
+  model.QrCodeTicketForm:
+    properties:
+      ticket:
+        description: 票据号
+        type: string
+    required:
+    - ticket
     type: object
   model.RoleForm:
     properties:
@@ -125,7 +142,7 @@ definitions:
         - 5
         type: integer
       deptIds:
-        description: 部门ID列表
+        description: 部门ID列表（关联关系，非表字段）
         items:
           type: integer
         type: array
@@ -204,6 +221,21 @@ definitions:
     required:
     - code
     type: object
+  service.UploadResult:
+    properties:
+      name:
+        description: 原始文件名
+        type: string
+      path:
+        description: 存储路径
+        type: string
+      size:
+        description: 文件大小
+        type: integer
+      url:
+        description: 访问URL
+        type: string
+    type: object
 info:
   contact: {}
 paths:
@@ -244,29 +276,6 @@ paths:
       summary: 账号密码登录
       tags:
       - 01.认证中心
-  /api/v1/auth/login/sms:
-    post:
-      consumes:
-      - application/json
-      description: 使用手机号和短信验证码登录
-      parameters:
-      - description: 短信登录信息
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/model.SmsLoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: code/msg/data，data 为 AuthenticationToken
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 短信验证码登录
-      tags:
-      - 01.认证中心
   /api/v1/auth/logout:
     delete:
       consumes:
@@ -285,6 +294,132 @@ paths:
       summary: 退出登录
       tags:
       - 01.认证中心
+  /api/v1/auth/qr-code/cancel:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 票据号
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.QrCodeTicketForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: data 为 QrCodeStatusVO
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - Bearer: []
+      summary: APP 取消登录
+      tags:
+      - 02.扫码登录
+  /api/v1/auth/qr-code/confirm:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 票据号
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.QrCodeTicketForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: data 为 QrCodeStatusVO
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - Bearer: []
+      summary: APP 确认登录
+      tags:
+      - 02.扫码登录
+  /api/v1/auth/qr-code/generate:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: data 为 QrCodeGenerateVO
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 生成扫码登录票据
+      tags:
+      - 02.扫码登录
+  /api/v1/auth/qr-code/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 票据号
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.QrCodeTicketForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: data 为 AuthenticationToken
+          schema:
+            additionalProperties: true
+            type: object
+      summary: PC 端换取会话令牌
+      tags:
+      - 02.扫码登录
+  /api/v1/auth/qr-code/scan:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 票据号
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.QrCodeTicketForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: data 为 QrCodeStatusVO
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - Bearer: []
+      summary: APP 标记已扫码
+      tags:
+      - 02.扫码登录
+  /api/v1/auth/qr-code/status:
+    get:
+      parameters:
+      - description: 票据号
+        in: query
+        name: ticket
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: data 为 QrCodeStatusVO
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 查询扫码状态
+      tags:
+      - 02.扫码登录
   /api/v1/auth/refresh-token:
     post:
       consumes:
@@ -332,6 +467,110 @@ paths:
       summary: 发送登录短信验证码
       tags:
       - 01.认证中心
+  /api/v1/auth/sms/login:
+    post:
+      consumes:
+      - application/json
+      description: 使用手机号和短信验证码登录
+      parameters:
+      - description: 短信登录信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.SmsLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: code/msg/data，data 为 AuthenticationToken
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 短信验证码登录
+      tags:
+      - 01.认证中心
+  /api/v1/auth/wxma/bind-mobile:
+    post:
+      consumes:
+      - application/json
+      description: 微信小程序绑定手机号
+      parameters:
+      - description: 绑定信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.WxMaBindMobileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: code/msg/data
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 绑定手机号
+      tags:
+      - 12.微信小程序认证
+  /api/v1/auth/wxma/phone-login:
+    post:
+      consumes:
+      - application/json
+      description: 微信小程序手机号快捷登录
+      parameters:
+      - description: 登录信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.WxMaPhoneLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: code/msg/data
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 手机号快捷登录
+      tags:
+      - 12.微信小程序认证
+  /api/v1/auth/wxma/silent-login:
+    post:
+      consumes:
+      - application/json
+      description: 微信小程序静默登录
+      parameters:
+      - description: 登录信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.WxMaSilentLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: code/msg/data
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 静默登录
+      tags:
+      - 12.微信小程序认证
+  /api/v1/codegen/{tableName}/ai-config:
+    post:
+      parameters:
+      - description: 表名
+        in: path
+        name: tableName
+        required: true
+        type: string
+      responses: {}
+      summary: AI 填充生成配置
+      tags:
+      - 11.代码生成
   /api/v1/codegen/{tableName}/config:
     delete:
       parameters:
@@ -454,34 +693,10 @@ paths:
       summary: 删除配置
       tags:
       - 07.系统配置
-  /api/v1/configs/key/{key}:
-    get:
-      parameters:
-      - description: 配置键
-        in: path
-        name: key
-        required: true
-        type: string
-      responses: {}
-      summary: 根据键获取配置
-      tags:
-      - 07.系统配置
   /api/v1/configs/refresh:
     post:
       responses: {}
       summary: 刷新全部配置缓存
-      tags:
-      - 07.系统配置
-  /api/v1/configs/refresh/{key}:
-    post:
-      parameters:
-      - description: 配置键
-        in: path
-        name: key
-        required: true
-        type: string
-      responses: {}
-      summary: 刷新配置缓存
       tags:
       - 07.系统配置
   /api/v1/files:
@@ -525,67 +740,116 @@ paths:
             - $ref: '#/definitions/common.Result'
             - properties:
                 data:
-                  $ref: '#/definitions/handler.UploadResult'
+                  $ref: '#/definitions/service.UploadResult'
               type: object
       summary: 文件上传
       tags:
       - 10.文件接口
-  /api/v1/files/batch:
-    post:
-      consumes:
-      - multipart/form-data
-      parameters:
-      - description: 文件列表
-        in: formData
-        name: files
-        required: true
-        type: file
-      - description: 存储路径前缀
-        in: formData
-        name: path
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/common.Result'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/handler.UploadResult'
-                  type: array
-              type: object
-      summary: 批量文件上传
+  /api/v1/forms:
+    get:
+      responses: {}
+      summary: 表单分页列表
       tags:
-      - 10.文件接口
-  /api/v1/files/image:
+      - 12.动态表单
     post:
-      consumes:
-      - multipart/form-data
-      parameters:
-      - description: 图片文件
-        in: formData
-        name: file
-        required: true
-        type: file
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/common.Result'
-            - properties:
-                data:
-                  $ref: '#/definitions/handler.UploadResult'
-              type: object
-      summary: 图片上传
+      responses: {}
+      summary: 新增表单
       tags:
-      - 10.文件接口
+      - 12.动态表单
+  /api/v1/forms/{formKey}/data:
+    get:
+      responses: {}
+      summary: 表单数据分页
+      tags:
+      - 12.动态表单
+    post:
+      responses: {}
+      summary: 提交表单数据
+      tags:
+      - 12.动态表单
+  /api/v1/forms/{formKey}/data/{dataId}:
+    get:
+      responses: {}
+      summary: 表单数据详情
+      tags:
+      - 12.动态表单
+  /api/v1/forms/{formKey}/data/{ids}:
+    delete:
+      responses: {}
+      summary: 删除表单数据
+      tags:
+      - 12.动态表单
+  /api/v1/forms/{formKey}/render:
+    get:
+      responses: {}
+      summary: 表单渲染规则
+      tags:
+      - 12.动态表单
+  /api/v1/forms/{id}:
+    put:
+      responses: {}
+      summary: 修改表单
+      tags:
+      - 12.动态表单
+  /api/v1/forms/{id}/disable:
+    put:
+      responses: {}
+      summary: 停用表单
+      tags:
+      - 12.动态表单
+  /api/v1/forms/{id}/form:
+    get:
+      responses: {}
+      summary: 表单设计数据
+      tags:
+      - 12.动态表单
+  /api/v1/forms/{id}/menu:
+    get:
+      responses: {}
+      summary: 表单访问菜单回显
+      tags:
+      - 12.动态表单
+    post:
+      responses: {}
+      summary: 生成表单访问菜单
+      tags:
+      - 12.动态表单
+  /api/v1/forms/{id}/publish:
+    put:
+      responses: {}
+      summary: 发布表单
+      tags:
+      - 12.动态表单
+  /api/v1/forms/{ids}:
+    delete:
+      responses: {}
+      summary: 删除表单
+      tags:
+      - 12.动态表单
+  /api/v1/forms/ai-generate:
+    post:
+      responses: {}
+      summary: AI 生成表单规则
+      tags:
+      - 12.动态表单
+  /api/v1/forms/options:
+    get:
+      responses: {}
+      summary: 审批表单下拉选项
+      tags:
+      - 12.动态表单
+  /api/v1/forms/public/{formKey}/data:
+    post:
+      responses: {}
+      summary: 公开表单提交
+      tags:
+      - 12.动态表单
+  /api/v1/forms/public/{formKey}/render:
+    get:
+      responses: {}
+      summary: 公开表单渲染规则
+      tags:
+      - 12.动态表单
   /api/v1/logs:
     get:
       responses: {}
@@ -686,6 +950,24 @@ paths:
             additionalProperties: true
             type: object
       summary: 获取菜单表单数据
+      tags:
+      - 04.菜单接口
+  /api/v1/menus/ai-fill:
+    post:
+      parameters:
+      - description: 菜单信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.MenuAiFillForm'
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: AI 推断菜单的访问路径与权限标识
       tags:
       - 04.菜单接口
   /api/v1/menus/options:
@@ -805,12 +1087,6 @@ paths:
       summary: 通知全部已读
       tags:
       - 08.通知公告
-  /api/v1/notices/unread-count:
-    get:
-      responses: {}
-      summary: 未读通知数量
-      tags:
-      - 08.通知公告
   /api/v1/roles:
     get:
       parameters:
@@ -908,31 +1184,6 @@ paths:
       summary: 获取角色自定义部门ID列表
       tags:
       - 03.角色接口
-  /api/v1/roles/{id}/depts:
-    put:
-      parameters:
-      - description: 角色ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: 部门ID列表
-        in: body
-        name: body
-        required: true
-        schema:
-          items:
-            type: integer
-          type: array
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 分配角色自定义部门
-      tags:
-      - 03.角色接口
   /api/v1/roles/{id}/form:
     get:
       parameters:
@@ -990,6 +1241,17 @@ paths:
             additionalProperties: true
             type: object
       summary: 分配菜单权限
+      tags:
+      - 03.角色接口
+  /api/v1/roles/code-options:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 角色编码下拉列表
       tags:
       - 03.角色接口
   /api/v1/roles/options:
@@ -1188,73 +1450,4 @@ paths:
       summary: 下载用户导入模板
       tags:
       - 02.用户接口
-  /api/v1/wxma/auth/bind-mobile:
-    post:
-      consumes:
-      - application/json
-      description: 微信小程序绑定手机号
-      parameters:
-      - description: 绑定信息
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/model.WxMaBindMobileRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: code/msg/data
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 绑定手机号
-      tags:
-      - 12.微信小程序认证
-  /api/v1/wxma/auth/phone-login:
-    post:
-      consumes:
-      - application/json
-      description: 微信小程序手机号快捷登录
-      parameters:
-      - description: 登录信息
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/model.WxMaPhoneLoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: code/msg/data
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 手机号快捷登录
-      tags:
-      - 12.微信小程序认证
-  /api/v1/wxma/auth/silent-login:
-    post:
-      consumes:
-      - application/json
-      description: 微信小程序静默登录
-      parameters:
-      - description: 登录信息
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/model.WxMaSilentLoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: code/msg/data
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 静默登录
-      tags:
-      - 12.微信小程序认证
 swagger: "2.0"

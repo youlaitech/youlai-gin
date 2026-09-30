@@ -23,11 +23,29 @@ var authWhitelist = map[string]bool{
 	"/api/v1/auth/qr-code/login":         true,
 }
 
+// 匿名前缀：路径含参数段，精确匹配覆盖不到（如公开表单 /api/v1/forms/public/{formKey}/render）
+var anonymousPrefixes = []string{
+	"/api/v1/forms/public/",
+}
+
+// isAnonymous 路径是否免认证
+func isAnonymous(path string) bool {
+	if authWhitelist[path] {
+		return true
+	}
+	for _, prefix := range anonymousPrefixes {
+		if strings.HasPrefix(path, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
 // Middleware 认证中间件
 func Middleware(tokenManager TokenManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 白名单路径跳过认证
-		if authWhitelist[c.Request.URL.Path] {
+		if isAnonymous(c.Request.URL.Path) {
 			c.Next()
 			return
 		}

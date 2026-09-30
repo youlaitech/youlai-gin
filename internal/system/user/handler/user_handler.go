@@ -41,7 +41,7 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 	r.POST("/users/import", auth.RequirePermission("sys:user:import"), middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeImport), h.Import)
 
 	// 读操作 - 无需权限
-	r.GET("/users", middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeList), h.Page)
+	r.GET("/users", auth.RequirePermission("sys:user:list"), middleware.OperationLog(enums.LogModuleUser, enums.ActionTypeList), h.Page)
 	r.GET("/users/:userId/form", auth.RequirePermission("sys:user:update"), h.GetForm)
 	r.GET("/users/export", auth.RequirePermission("sys:user:export"), h.Export)
 	r.GET("/users/template", h.Template)

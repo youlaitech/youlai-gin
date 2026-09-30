@@ -27,7 +27,7 @@ func NewHandler(svc *service.Service) *Handler { return &Handler{svc: svc} }
 func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 	menus := r.Group("/menus")
 	{
-		menus.GET("", h.List)
+		menus.GET("", auth.RequirePermission("sys:menu:list"), h.List)
 		menus.GET("/options", h.Options)
 		menus.POST("/ai-fill", h.AiFill)
 		menus.GET("/routes", h.UserRoutes)

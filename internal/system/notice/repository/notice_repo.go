@@ -153,13 +153,4 @@ func (r *Repository) MarkRead(ctx context.Context, noticeID, userID int64) error
 	return db.Create(&userNotice).Error
 }
 
-// UnreadCount 用户未读通知数量
-func (r *Repository) UnreadCount(ctx context.Context, userID int64) (int64, error) {
-	var count int64
-	err := r.db.WithContext(ctx).Table("sys_notice n").
-		Where("n.is_deleted = 0 AND n.publish_status = 1").
-		Where("(n.target_type = 1 OR (n.target_type = 2 AND FIND_IN_SET(?, n.target_user_ids)))", userID).
-		Where("NOT EXISTS (SELECT 1 FROM sys_user_notice WHERE notice_id = n.id AND user_id = ? AND is_read = 1 AND is_deleted = 0)", userID).
-		Count(&count).Error
-	return count, err
-}
+

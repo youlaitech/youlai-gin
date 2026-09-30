@@ -25,13 +25,13 @@ func NewHandler(svc *service.Service) *Handler { return &Handler{svc: svc} }
 func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 	dicts := r.Group("/dicts")
 	{
-		dicts.GET("", middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeList), h.Page)
+		dicts.GET("", auth.RequirePermission("sys:dict:list"), middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeList), h.Page)
 		dicts.GET("/options", h.Options)
 		dicts.POST("", auth.RequirePermission("sys:dict:create"), middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeInsert), h.Create)
 		dicts.GET("/:id/form", h.GetForm)
 		dicts.PUT("/:id", auth.RequirePermission("sys:dict:update"), middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeUpdate), h.Update)
 		dicts.DELETE("/:id", auth.RequirePermission("sys:dict:delete"), middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeDelete), h.Delete)
-		dicts.GET("/:id/items", h.ItemPage)
+		dicts.GET("/:id/items", auth.RequirePermission("sys:dict-item:list"), h.ItemPage)
 		dicts.GET("/:id/items/options", h.Items)
 		dicts.POST("/:id/items", auth.RequirePermission("sys:dict-item:create"), middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeInsert), h.CreateItem)
 		dicts.GET("/:id/items/:itemId/form", h.GetItemForm)

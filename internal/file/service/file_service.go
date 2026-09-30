@@ -42,14 +42,6 @@ func (s *FileService) Upload(file *multipart.FileHeader, pathPrefix string) (*Up
 	return result, nil
 }
 
-// UploadImage 上传图片（复用严格图片校验，固定 images 路径前缀）
-func (s *FileService) UploadImage(file *multipart.FileHeader) (*UploadResult, error) {
-	if err := utils.ValidateImage(file); err != nil {
-		return nil, errs.BadRequest(err.Error())
-	}
-	return doUpload(file, "images")
-}
-
 // Delete 删除存储中指定路径的文件
 func (s *FileService) Delete(path string) error {
 	if path == "" {

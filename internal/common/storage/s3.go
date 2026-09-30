@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -11,11 +12,13 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	awstypes "github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 // S3Storage S3 对象存储（通过 RustFS 等 S3 兼容服务实现）
 type S3Storage struct {
 	client           *s3.Client
+	presigner        *s3.PresignClient
 	bucket           string
 	endpoint         string // 原始地址（含 scheme）
 	domain           string // 自定义域名（优先于 endpoint 拼接访问 URL）
@@ -47,6 +50,7 @@ func NewS3Storage(config *Config) (*S3Storage, error) {
 
 	s := &S3Storage{
 		client:           client,
+		presigner:        s3.NewPresignClient(client),
 		bucket:           config.Bucket,
 		endpoint:         config.Endpoint,
 		domain:           config.Domain,
@@ -61,13 +65,14 @@ func NewS3Storage(config *Config) (*S3Storage, error) {
 // ensureBucket 存储桶不存在则创建，并赋予公共读策略（使直链可匿名访问）
 func (s *S3Storage) ensureBucket() error {
 	ctx := context.Background()
-	exists, err := s.client.HeadBucket(ctx, &s3.HeadBucketInput{Bucket: aws.String(s.bucket)})
-	if err != nil && exists == nil && !strings.Contains(err.Error(), "NotFound") {
-		// HeadBucket 对不存在的桶可能返回错误码，下面用 ListObjectsV2 兜底判断
-	}
-	_, err = s.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{Bucket: aws.String(s.bucket)})
-	if err == nil {
+	if _, err := s.client.HeadBucket(ctx, &s3.HeadBucketInput{Bucket: aws.String(s.bucket)}); err == nil {
 		return nil
+	} else {
+		// 仅桶不存在（404）时继续创建，其余错误（如权限不足）原样返回
+		var notFound *awstypes.NotFound
+		if !errors.As(err, &notFound) && !strings.Contains(err.Error(), "NotFound") {
+			return fmt.Errorf("检查存储桶失败: %w", err)
+		}
 	}
 	if _, err := s.client.CreateBucket(ctx, &s3.CreateBucketInput{Bucket: aws.String(s.bucket)}); err != nil {
 		return fmt.Errorf("创建存储桶失败: %w", err)
@@ -111,28 +116,50 @@ func (s *S3Storage) UploadWithOptions(path string, file io.Reader, opts *UploadO
 	return s.GetURL(path, 0)
 }
 
-// Delete 删除文件
+// Delete 删除文件（兼容传入完整 URL 或对象路径）
 func (s *S3Storage) Delete(path string) error {
 	if _, err := s.client.DeleteObject(context.Background(), &s3.DeleteObjectInput{
 		Bucket: aws.String(s.bucket),
-		Key:    aws.String(path),
+		Key:    aws.String(s.extractKey(path)),
 	}); err != nil {
 		return fmt.Errorf("删除文件失败: %w", err)
 	}
 	return nil
 }
 
-// GetURL 获取文件访问 URL（domain 优先，否则用 endpoint）
+// extractKey 从 URL 或路径解析对象 key（兼容域名/endpoint 直链，签名 query 不计入）
+func (s *S3Storage) extractKey(path string) string {
+	if idx := strings.Index(path, "?"); idx >= 0 {
+		path = path[:idx]
+	}
+	marker := "/" + s.bucket + "/"
+	if idx := strings.Index(path, marker); idx >= 0 {
+		return path[idx+len(marker):]
+	}
+	return strings.TrimPrefix(path, "/")
+}
+
+// GetURL 获取文件访问 URL（domain 优先；expires > 0 且未配置域名时返回预签名 URL）
 func (s *S3Storage) GetURL(path string, expires time.Duration) (string, error) {
 	base := s.endpoint
 	if s.domain != "" {
 		base = s.domain
 	}
 	base = strings.TrimRight(base, "/")
-	if s.pathNoBucketName {
-		return fmt.Sprintf("%s/%s", base, path), nil
+	if expires <= 0 || s.domain != "" || s.presigner == nil {
+		if s.pathNoBucketName {
+			return fmt.Sprintf("%s/%s", base, path), nil
+		}
+		return fmt.Sprintf("%s/%s/%s", base, s.bucket, path), nil
 	}
-	return fmt.Sprintf("%s/%s/%s", base, s.bucket, path), nil
+	presigned, err := s.presigner.PresignGetObject(context.Background(), &s3.GetObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(path),
+	}, s3.WithPresignExpires(expires))
+	if err != nil {
+		return "", fmt.Errorf("生成预签名 URL 失败: %w", err)
+	}
+	return presigned.URL, nil
 }
 
 // Exists 检查文件是否存在

@@ -399,7 +399,6 @@ func (s *Service) SendMobileCode(ctx context.Context, mobile string) error {
 	}
 
 	// TODO: 接入短信服务商并发送验证码
-	// smsService.SendSMS(mobile, code)
 
 	slog.Info("短信验证码已发送", "mobile", mobile, "code", code, "expiration_minutes", utils.CodeExpiration)
 

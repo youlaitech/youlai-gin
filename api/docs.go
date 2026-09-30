@@ -71,41 +71,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/auth/login/sms": {
-            "post": {
-                "description": "使用手机号和短信验证码登录",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "01.认证中心"
-                ],
-                "summary": "短信验证码登录",
-                "parameters": [
-                    {
-                        "description": "短信登录信息",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.SmsLoginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "code/msg/data，data 为 AuthenticationToken",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/auth/logout": {
             "delete": {
                 "security": [
@@ -127,6 +92,206 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "code/msg",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/qr-code/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "02.扫码登录"
+                ],
+                "summary": "APP 取消登录",
+                "parameters": [
+                    {
+                        "description": "票据号",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.QrCodeTicketForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data 为 QrCodeStatusVO",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/qr-code/confirm": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "02.扫码登录"
+                ],
+                "summary": "APP 确认登录",
+                "parameters": [
+                    {
+                        "description": "票据号",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.QrCodeTicketForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data 为 QrCodeStatusVO",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/qr-code/generate": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "02.扫码登录"
+                ],
+                "summary": "生成扫码登录票据",
+                "responses": {
+                    "200": {
+                        "description": "data 为 QrCodeGenerateVO",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/qr-code/login": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "02.扫码登录"
+                ],
+                "summary": "PC 端换取会话令牌",
+                "parameters": [
+                    {
+                        "description": "票据号",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.QrCodeTicketForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data 为 AuthenticationToken",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/qr-code/scan": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "02.扫码登录"
+                ],
+                "summary": "APP 标记已扫码",
+                "parameters": [
+                    {
+                        "description": "票据号",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.QrCodeTicketForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data 为 QrCodeStatusVO",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/qr-code/status": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "02.扫码登录"
+                ],
+                "summary": "查询扫码状态",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "票据号",
+                        "name": "ticket",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data 为 QrCodeStatusVO",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -206,12 +371,170 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/auth/sms/login": {
+            "post": {
+                "description": "使用手机号和短信验证码登录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "01.认证中心"
+                ],
+                "summary": "短信验证码登录",
+                "parameters": [
+                    {
+                        "description": "短信登录信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SmsLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "code/msg/data，data 为 AuthenticationToken",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/wxma/bind-mobile": {
+            "post": {
+                "description": "微信小程序绑定手机号",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "12.微信小程序认证"
+                ],
+                "summary": "绑定手机号",
+                "parameters": [
+                    {
+                        "description": "绑定信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.WxMaBindMobileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "code/msg/data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/wxma/phone-login": {
+            "post": {
+                "description": "微信小程序手机号快捷登录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "12.微信小程序认证"
+                ],
+                "summary": "手机号快捷登录",
+                "parameters": [
+                    {
+                        "description": "登录信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.WxMaPhoneLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "code/msg/data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/wxma/silent-login": {
+            "post": {
+                "description": "微信小程序静默登录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "12.微信小程序认证"
+                ],
+                "summary": "静默登录",
+                "parameters": [
+                    {
+                        "description": "登录信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.WxMaSilentLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "code/msg/data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/codegen/table": {
             "get": {
                 "tags": [
                     "11.代码生成"
                 ],
                 "summary": "数据表分页",
+                "responses": {}
+            }
+        },
+        "/api/v1/codegen/{tableName}/ai-config": {
+            "post": {
+                "tags": [
+                    "11.代码生成"
+                ],
+                "summary": "AI 填充生成配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "表名",
+                        "name": "tableName",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {}
             }
         },
@@ -317,48 +640,12 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/api/v1/configs/key/{key}": {
-            "get": {
-                "tags": [
-                    "07.系统配置"
-                ],
-                "summary": "根据键获取配置",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "配置键",
-                        "name": "key",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {}
-            }
-        },
         "/api/v1/configs/refresh": {
             "post": {
                 "tags": [
                     "07.系统配置"
                 ],
                 "summary": "刷新全部配置缓存",
-                "responses": {}
-            }
-        },
-        "/api/v1/configs/refresh/{key}": {
-            "post": {
-                "tags": [
-                    "07.系统配置"
-                ],
-                "summary": "刷新配置缓存",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "配置键",
-                        "name": "key",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
                 "responses": {}
             }
         },
@@ -471,7 +758,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/handler.UploadResult"
+                                            "$ref": "#/definitions/service.UploadResult"
                                         }
                                     }
                                 }
@@ -507,99 +794,160 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/files/batch": {
-            "post": {
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
+        "/api/v1/forms": {
+            "get": {
                 "tags": [
-                    "10.文件接口"
+                    "12.动态表单"
                 ],
-                "summary": "批量文件上传",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "文件列表",
-                        "name": "files",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "存储路径前缀",
-                        "name": "path",
-                        "in": "formData"
-                    }
+                "summary": "表单分页列表",
+                "responses": {}
+            },
+            "post": {
+                "tags": [
+                    "12.动态表单"
                 ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/common.Result"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/handler.UploadResult"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
+                "summary": "新增表单",
+                "responses": {}
             }
         },
-        "/api/v1/files/image": {
+        "/api/v1/forms/ai-generate": {
             "post": {
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
                 "tags": [
-                    "10.文件接口"
+                    "12.动态表单"
                 ],
-                "summary": "图片上传",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "图片文件",
-                        "name": "file",
-                        "in": "formData",
-                        "required": true
-                    }
+                "summary": "AI 生成表单规则",
+                "responses": {}
+            }
+        },
+        "/api/v1/forms/options": {
+            "get": {
+                "tags": [
+                    "12.动态表单"
                 ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/common.Result"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/handler.UploadResult"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
+                "summary": "审批表单下拉选项",
+                "responses": {}
+            }
+        },
+        "/api/v1/forms/public/{formKey}/data": {
+            "post": {
+                "tags": [
+                    "12.动态表单"
+                ],
+                "summary": "公开表单提交",
+                "responses": {}
+            }
+        },
+        "/api/v1/forms/public/{formKey}/render": {
+            "get": {
+                "tags": [
+                    "12.动态表单"
+                ],
+                "summary": "公开表单渲染规则",
+                "responses": {}
+            }
+        },
+        "/api/v1/forms/{formKey}/data": {
+            "get": {
+                "tags": [
+                    "12.动态表单"
+                ],
+                "summary": "表单数据分页",
+                "responses": {}
+            },
+            "post": {
+                "tags": [
+                    "12.动态表单"
+                ],
+                "summary": "提交表单数据",
+                "responses": {}
+            }
+        },
+        "/api/v1/forms/{formKey}/data/{dataId}": {
+            "get": {
+                "tags": [
+                    "12.动态表单"
+                ],
+                "summary": "表单数据详情",
+                "responses": {}
+            }
+        },
+        "/api/v1/forms/{formKey}/data/{ids}": {
+            "delete": {
+                "tags": [
+                    "12.动态表单"
+                ],
+                "summary": "删除表单数据",
+                "responses": {}
+            }
+        },
+        "/api/v1/forms/{formKey}/render": {
+            "get": {
+                "tags": [
+                    "12.动态表单"
+                ],
+                "summary": "表单渲染规则",
+                "responses": {}
+            }
+        },
+        "/api/v1/forms/{ids}": {
+            "delete": {
+                "tags": [
+                    "12.动态表单"
+                ],
+                "summary": "删除表单",
+                "responses": {}
+            }
+        },
+        "/api/v1/forms/{id}": {
+            "put": {
+                "tags": [
+                    "12.动态表单"
+                ],
+                "summary": "修改表单",
+                "responses": {}
+            }
+        },
+        "/api/v1/forms/{id}/disable": {
+            "put": {
+                "tags": [
+                    "12.动态表单"
+                ],
+                "summary": "停用表单",
+                "responses": {}
+            }
+        },
+        "/api/v1/forms/{id}/form": {
+            "get": {
+                "tags": [
+                    "12.动态表单"
+                ],
+                "summary": "表单设计数据",
+                "responses": {}
+            }
+        },
+        "/api/v1/forms/{id}/menu": {
+            "get": {
+                "tags": [
+                    "12.动态表单"
+                ],
+                "summary": "表单访问菜单回显",
+                "responses": {}
+            },
+            "post": {
+                "tags": [
+                    "12.动态表单"
+                ],
+                "summary": "生成表单访问菜单",
+                "responses": {}
+            }
+        },
+        "/api/v1/forms/{id}/publish": {
+            "put": {
+                "tags": [
+                    "12.动态表单"
+                ],
+                "summary": "发布表单",
+                "responses": {}
             }
         },
         "/api/v1/logs": {
@@ -658,6 +1006,34 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/model.MenuForm"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/menus/ai-fill": {
+            "post": {
+                "tags": [
+                    "04.菜单接口"
+                ],
+                "summary": "AI 推断菜单的访问路径与权限标识",
+                "parameters": [
+                    {
+                        "description": "菜单信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.MenuAiFillForm"
                         }
                     }
                 ],
@@ -822,15 +1198,6 @@ const docTemplate = `{
                     "08.通知公告"
                 ],
                 "summary": "通知全部已读",
-                "responses": {}
-            }
-        },
-        "/api/v1/notices/unread-count": {
-            "get": {
-                "tags": [
-                    "08.通知公告"
-                ],
-                "summary": "未读通知数量",
                 "responses": {}
             }
         },
@@ -1005,6 +1372,23 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/roles/code-options": {
+            "get": {
+                "tags": [
+                    "03.角色接口"
+                ],
+                "summary": "角色编码下拉列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/roles/options": {
             "get": {
                 "tags": [
@@ -1094,44 +1478,6 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/roles/{id}/depts": {
-            "put": {
-                "tags": [
-                    "03.角色接口"
-                ],
-                "summary": "分配角色自定义部门",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "角色ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "部门ID列表",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "integer"
-                            }
-                        }
                     }
                 ],
                 "responses": {
@@ -1512,111 +1858,6 @@ const docTemplate = `{
                 ],
                 "responses": {}
             }
-        },
-        "/api/v1/wxma/auth/bind-mobile": {
-            "post": {
-                "description": "微信小程序绑定手机号",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "12.微信小程序认证"
-                ],
-                "summary": "绑定手机号",
-                "parameters": [
-                    {
-                        "description": "绑定信息",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.WxMaBindMobileRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "code/msg/data",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/wxma/auth/phone-login": {
-            "post": {
-                "description": "微信小程序手机号快捷登录",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "12.微信小程序认证"
-                ],
-                "summary": "手机号快捷登录",
-                "parameters": [
-                    {
-                        "description": "登录信息",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.WxMaPhoneLoginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "code/msg/data",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/wxma/auth/silent-login": {
-            "post": {
-                "description": "微信小程序静默登录",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "12.微信小程序认证"
-                ],
-                "summary": "静默登录",
-                "parameters": [
-                    {
-                        "description": "登录信息",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.WxMaSilentLoginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "code/msg/data",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
@@ -1628,27 +1869,6 @@ const docTemplate = `{
                 },
                 "data": {},
                 "msg": {
-                    "type": "string"
-                }
-            }
-        },
-        "handler.UploadResult": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "description": "原始文件名",
-                    "type": "string"
-                },
-                "path": {
-                    "description": "存储路径",
-                    "type": "string"
-                },
-                "size": {
-                    "description": "文件大小",
-                    "type": "integer"
-                },
-                "url": {
-                    "description": "访问URL",
                     "type": "string"
                 }
             }
@@ -1695,6 +1915,26 @@ const docTemplate = `{
                 }
             }
         },
+        "model.MenuAiFillForm": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "description": "菜单名称",
+                    "type": "string"
+                },
+                "parentId": {
+                    "description": "上级菜单ID，用于参考同级菜单的命名风格",
+                    "type": "integer"
+                },
+                "type": {
+                    "description": "类型(C目录/M菜单/E外链/B按钮)",
+                    "type": "string"
+                }
+            }
+        },
         "model.MenuForm": {
             "type": "object",
             "required": [
@@ -1702,9 +1942,21 @@ const docTemplate = `{
                 "type"
             ],
             "properties": {
+                "buttonPermPrefix": {
+                    "description": "按钮权限标识前缀，如 sys:user",
+                    "type": "string"
+                },
                 "component": {
                     "description": "前端组件",
                     "type": "string"
+                },
+                "externalUrl": {
+                    "description": "外链地址",
+                    "type": "string"
+                },
+                "generateCrudButtons": {
+                    "description": "新增页面菜单时是否生成增删改查按钮",
+                    "type": "boolean"
                 },
                 "icon": {
                     "description": "图标",
@@ -1715,7 +1967,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "keepAlive": {
-                    "description": "页面缓存",
+                    "description": "页面缓存(0/1)",
                     "type": "integer"
                 },
                 "name": {
@@ -1754,21 +2006,34 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "type": {
-                    "description": "类型(C目录/M菜单/B按钮)",
+                    "description": "类型(C目录/M菜单/E外链/B按钮)",
                     "type": "string",
                     "enum": [
                         "C",
                         "M",
-                        "B"
+                        "B",
+                        "E"
                     ]
                 },
                 "visible": {
-                    "description": "是否可见",
+                    "description": "是否可见(0/1)",
                     "type": "integer",
                     "enum": [
                         0,
                         1
                     ]
+                }
+            }
+        },
+        "model.QrCodeTicketForm": {
+            "type": "object",
+            "required": [
+                "ticket"
+            ],
+            "properties": {
+                "ticket": {
+                    "description": "票据号",
+                    "type": "string"
                 }
             }
         },
@@ -1795,7 +2060,7 @@ const docTemplate = `{
                     ]
                 },
                 "deptIds": {
-                    "description": "部门ID列表",
+                    "description": "部门ID列表（关联关系，非表字段）",
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -1896,6 +2161,27 @@ const docTemplate = `{
                     "description": "微信登录code",
                     "type": "string",
                     "example": "xxx"
+                }
+            }
+        },
+        "service.UploadResult": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "原始文件名",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "存储路径",
+                    "type": "string"
+                },
+                "size": {
+                    "description": "文件大小",
+                    "type": "integer"
+                },
+                "url": {
+                    "description": "访问URL",
+                    "type": "string"
                 }
             }
         }

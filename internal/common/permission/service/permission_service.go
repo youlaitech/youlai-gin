@@ -335,7 +335,7 @@ func CheckAnyRole(userID int64, roleCodes []string) (bool, error) {
 }
 
 // getUserPermsByRoles 获取角色权限集合（Read-Through 缓存策略）
-// Redis Hash: system:role:perms -> {roleCode -> JSON array}
+// Redis Hash：field 为角色编码，value 为权限 JSON 数组
 func getUserPermsByRoles(roleCodes []string) ([]string, error) {
 	if len(roleCodes) == 0 {
 		return []string{}, nil

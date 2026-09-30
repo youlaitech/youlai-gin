@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	response "youlai-gin/internal/common"
+	"youlai-gin/internal/common/auth"
 	appContext "youlai-gin/internal/common/context"
 	"youlai-gin/internal/common/validator"
 	"youlai-gin/internal/system/notice/model"
@@ -23,17 +24,16 @@ func NewHandler(svc *service.Service) *Handler { return &Handler{svc: svc} }
 
 // RegisterRoutes 注册通知公告路由
 func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
-	r.GET("/notices", h.Page)
-	r.POST("/notices", h.Create)
-	r.GET("/notices/:id/form", h.GetForm)
+	r.GET("/notices", auth.RequirePermission("sys:notice:list"), h.Page)
+	r.POST("/notices", auth.RequirePermission("sys:notice:create"), h.Create)
+	r.GET("/notices/:id/form", auth.RequirePermission("sys:notice:update"), h.GetForm)
 	r.GET("/notices/:id/detail", h.GetDetail)
-	r.PUT("/notices/:id", h.Update)
-	r.PUT("/notices/:id/publish", h.Publish)
-	r.PUT("/notices/:id/revoke", h.Revoke)
-	r.DELETE("/notices/:ids", h.Delete)
+	r.PUT("/notices/:id", auth.RequirePermission("sys:notice:update"), h.Update)
+	r.PUT("/notices/:id/publish", auth.RequirePermission("sys:notice:publish"), h.Publish)
+	r.PUT("/notices/:id/revoke", auth.RequirePermission("sys:notice:revoke"), h.Revoke)
+	r.DELETE("/notices/:ids", auth.RequirePermission("sys:notice:delete"), h.Delete)
 	r.GET("/notices/my", h.MyPage)
 	r.PUT("/notices/read-all", h.ReadAll)
-	r.GET("/notices/unread-count", h.UnreadCount)
 }
 
 // Page 通知公告分页列表
@@ -253,24 +253,4 @@ func (h *Handler) ReadAll(c *gin.Context) {
 	response.OkMsg(c, "全部已读成功")
 }
 
-// UnreadCount 获取未读通知数量
-// @Summary 未读通知数量
-// @Tags 08.通知公告
-// @Router /api/v1/notices/unread-count [get]
-func (h *Handler) UnreadCount(c *gin.Context) {
-	userID, err := appContext.GetCurrentUserID(c)
-	if err != nil {
-		c.Error(err)
-		return
-	}
 
-	count, err := h.svc.UnreadCount(c.Request.Context(), userID)
-	if err != nil {
-		c.Error(err)
-		return
-	}
-
-	response.Ok(c, map[string]interface{}{
-		"count": count,
-	})
-}

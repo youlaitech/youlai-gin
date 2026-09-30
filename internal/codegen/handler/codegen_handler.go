@@ -30,6 +30,7 @@ func (h *CodegenHandler) RegisterRoutes(r *gin.RouterGroup) {
 	codegenGroup.DELETE("/:tableName/config", h.DeleteGenConfig)
 	codegenGroup.GET("/:tableName/preview", h.GetPreview)
 	codegenGroup.GET("/:tableName/download", h.Download)
+	codegenGroup.POST("/:tableName/ai-config", h.AiFillConfig)
 }
 
 // GetTablePage 数据表分页
@@ -151,4 +152,29 @@ func (h *CodegenHandler) Download(c *gin.Context) {
 	c.Writer.Header().Set("Content-Type", "application/octet-stream")
 	c.Writer.Header().Set("Content-Disposition", "attachment; filename="+fileName)
 	c.Data(http.StatusOK, "application/octet-stream", data)
+}
+
+// AiFillConfig AI 填充生成配置
+// @Summary AI 填充生成配置
+// @Tags 11.代码生成
+// @Param tableName path string true "表名"
+// @Router /api/v1/codegen/{tableName}/ai-config [post]
+func (h *CodegenHandler) AiFillConfig(c *gin.Context) {
+	tableName := c.Param("tableName")
+
+	var body model.AiFillConfigForm
+	if c.Request.ContentLength > 0 {
+		if err := validator.BindJSON(c, &body); err != nil {
+			c.Error(err)
+			return
+		}
+	}
+
+	result, err := h.svc.AiFillConfig(c.Request.Context(), tableName, body.Requirement)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.Ok(c, result)
 }

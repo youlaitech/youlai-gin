@@ -165,7 +165,7 @@ func (s *Service) buildRoutes(menus []model.Menu, parentId int64) []*model.Route
 		if (menu.Type == "M" || isEmbedded) && menu.KeepAlive == 1 {
 			meta.KeepAlive = true
 		}
-		if isEmbedded && menu.ExternalURL != "" {
+		if isExternal && menu.ExternalURL != "" {
 			meta.ExternalURL = menu.ExternalURL
 		}
 
@@ -520,9 +520,11 @@ func (s *Service) buildAiUserPrompt(ctx context.Context, form *model.MenuAiFillF
 		builder.WriteString("（无）\n")
 	} else {
 		for _, menu := range siblings {
+			// 示例路径只展示当前这一级的路径片段
+			routePath := strings.TrimPrefix(menu.RoutePath, "/")
 			builder.WriteString(fmt.Sprintf(
 				"- %s（类型 %s，路径片段 %s，权限 %s）\n",
-				menu.Name, menuTypeLabel(menu.Type), blankDefault(menu.RoutePath, "无"), blankDefault(menu.Perm, "无")))
+				menu.Name, menuTypeLabel(menu.Type), blankDefault(routePath, "无"), blankDefault(menu.Perm, "无")))
 		}
 	}
 	return builder.String(), nil

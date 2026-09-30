@@ -156,7 +156,6 @@ func (s *AuthService) SendSmsLoginCode(ctx context.Context, mobile string) error
 	}
 
 	// TODO: 接入短信服务商并发送验证码
-	// smsService.SendSMS(mobile, code)
 
 	return nil
 }

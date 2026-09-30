@@ -19,7 +19,7 @@ const (
 // 角色 ID（对应 sys_role 表固定记录；配合 RoleCodeGuest 使用）
 const RoleGuestID int64 = 3
 
-// Redis Key
+// Redis 缓存键
 const (
 	RedisKeyRolePerms = "system:role:perms" // 角色权限缓存 Hash key
 )

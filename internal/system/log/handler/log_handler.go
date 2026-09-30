@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	response "youlai-gin/internal/common"
+	"youlai-gin/internal/common/auth"
 	"youlai-gin/internal/common/validator"
 	"youlai-gin/internal/system/log/model"
 	"youlai-gin/internal/system/log/service"
@@ -20,9 +21,9 @@ func NewHandler(svc *service.Service) *Handler { return &Handler{svc: svc} }
 
 // RegisterRoutes 注册日志路由
 func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
-	r.GET("/logs", h.Page)
-	r.GET("/logs/analytics/trend", h.VisitTrend)
-	r.GET("/logs/analytics/overview", h.VisitOverview)
+	r.GET("/logs", auth.RequirePermission("sys:log:list"), h.Page)
+	r.GET("/logs/analytics/trend", auth.RequirePermission("sys:log:list"), h.VisitTrend)
+	r.GET("/logs/analytics/overview", auth.RequirePermission("sys:log:list"), h.VisitOverview)
 }
 
 // Page 日志分页列表

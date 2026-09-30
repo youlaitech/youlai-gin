@@ -24,7 +24,6 @@ type Repository interface {
 	DeleteUserNoticesByNoticeID(ctx context.Context, noticeID int64) error
 	UserNoticePage(ctx context.Context, userID int64, query *model.UserNoticeQuery) ([]model.Notice, int64, error)
 	MarkRead(ctx context.Context, noticeID, userID int64) error
-	UnreadCount(ctx context.Context, userID int64) (int64, error)
 }
 
 // Service 通知公告业务逻辑层
@@ -216,11 +215,6 @@ func (s *Service) MarkRead(ctx context.Context, noticeID, userID int64) error {
 		return errs.SystemError("标记通知已读失败")
 	}
 	return nil
-}
-
-// UnreadCount 用户未读通知数量
-func (s *Service) UnreadCount(ctx context.Context, userID int64) (int64, error) {
-	return s.repo.UnreadCount(ctx, userID)
 }
 
 // parsePublishTime 解析表单发布时间字符串，空串返回 nil

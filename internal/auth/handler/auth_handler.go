@@ -32,7 +32,7 @@ func NewAuthHandler(svc *service.AuthService) *AuthHandler { return &AuthHandler
 func (h *AuthHandler) RegisterRoutes(r *gin.RouterGroup) {
 	r.GET("/auth/captcha", h.GetCaptcha)
 	r.POST("/auth/login", middleware.OperationLog(enums.LogModuleLogin, enums.ActionTypeLogin), h.Login)
-	r.POST("/auth/login/sms", middleware.OperationLog(enums.LogModuleLogin, enums.ActionTypeLogin), h.LoginBySms)
+	r.POST("/auth/sms/login", middleware.OperationLog(enums.LogModuleLogin, enums.ActionTypeLogin), h.LoginBySms)
 	r.POST("/auth/sms/code", h.SendSmsCode)
 	r.DELETE("/auth/logout", middleware.OperationLog(enums.LogModuleLogin, enums.ActionTypeLogout), h.Logout)
 	r.POST("/auth/refresh-token", h.RefreshToken)
@@ -185,7 +185,7 @@ func (h *AuthHandler) SendSmsCode(c *gin.Context) {
 // @Produce json
 // @Param body body model.SmsLoginRequest true "短信登录信息"
 // @Success 200 {object} map[string]interface{} "code/msg/data，data 为 AuthenticationToken"
-// @Router /api/v1/auth/login/sms [post]
+// @Router /api/v1/auth/sms/login [post]
 func (h *AuthHandler) LoginBySms(c *gin.Context) {
 	var req model.SmsLoginRequest
 	if err := validator.BindJSON(c, &req); err != nil {
@@ -207,7 +207,7 @@ func (h *AuthHandler) LoginBySms(c *gin.Context) {
 	response.Ok(c, token)
 
 	// 异步保存登录日志
-	go saveLoginLog(c, userID, "/api/v1/auth/login/sms")
+	go saveLoginLog(c, userID, "/api/v1/auth/sms/login")
 }
 
 // saveLoginLog 异步保存登录操作日志（登录为公开路由，中间件无法获取 userID）

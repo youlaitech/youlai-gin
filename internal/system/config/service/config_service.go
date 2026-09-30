@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -44,28 +43,6 @@ func (s *Service) Page(ctx context.Context, query *model.ConfigQuery) (*baseMode
 	}
 
 	return &baseModel.PagedData{List: configs, Total: total}, nil
-}
-
-// GetByKey 根据 Key 获取配置（带缓存）
-func (s *Service) GetByKey(ctx context.Context, configKey string) (*model.Config, error) {
-	cacheKey := configCachePrefix + configKey
-	if cached, err := redis.Client.Get(ctx, cacheKey).Result(); err == nil && cached != "" {
-		var config model.Config
-		if err := json.Unmarshal([]byte(cached), &config); err == nil {
-			return &config, nil
-		}
-	}
-
-	config, err := s.repo.GetByKey(ctx, configKey)
-	if err != nil {
-		return nil, err
-	}
-
-	if data, err := json.Marshal(config); err == nil {
-		redis.Client.Set(context.Background(), cacheKey, string(data), configCacheExpire)
-	}
-
-	return config, nil
 }
 
 // Get 根据 ID 获取配置详情
@@ -139,13 +116,6 @@ func (s *Service) Delete(ctx context.Context, ids []int64) error {
 	}
 	s.ClearAllCache(ctx)
 	return nil
-}
-
-// RefreshCache 刷新指定配置缓存
-func (s *Service) RefreshCache(ctx context.Context, configKey string) error {
-	s.clearCache(configKey)
-	_, err := s.GetByKey(ctx, configKey)
-	return err
 }
 
 // ClearAllCache 清除所有配置缓存

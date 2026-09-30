@@ -20,9 +20,9 @@ func NewWxMaHandler(svc *service.WxMaService) *WxMaHandler { return &WxMaHandler
 
 // RegisterRoutes 注册微信小程序认证路由
 func (h *WxMaHandler) RegisterRoutes(r *gin.RouterGroup) {
-	r.POST("/wxma/auth/silent-login", h.SilentLogin)
-	r.POST("/wxma/auth/phone-login", h.PhoneLogin)
-	r.POST("/wxma/auth/bind-mobile", h.BindMobile)
+	r.POST("/auth/wxma/silent-login", h.SilentLogin)
+	r.POST("/auth/wxma/phone-login", h.PhoneLogin)
+	r.POST("/auth/wxma/bind-mobile", h.BindMobile)
 }
 
 // SilentLogin 静默登录
@@ -33,7 +33,7 @@ func (h *WxMaHandler) RegisterRoutes(r *gin.RouterGroup) {
 // @Produce json
 // @Param body body model.WxMaSilentLoginRequest true "登录信息"
 // @Success 200 {object} map[string]interface{} "code/msg/data"
-// @Router /api/v1/wxma/auth/silent-login [post]
+// @Router /api/v1/auth/wxma/silent-login [post]
 func (h *WxMaHandler) SilentLogin(c *gin.Context) {
 	var req model.WxMaSilentLoginRequest
 	if err := validator.BindJSON(c, &req); err != nil {
@@ -63,7 +63,7 @@ func (h *WxMaHandler) SilentLogin(c *gin.Context) {
 // @Produce json
 // @Param body body model.WxMaPhoneLoginRequest true "登录信息"
 // @Success 200 {object} map[string]interface{} "code/msg/data"
-// @Router /api/v1/wxma/auth/phone-login [post]
+// @Router /api/v1/auth/wxma/phone-login [post]
 func (h *WxMaHandler) PhoneLogin(c *gin.Context) {
 	var req model.WxMaPhoneLoginRequest
 	if err := validator.BindJSON(c, &req); err != nil {
@@ -93,7 +93,7 @@ func (h *WxMaHandler) PhoneLogin(c *gin.Context) {
 // @Produce json
 // @Param body body model.WxMaBindMobileRequest true "绑定信息"
 // @Success 200 {object} map[string]interface{} "code/msg/data"
-// @Router /api/v1/wxma/auth/bind-mobile [post]
+// @Router /api/v1/auth/wxma/bind-mobile [post]
 func (h *WxMaHandler) BindMobile(c *gin.Context) {
 	var req model.WxMaBindMobileRequest
 	if err := validator.BindJSON(c, &req); err != nil {

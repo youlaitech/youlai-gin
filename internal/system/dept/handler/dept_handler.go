@@ -27,7 +27,7 @@ func NewHandler(svc *service.Service) *Handler {
 func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 	depts := r.Group("/depts")
 	{
-		depts.GET("", h.List)
+		depts.GET("", auth.RequirePermission("sys:dept:list"), h.List)
 		depts.GET("/options", h.Options)
 		depts.POST("", auth.RequirePermission("sys:dept:create"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeInsert), h.Create)
 		depts.GET("/:id/form", h.GetForm)
