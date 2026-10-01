@@ -8,16 +8,16 @@ import (
 // FormDefinition 表单定义表
 type FormDefinition struct {
 	ID          types.BigInt    `gorm:"primaryKey;autoIncrement" json:"id"`
-	FormKey     string          `gorm:"column:form_key;uniqueIndex" json:"formKey"`             // 表单唯一标识
-	FormName    string          `gorm:"column:form_name" json:"formName"`                       // 表单名称
-	Description string          `gorm:"column:description" json:"description"`                  // 表单描述
-	FormJson    []any           `gorm:"column:form_json;serializer:json" json:"formJson"`       // 表单规则
-	OptionsJson map[string]any  `gorm:"column:options_json;serializer:json" json:"optionsJson"` // 表单全局配置
-	Status      int             `gorm:"column:status;default:0" json:"status"`                  // 0草稿 1已发布 -1已停用
-	IsPublic    int             `gorm:"column:is_public;default:0" json:"isPublic"`             // 是否允许匿名公开访问
-	Category    string          `gorm:"column:category;default:normal" json:"category"`         // normal通用 workflow审批表单
-	MenuID      *types.BigInt   `gorm:"column:menu_id" json:"menuId"`                           // 生成的访问菜单ID
-	Version     int             `gorm:"column:version;default:1" json:"version"`                // 版本号
+	FormKey     string          `gorm:"column:form_key;uniqueIndex" json:"formKey"`     // 表单唯一标识
+	FormName    string          `gorm:"column:form_name" json:"formName"`               // 表单名称
+	Description string          `gorm:"column:description" json:"description"`          // 表单描述
+	FormJson    string          `gorm:"column:form_json" json:"formJson"`               // 表单规则（form-create rule 数组 JSON 字符串）
+	OptionsJson string          `gorm:"column:options_json" json:"optionsJson"`         // 表单全局配置 JSON 字符串
+	Status      int             `gorm:"column:status;default:0" json:"status"`          // 0草稿 1已发布 -1已停用
+	IsPublic    int             `gorm:"column:is_public;default:0" json:"isPublic"`     // 是否允许匿名公开访问
+	Category    string          `gorm:"column:category;default:normal" json:"category"` // normal通用 workflow审批表单
+	MenuID      *types.BigInt   `gorm:"column:menu_id" json:"menuId"`                   // 生成的访问菜单ID
+	Version     int             `gorm:"column:version;default:1" json:"version"`        // 版本号
 	CreateBy    *types.BigInt   `gorm:"column:create_by" json:"createBy,omitempty"`
 	CreateTime  types.LocalTime `gorm:"column:create_time;autoCreateTime" json:"createTime,omitempty"`
 	UpdateBy    *types.BigInt   `gorm:"column:update_by" json:"updateBy,omitempty"`
@@ -32,10 +32,10 @@ func (FormDefinition) TableName() string {
 // FormData 表单数据表
 type FormData struct {
 	ID          types.BigInt    `gorm:"primaryKey;autoIncrement" json:"id"`
-	FormID      types.BigInt    `gorm:"column:form_id" json:"formId"`                     // 表单定义ID
-	FormVersion int             `gorm:"column:form_version" json:"formVersion"`           // 提交时表单版本
-	DataJson    map[string]any  `gorm:"column:data_json;serializer:json" json:"dataJson"` // 表单数据
-	CreateBy    *types.BigInt   `gorm:"column:create_by" json:"createBy,omitempty"`       // 提交人ID，匿名为空
+	FormID      types.BigInt    `gorm:"column:form_id" json:"formId"`               // 表单定义ID
+	FormVersion int             `gorm:"column:form_version" json:"formVersion"`     // 提交时表单版本
+	DataJson    string          `gorm:"column:data_json" json:"dataJson"`           // 表单数据（field -> value 映射的 JSON 字符串）
+	CreateBy    *types.BigInt   `gorm:"column:create_by" json:"createBy,omitempty"` // 提交人ID，匿名为空
 	CreateTime  types.LocalTime `gorm:"column:create_time;autoCreateTime" json:"createTime,omitempty"`
 	UpdateBy    *types.BigInt   `gorm:"column:update_by" json:"updateBy,omitempty"`
 	UpdateTime  types.LocalTime `gorm:"column:update_time;autoUpdateTime" json:"updateTime,omitempty"`
@@ -51,8 +51,8 @@ type FormSnapshot struct {
 	ID          types.BigInt    `gorm:"primaryKey;autoIncrement" json:"id"`
 	FormID      types.BigInt    `gorm:"column:form_id" json:"formId"`
 	Version     int             `gorm:"column:version" json:"version"`
-	FormJson    []any           `gorm:"column:form_json;serializer:json" json:"formJson"`
-	OptionsJson map[string]any  `gorm:"column:options_json;serializer:json" json:"optionsJson"`
+	FormJson    string          `gorm:"column:form_json" json:"formJson"`       // 表单规则快照 JSON 字符串
+	OptionsJson string          `gorm:"column:options_json" json:"optionsJson"` // 表单全局配置快照 JSON 字符串
 	CreateTime  types.LocalTime `gorm:"column:create_time;autoCreateTime" json:"createTime,omitempty"`
 	UpdateTime  types.LocalTime `gorm:"column:update_time;autoUpdateTime" json:"updateTime,omitempty"`
 	IsDeleted   int             `gorm:"column:is_deleted;default:0" json:"isDeleted"`
@@ -77,14 +77,14 @@ type FormDataQuery struct {
 
 // FormDefinitionForm 表单定义入参
 type FormDefinitionForm struct {
-	ID          types.BigInt   `json:"id"`
-	FormKey     string         `json:"formKey" binding:"required"`
-	FormName    string         `json:"formName" binding:"required"`
-	Description string         `json:"description"`
-	FormJson    []any          `json:"formJson"`
-	OptionsJson map[string]any `json:"optionsJson"`
-	IsPublic    *int           `json:"isPublic"`
-	Category    string         `json:"category"`
+	ID          types.BigInt `json:"id"`
+	FormKey     string       `json:"formKey" binding:"required"`
+	FormName    string       `json:"formName" binding:"required"`
+	Description string       `json:"description"`
+	FormJson    string       `json:"formJson"`
+	OptionsJson string       `json:"optionsJson"`
+	IsPublic    *int         `json:"isPublic"`
+	Category    string       `json:"category"`
 }
 
 // FormMenuForm 生成访问菜单入参
@@ -114,11 +114,11 @@ type FormDefinitionVO struct {
 
 // FormRenderVO 表单渲染规则
 type FormRenderVO struct {
-	FormKey     string         `json:"formKey"`
-	FormName    string         `json:"formName"`
-	Version     int            `json:"version"`
-	FormJson    []any          `json:"formJson"`
-	OptionsJson map[string]any `json:"optionsJson"`
+	FormKey     string `json:"formKey"`
+	FormName    string `json:"formName"`
+	Version     int    `json:"version"`
+	FormJson    string `json:"formJson"`
+	OptionsJson string `json:"optionsJson"`
 }
 
 // FormMenuVO 访问菜单回显
@@ -131,17 +131,17 @@ type FormMenuVO struct {
 
 // FormDataVO 表单数据分页行
 type FormDataVO struct {
-	ID           types.BigInt   `json:"id"`
-	FormVersion  int            `json:"formVersion"`
-	DataJson     map[string]any `json:"dataJson"`
-	CreateBy     *types.BigInt  `json:"createBy"`
-	CreateByName string         `json:"createByName"`
-	CreateTime   string         `json:"createTime"`
+	ID           types.BigInt  `json:"id"`
+	FormVersion  int           `json:"formVersion"`
+	DataJson     string        `json:"dataJson"`
+	CreateBy     *types.BigInt `json:"createBy"`
+	CreateByName string        `json:"createByName"`
+	CreateTime   string        `json:"createTime"`
 }
 
 // FormDataDetailVO 表单数据详情（附提交时版本规则）
 type FormDataDetailVO struct {
 	FormDataVO
-	FormJson    []any          `json:"formJson"`
-	OptionsJson map[string]any `json:"optionsJson"`
+	FormJson    string `json:"formJson"`
+	OptionsJson string `json:"optionsJson"`
 }

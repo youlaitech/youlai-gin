@@ -150,10 +150,17 @@ func walkNodes(nodes []any, data, filtered map[string]any, errList *[]string) {
 }
 
 // ValidateAndFilter 按规则白名单过滤提交数据并校验必填与类型
-func ValidateAndFilter(rules []any, data map[string]any) (map[string]any, error) {
+func ValidateAndFilter(rules string, data map[string]any) (map[string]any, error) {
+	var ruleList []any
+	if strings.TrimSpace(rules) == "" {
+		rules = "[]"
+	}
+	if err := json.Unmarshal([]byte(rules), &ruleList); err != nil {
+		return nil, errs.BadRequest("表单规则格式非法")
+	}
 	filtered := make(map[string]any)
 	var list []string
-	walkNodes(rules, data, filtered, &list)
+	walkNodes(ruleList, data, filtered, &list)
 	if len(list) > 0 {
 		return nil, errs.BadRequest(strings.Join(list, "；"))
 	}
@@ -222,6 +229,9 @@ func (s *Service) CreateDefinition(ctx context.Context, form *model.FormDefiniti
 	if entity.Category == "" {
 		entity.Category = "normal"
 	}
+	if strings.TrimSpace(entity.FormJson) == "" {
+		entity.FormJson = "[]"
+	}
 	if form.IsPublic != nil {
 		entity.IsPublic = *form.IsPublic
 	}
@@ -251,10 +261,10 @@ func (s *Service) UpdateDefinition(ctx context.Context, id int64, form *model.Fo
 		"description": form.Description,
 		"update_time": time.Now(),
 	}
-	if form.FormJson != nil {
+	if strings.TrimSpace(form.FormJson) != "" {
 		updates["form_json"] = form.FormJson
 	}
-	if form.OptionsJson != nil {
+	if strings.TrimSpace(form.OptionsJson) != "" {
 		updates["options_json"] = form.OptionsJson
 	}
 	if form.IsPublic != nil {
@@ -617,10 +627,14 @@ func (s *Service) persist(ctx context.Context, entity *model.FormDefinition, dat
 	if err != nil {
 		return err
 	}
+	payload, err := json.Marshal(filtered)
+	if err != nil {
+		return errs.SystemError("序列化表单数据失败")
+	}
 	if err := s.repo.CreateData(ctx, &model.FormData{
 		FormID:      entity.ID,
 		FormVersion: entity.Version,
-		DataJson:    filtered,
+		DataJson:    string(payload),
 	}); err != nil {
 		return errs.SystemError("保存表单数据失败")
 	}
@@ -690,8 +704,7 @@ func (s *Service) DataDetail(ctx context.Context, id int64) (*model.FormDataDeta
 		return nil, errs.NotFound("表单数据不存在")
 	}
 
-	var formJson []any
-	var optionsJson map[string]any
+	var formJson, optionsJson string
 	if snapshot, snapErr := s.repo.GetSnapshot(ctx, int64(row.FormID), row.FormVersion); snapErr == nil {
 		formJson, optionsJson = snapshot.FormJson, snapshot.OptionsJson
 	} else if definition, defErr := s.repo.GetDefinition(ctx, int64(row.FormID)); defErr == nil {

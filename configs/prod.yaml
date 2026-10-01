@@ -78,6 +78,12 @@ security:
     refreshTokenTTL: 2592000 # 刷新令牌有效期（秒）
     allowMultiLogin: true # 是否允许多设备同时登录（开发环境允许）
 
+# 微信小程序配置
+wechat:
+  miniapp:
+    appId: Your_AppId
+    appSecret: Your_AppSecret
+
 # 文件存储
 storage:
   # 存储类型：s3 | local
