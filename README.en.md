@@ -277,6 +277,18 @@ youlai-gin/
 
 
 
+## Optional Extensions
+
+**AI (off by default)**: enable the `ai` block in `configs/{env}.yaml` and fill in the key; the API is OpenAI-compatible.
+
+```yaml
+ai:
+  enabled: true
+  baseUrl: https://dashscope.aliyuncs.com/compatible-mode/v1
+  apiKey: sk-xxx
+  model: qwen-plus
+```
+
 ## Documentation
 
 

@@ -16,7 +16,8 @@ const (
 	CaptchaSmsPrefix   = "captcha:sms:login:" // 短信登录验证码（发送/校验共用同一 Key）
 
 	// 微信相关
-	WechatAccessTokenPrefix = "wechat:access_token:" // 微信 AccessToken 缓存
+	WechatAccessTokenPrefix = "wechat:access_token:"   // 微信 AccessToken 缓存
+	WxMaSessionKeyPrefix    = "auth:wxma:session_key:" // 小程序会话密钥，拼接 provider:openid
 
 	// 限流相关
 	RateLimiterIPPrefix  = "rate_limit:ip:"  // IP 限流

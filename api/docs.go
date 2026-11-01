@@ -1309,6 +1309,47 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/v1/realtime/presence": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "13.实时推送"
+                ],
+                "summary": "查询在线状态",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.Result"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/realtime/tickets": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "13.实时推送"
+                ],
+                "summary": "签发实时连接票据",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.Result"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/roles": {
             "get": {
                 "tags": [
@@ -1576,58 +1617,6 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/sse/connect": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "text/event-stream"
-                ],
-                "tags": [
-                    "13.SSE连接"
-                ],
-                "summary": "建立SSE连接",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "JWT Token (可选，优先使用Authorization Header)",
-                        "name": "token",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "SSE Stream",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/sse/online-count": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "13.SSE连接"
-                ],
-                "summary": "获取在线用户数",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/common.Result"
                         }
                     }
                 }

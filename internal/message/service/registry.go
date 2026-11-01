@@ -4,176 +4,126 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/google/uuid"
 
-	"youlai-gin/internal/common/logger"
 	msgModel "youlai-gin/internal/message/model"
 )
 
-// SessionInfo 单条 SSE 会话信息
-type SessionInfo struct {
-	Username    string
-	ConnectTime int64
+// RealtimeSessionRegistry 管理实时连接会话，支持多设备同时登录
+type RealtimeSessionRegistry struct {
+	mu          sync.RWMutex
+	userClients map[string]map[*RealtimeClient]struct{}
+	clientTime  map[*RealtimeClient]time.Time
+	nodeId      string
 }
 
-// SseSessionRegistry 维护「用户 ↔ 连接」映射，支撑在线人数统计与定向推送
-// 内部实现（非 DB 仓储）：连接登记写在此层，SseService 只感知会话概念
-type SseSessionRegistry struct {
-	mu              sync.RWMutex
-	userEmittersMap map[string]map[*SseEmitter]bool
-	emitterUserMap  map[*SseEmitter]*SessionInfo
-	emitterTimeMap  map[*SseEmitter]int64
-}
-
-func NewSseSessionRegistry() *SseSessionRegistry {
-	return &SseSessionRegistry{
-		userEmittersMap: make(map[string]map[*SseEmitter]bool),
-		emitterUserMap:  make(map[*SseEmitter]*SessionInfo),
-		emitterTimeMap:  make(map[*SseEmitter]int64),
+// NewRealtimeSessionRegistry 创建会话注册表
+func NewRealtimeSessionRegistry() *RealtimeSessionRegistry {
+	return &RealtimeSessionRegistry{
+		userClients: make(map[string]map[*RealtimeClient]struct{}),
+		clientTime:  make(map[*RealtimeClient]time.Time),
+		nodeId:      uuid.NewString(),
 	}
 }
 
-// UserConnected 登记用户的一条新连接
-func (r *SseSessionRegistry) UserConnected(username string, emitter *SseEmitter) {
+// UserConnected 登记新连接
+func (r *RealtimeSessionRegistry) UserConnected(username string, client *RealtimeClient) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
-	if r.userEmittersMap[username] == nil {
-		r.userEmittersMap[username] = make(map[*SseEmitter]bool)
+	clients, ok := r.userClients[username]
+	if !ok {
+		clients = make(map[*RealtimeClient]struct{})
+		r.userClients[username] = clients
 	}
-	r.userEmittersMap[username][emitter] = true
-	r.emitterUserMap[emitter] = &SessionInfo{
-		Username:    username,
-		ConnectTime: time.Now().UnixMilli(),
-	}
-	r.emitterTimeMap[emitter] = time.Now().UnixMilli()
-
-	logger.Debug("SSE连接已建立", zap.String("username", username), zap.Int("online", len(r.userEmittersMap)))
+	clients[client] = struct{}{}
+	r.clientTime[client] = time.Now()
 }
 
-// RemoveEmitter 移除连接，用户连接全部断开时一并清理其映射
-func (r *SseSessionRegistry) RemoveEmitter(emitter *SseEmitter) {
+// RemoveClient 移除连接，用户无连接时清空记录
+func (r *RealtimeSessionRegistry) RemoveClient(client *RealtimeClient) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
-	sessionInfo, ok := r.emitterUserMap[emitter]
+	delete(r.clientTime, client)
+	clients, ok := r.userClients[client.Username()]
 	if !ok {
 		return
 	}
-
-	delete(r.emitterUserMap, emitter)
-	delete(r.emitterTimeMap, emitter)
-
-	emitters, ok := r.userEmittersMap[sessionInfo.Username]
-	if ok {
-		delete(emitters, emitter)
-		if len(emitters) == 0 {
-			delete(r.userEmittersMap, sessionInfo.Username)
-			logger.Debug("用户所有SSE连接已断开", zap.String("username", sessionInfo.Username))
-		}
+	delete(clients, client)
+	if len(clients) == 0 {
+		delete(r.userClients, client.Username())
 	}
 }
 
-// GetOnlineUserCount 在线用户数（按用户名去重）
-func (r *SseSessionRegistry) GetOnlineUserCount() int {
+// GetUserClients 返回指定用户的全部连接
+func (r *RealtimeSessionRegistry) GetUserClients(username string) []*RealtimeClient {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return len(r.userEmittersMap)
+	clients := r.userClients[username]
+	result := make([]*RealtimeClient, 0, len(clients))
+	for client := range clients {
+		result = append(result, client)
+	}
+	return result
 }
 
-// GetTotalConnectionCount 连接总数（含同一用户的多个标签页）
-func (r *SseSessionRegistry) GetTotalConnectionCount() int {
+// GetAllClients 返回全部连接
+func (r *RealtimeSessionRegistry) GetAllClients() []*RealtimeClient {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return len(r.emitterUserMap)
+	result := make([]*RealtimeClient, 0, len(r.clientTime))
+	for client := range r.clientTime {
+		result = append(result, client)
+	}
+	return result
 }
 
-// GetOnlineUsers 在线用户列表，含各自会话数与最早登录时间
-func (r *SseSessionRegistry) GetOnlineUsers() []*msgModel.OnlineUserDTO {
+// GetOnlineUserCount 在线用户数，按用户去重
+func (r *RealtimeSessionRegistry) GetOnlineUserCount() int {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
+	return len(r.userClients)
+}
 
-	result := make([]*msgModel.OnlineUserDTO, 0, len(r.userEmittersMap))
-	for username, emitters := range r.userEmittersMap {
-		var earliestLoginTime int64 = -1
-		for emitter := range emitters {
-			if t, ok := r.emitterTimeMap[emitter]; ok {
-				if earliestLoginTime == -1 || t < earliestLoginTime {
-					earliestLoginTime = t
-				}
+// GetOnlineConnectionCount 在线连接总数，多标签页会重复计数
+func (r *RealtimeSessionRegistry) GetOnlineConnectionCount() int {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return len(r.clientTime)
+}
+
+// NodeId 节点标识，进程内固定
+func (r *RealtimeSessionRegistry) NodeId() string {
+	return r.nodeId
+}
+
+// GetOnlineUsers 在线用户列表，登录时间取该用户最早的连接时间
+func (r *RealtimeSessionRegistry) GetOnlineUsers() []*msgModel.OnlineUserDTO {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	result := make([]*msgModel.OnlineUserDTO, 0, len(r.userClients))
+	for username, clients := range r.userClients {
+		earliest := time.Now()
+		for client := range clients {
+			if t, ok := r.clientTime[client]; ok && t.Before(earliest) {
+				earliest = t
 			}
-		}
-		if earliestLoginTime == -1 {
-			earliestLoginTime = time.Now().UnixMilli()
 		}
 		result = append(result, &msgModel.OnlineUserDTO{
 			Username:     username,
-			SessionCount: len(emitters),
-			LoginTime:    earliestLoginTime,
+			SessionCount: len(clients),
+			LoginTime:    earliest.UnixMilli(),
 		})
 	}
 	return result
 }
 
-// GetAllEmitters 返回全部活跃连接
-func (r *SseSessionRegistry) GetAllEmitters() []*SseEmitter {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	emitters := make([]*SseEmitter, 0, len(r.emitterUserMap))
-	for emitter := range r.emitterUserMap {
-		emitters = append(emitters, emitter)
-	}
-	return emitters
-}
-
-// GetUserEmitters 返回某用户的全部连接
-func (r *SseSessionRegistry) GetUserEmitters(username string) []*SseEmitter {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	emitterSet, ok := r.userEmittersMap[username]
-	if !ok {
-		return nil
-	}
-	emitters := make([]*SseEmitter, 0, len(emitterSet))
-	for emitter := range emitterSet {
-		emitters = append(emitters, emitter)
-	}
-	return emitters
-}
-
-// IsUserOnline 判断用户是否有活跃连接
-func (r *SseSessionRegistry) IsUserOnline(username string) bool {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	emitters, ok := r.userEmittersMap[username]
-	return ok && len(emitters) > 0
-}
-
-// CloseAll 关闭所有SSE连接，在服务关闭时调用
-func (r *SseSessionRegistry) CloseAll() {
+// CloseAll 关闭全部连接
+func (r *RealtimeSessionRegistry) CloseAll() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
-	count := len(r.emitterUserMap)
-	if count == 0 {
-		return
+	for client := range r.clientTime {
+		client.Close()
 	}
-	logger.Info("应用关闭，主动断开SSE连接...", zap.Int("count", count))
-
-	for emitter := range r.emitterUserMap {
-		if emitter.done != nil {
-			select {
-			case <-emitter.done:
-			default:
-				close(emitter.done)
-			}
-		}
-	}
-	r.userEmittersMap = make(map[string]map[*SseEmitter]bool)
-	r.emitterUserMap = make(map[*SseEmitter]*SessionInfo)
-	r.emitterTimeMap = make(map[*SseEmitter]int64)
-
-	logger.Info("所有SSE连接已断开")
+	r.userClients = make(map[string]map[*RealtimeClient]struct{})
+	r.clientTime = make(map[*RealtimeClient]time.Time)
 }

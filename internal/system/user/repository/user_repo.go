@@ -273,19 +273,21 @@ func (r *Repository) Options(ctx context.Context) ([]model.User, error) {
 	return users, err
 }
 
-// GetSocial 查询第三方账号绑定（platform + openid 唯一）
-func (r *Repository) GetSocial(ctx context.Context, platform model.SocialPlatform, openID string) (*model.UserSocial, error) {
-	var social model.UserSocial
-	err := r.db.WithContext(ctx).Where("platform = ? AND openid = ?", platform, openID).First(&social).Error
-	return &social, err
+// GetIdentity 按认证源和来源方账号查询关联（provider + provider_account_id 唯一）
+func (r *Repository) GetIdentity(ctx context.Context, provider, providerAccountID string) (*model.UserIdentity, error) {
+	var identity model.UserIdentity
+	err := r.db.WithContext(ctx).
+		Where("provider = ? AND provider_account_id = ?", provider, providerAccountID).
+		First(&identity).Error
+	return &identity, err
 }
 
-// UpsertSocial 保存第三方账号绑定：已存在则更新绑定的用户与会话密钥，否则新增
-func (r *Repository) UpsertSocial(ctx context.Context, social *model.UserSocial) error {
+// SaveIdentity 保存关联：同账号已存在则只刷新登录时间，否则新增
+func (r *Repository) SaveIdentity(ctx context.Context, identity *model.UserIdentity) error {
 	err := r.db.WithContext(ctx).
-		Where("platform = ? AND openid = ?", social.Platform, social.OpenID).
-		Assign(social).
-		FirstOrCreate(social).Error
+		Where("provider = ? AND provider_account_id = ?", identity.Provider, identity.ProviderAccountID).
+		Assign(identity).
+		FirstOrCreate(identity).Error
 	return err
 }
 

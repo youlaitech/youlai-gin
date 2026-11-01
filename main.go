@@ -19,7 +19,7 @@ import (
 	"youlai-gin/internal/common/logger"
 	"youlai-gin/internal/common/redis"
 	"youlai-gin/internal/common/storage"
-	sse "youlai-gin/internal/message/service"
+	realtime "youlai-gin/internal/message/service"
 	"youlai-gin/internal/middleware"
 	"youlai-gin/internal/router"
 
@@ -122,7 +122,7 @@ func main() {
 	logger.Log.Sugar().Infof("文件存储已初始化: type=%s", storageCfg.Type)
 
 	// 初始化 SSE 服务
-	sse.InitSseService()
+	realtime.InitRealtimeService()
 
 	// 初始化 TokenManager
 	tokenManager, err := auth.CreateTokenManager(&config.Cfg.Security)
@@ -178,7 +178,7 @@ func main() {
 	logger.Log.Sugar().Info("正在关闭服务器...")
 
 	// 主动断开所有 SSE 连接
-	sse.GetSseService().CloseAll()
+	realtime.GetRealtimeService().CloseAll()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

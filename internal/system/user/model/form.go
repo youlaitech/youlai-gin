@@ -15,7 +15,7 @@ type UserForm struct {
 	Status   types.FlexInt  `json:"status"`                              // 状态(1启用0禁用) (兼容字符串和数字)
 	DeptID   types.BigInt   `json:"deptId"`                              // 部门ID
 	RoleIDs  []types.BigInt `json:"roleIds" binding:"required" gorm:"-"` // 角色ID（关联关系，非表字段）
-	Openid   string         `json:"openId" gorm:"-"`                     // 第三方openid（非表字段，落库到 user_social）
+	Openid   string         `json:"openId" gorm:"-"`                     // 第三方openid（非表字段，落库到 user_identity）
 }
 
 // UserProfileForm 个人中心用户信息更新表单

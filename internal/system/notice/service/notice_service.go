@@ -3,10 +3,12 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"strings"
 	"time"
 
-	sse "youlai-gin/internal/message/service"
+	msgModel "youlai-gin/internal/message/model"
+	realtime "youlai-gin/internal/message/service"
 	"youlai-gin/internal/system/notice/model"
 	"youlai-gin/pkg/errs"
 	"youlai-gin/pkg/gormx"
@@ -189,10 +191,13 @@ func (s *Service) Revoke(ctx context.Context, id int64) error {
 	_ = s.repo.DeleteUserNoticesByNoticeID(ctx, id)
 
 	// 通知前端移除该通知
-	sseService := sse.GetSseService()
-	if sseService != nil {
-		for _, u := range sseService.GetOnlineUsers() {
-			sseService.SendToUser(u.Username, "notice-revoke", map[string]interface{}{"id": id})
+	realtimeService := realtime.GetRealtimeService()
+	if realtimeService != nil {
+		for _, u := range realtimeService.GetOnlineUsers() {
+			realtimeService.SendToUser(u.Username, msgModel.EventNoticeChanged, map[string]interface{}{
+				"noticeId": strconv.FormatInt(id, 10),
+				"action":   "revoked",
+			})
 		}
 	}
 
@@ -232,22 +237,17 @@ func parsePublishTime(s string) (*types.LocalTime, error) {
 
 // pushNotice 推送通知（SSE）
 func pushNotice(notice *model.Notice, targetUsers []types.BigInt) {
-	sseService := sse.GetSseService()
-	if sseService == nil {
+	realtimeService := realtime.GetRealtimeService()
+	if realtimeService == nil {
 		return
 	}
 
-	noticeData := map[string]interface{}{
-		"id":          notice.ID,
-		"title":       notice.Title,
-		"type":        notice.Type,
-		"level":       notice.Level,
-		"publishTime": notice.PublishTime,
-	}
-
 	if notice.TargetType == 1 {
-		for _, u := range sseService.GetOnlineUsers() {
-			sseService.SendToUser(u.Username, "notice", noticeData)
+		for _, u := range realtimeService.GetOnlineUsers() {
+			realtimeService.SendToUser(u.Username, msgModel.EventNoticeChanged, map[string]interface{}{
+				"noticeId": strconv.FormatInt(int64(notice.ID), 10),
+				"action":   "published",
+			})
 		}
 	} else if len(targetUsers) > 0 {
 		// TODO: 将用户ID转换为用户名后推送

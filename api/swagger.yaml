@@ -1087,6 +1087,32 @@ paths:
       summary: 通知全部已读
       tags:
       - 08.通知公告
+  /api/v1/realtime/presence:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.Result'
+      summary: 查询在线状态
+      tags:
+      - 13.实时推送
+  /api/v1/realtime/tickets:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.Result'
+      summary: 签发实时连接票据
+      tags:
+      - 13.实时推送
   /api/v1/roles:
     get:
       parameters:
@@ -1265,39 +1291,6 @@ paths:
       summary: 角色下拉列表
       tags:
       - 03.角色接口
-  /api/v1/sse/connect:
-    get:
-      consumes:
-      - application/json
-      parameters:
-      - description: JWT Token (可选，优先使用Authorization Header)
-        in: query
-        name: token
-        type: string
-      produces:
-      - text/event-stream
-      responses:
-        "200":
-          description: SSE Stream
-          schema:
-            type: string
-      summary: 建立SSE连接
-      tags:
-      - 13.SSE连接
-  /api/v1/sse/online-count:
-    get:
-      consumes:
-      - application/json
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.Result'
-      summary: 获取在线用户数
-      tags:
-      - 13.SSE连接
   /api/v1/users:
     get:
       responses: {}

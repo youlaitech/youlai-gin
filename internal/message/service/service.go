@@ -1,9 +1,6 @@
 package service
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
 	"time"
 
 	"go.uber.org/zap"
@@ -12,178 +9,102 @@ import (
 	msgModel "youlai-gin/internal/message/model"
 )
 
-// SseEmitter 单个 SSE 连接，封装响应写入与关闭信号
-type SseEmitter struct {
-	w       http.ResponseWriter
-	flusher http.Flusher
-	done    chan struct{}
+// RealtimeService 管理实时连接与消息广播
+type RealtimeService struct {
+	registry *RealtimeSessionRegistry
 }
 
-// NewSseEmitter 基于 HTTP 响应创建 SSE 连接，要求底层支持流式写入
-func NewSseEmitter(w http.ResponseWriter) (*SseEmitter, error) {
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		return nil, fmt.Errorf("streaming unsupported")
-	}
-
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("X-Accel-Buffering", "no")
-
-	return &SseEmitter{
-		w:       w,
-		flusher: flusher,
-		done:    make(chan struct{}),
-	}, nil
+// NewRealtimeService 创建实时服务
+func NewRealtimeService() *RealtimeService {
+	return &RealtimeService{registry: NewRealtimeSessionRegistry()}
 }
 
-// Send 向客户端推送一条命名事件
-func (e *SseEmitter) Send(eventName string, data interface{}) error {
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-
-	fmt.Fprintf(e.w, "event: %s\n", eventName)
-	fmt.Fprintf(e.w, "data: %s\n\n", jsonData)
-	e.flusher.Flush()
-	return nil
+// RegisterClient 登记连接
+func (s *RealtimeService) RegisterClient(client *RealtimeClient) {
+	s.registry.UserConnected(client.Username(), client)
 }
 
-func (e *SseEmitter) Close() {
-	close(e.done)
+// RemoveClient 移除连接
+func (s *RealtimeService) RemoveClient(client *RealtimeClient) {
+	s.registry.RemoveClient(client)
 }
 
-// Done 返回连接关闭信号，供调用方监听
-func (e *SseEmitter) Done() <-chan struct{} {
-	return e.done
-}
-
-// SendHeartbeat 发送注释行心跳以保活连接
-func (e *SseEmitter) SendHeartbeat() error {
-	select {
-	case <-e.done:
-		return fmt.Errorf("连接已关闭")
-	default:
-	}
-	_, err := fmt.Fprintf(e.w, ": heartbeat\n\n")
-	if err != nil {
-		return err
-	}
-	e.flusher.Flush()
-	return nil
-}
-
-// SseService 管理 SSE 连接与事件广播
-type SseService struct {
-	registry *SseSessionRegistry
-}
-
-// NewSseService 创建 SSE 服务
-func NewSseService() *SseService {
-	return &SseService{
-		registry: NewSseSessionRegistry(),
+// Broadcast 向订阅了该主题的连接广播消息
+func (s *RealtimeService) Broadcast(topic string, msgType string, payload interface{}) {
+	message := msgModel.NewRealtimeMessage(msgType, payload)
+	for _, client := range s.registry.GetAllClients() {
+		if !client.HasTopic(topic) {
+			continue
+		}
+		if err := client.Send(message); err != nil {
+			logger.Warn("发送实时消息失败", zap.String("username", client.Username()), zap.Error(err))
+			s.registry.RemoveClient(client)
+		}
 	}
 }
 
-// CreateConnection 建立连接、登记会话并广播最新在线人数
-func (s *SseService) CreateConnection(username string, w http.ResponseWriter) (*SseEmitter, error) {
-	emitter, err := NewSseEmitter(w)
-	if err != nil {
-		return nil, err
+// SendToUser 向指定用户的全部连接推送消息
+func (s *RealtimeService) SendToUser(username string, msgType string, payload interface{}) {
+	message := msgModel.NewRealtimeMessage(msgType, payload)
+	for _, client := range s.registry.GetUserClients(username) {
+		if err := client.Send(message); err != nil {
+			logger.Warn("发送实时消息失败", zap.String("username", username), zap.Error(err))
+			s.registry.RemoveClient(client)
+		}
 	}
-
-	s.registry.UserConnected(username, emitter)
-
-	// 发送初始在线人数
-	if err := emitter.Send(msgModel.TopicOnlineCount, s.registry.GetOnlineUserCount()); err != nil {
-		logger.Warn("发送初始在线用户数失败", zap.Error(err))
-	}
-
-	logger.Info("SSE连接已建立", zap.String("username", username), zap.Int("online", s.registry.GetOnlineUserCount()))
-
-	// 广播在线人数
-	s.SendOnlineCount()
-
-	return emitter, nil
 }
 
-// SendDictChange 广播字典变更事件
-func (s *SseService) SendDictChange(dictCode string) {
+// SendDictChange 广播字典变更
+func (s *RealtimeService) SendDictChange(dictCode string) {
 	if dictCode == "" {
 		return
 	}
-	event := msgModel.NewDictChangeEvent(dictCode)
-	s.broadcast(msgModel.TopicDict, event)
-	logger.Debug("字典变更通知已发送", zap.String("dictCode", dictCode))
+	s.Broadcast(msgModel.TopicDict, msgModel.EventDictChanged, map[string]any{"dictCode": dictCode})
 }
 
-func (s *SseService) SendOnlineCount() {
-	count := s.registry.GetOnlineUserCount()
-	s.broadcast(msgModel.TopicOnlineCount, count)
+// SendOnlineCount 广播在线状态快照
+func (s *RealtimeService) SendOnlineCount() {
+	s.Broadcast(msgModel.TopicPresence, msgModel.EventPresenceSnapshot, s.PresenceSnapshot())
 }
 
-// SendToUser 向指定用户的全部连接推送事件
-func (s *SseService) SendToUser(username string, eventName string, data interface{}) {
-	emitters := s.registry.GetUserEmitters(username)
-	if emitters == nil {
-		return
-	}
-	for _, emitter := range emitters {
-		if err := emitter.Send(eventName, data); err != nil {
-			logger.Warn("发送SSE事件失败", zap.String("username", username), zap.Error(err))
-			s.registry.RemoveEmitter(emitter)
-		}
-	}
-	logger.Debug("SSE事件已发送给用户", zap.String("username", username), zap.String("event", eventName))
-}
-
-func (s *SseService) GetOnlineUsers() []*msgModel.OnlineUserDTO {
+// GetOnlineUsers 在线用户列表
+func (s *RealtimeService) GetOnlineUsers() []*msgModel.OnlineUserDTO {
 	return s.registry.GetOnlineUsers()
 }
 
-func (s *SseService) GetOnlineUserCount() int {
+// GetOnlineUserCount 在线用户数
+func (s *RealtimeService) GetOnlineUserCount() int {
 	return s.registry.GetOnlineUserCount()
 }
 
-// SendSystemMessage 广播系统通知
-func (s *SseService) SendSystemMessage(message string) {
-	systemMessage := map[string]interface{}{
-		"sender":    "系统通知",
-		"content":   message,
-		"timestamp": time.Now().UnixMilli(),
+// GetOnlineConnectionCount 在线连接总数
+func (s *RealtimeService) GetOnlineConnectionCount() int {
+	return s.registry.GetOnlineConnectionCount()
+}
+
+// PresenceSnapshot 生成在线状态快照
+func (s *RealtimeService) PresenceSnapshot() map[string]any {
+	return map[string]any{
+		"onlineUsers":       s.registry.GetOnlineUserCount(),
+		"onlineConnections": s.registry.GetOnlineConnectionCount(),
+		"nodeId":            s.registry.NodeId(),
+		"observedAt":        time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
 	}
-	s.broadcast(msgModel.TopicSystem, systemMessage)
-	logger.Debug("系统消息已发送", zap.String("message", message))
 }
 
-func (s *SseService) RemoveEmitter(emitter *SseEmitter) {
-	s.registry.RemoveEmitter(emitter)
-}
-
-// CloseAll 关闭所有SSE连接，在服务关闭时调用
-func (s *SseService) CloseAll() {
+// CloseAll 关闭全部连接
+func (s *RealtimeService) CloseAll() {
 	s.registry.CloseAll()
 }
 
-func (s *SseService) broadcast(eventName string, data interface{}) {
-	emitters := s.registry.GetAllEmitters()
-	for _, emitter := range emitters {
-		if err := emitter.Send(eventName, data); err != nil {
-			s.registry.RemoveEmitter(emitter)
-		}
-	}
+var defaultRealtimeService *RealtimeService
+
+// InitRealtimeService 初始化全局实时服务实例
+func InitRealtimeService() {
+	defaultRealtimeService = NewRealtimeService()
 }
 
-var defaultSseService *SseService
-
-// InitSseService 初始化全局 SSE 服务实例
-func InitSseService() {
-	defaultSseService = NewSseService()
-}
-
-// GetSseService 返回全局 SSE 服务实例
-func GetSseService() *SseService {
-	return defaultSseService
+// GetRealtimeService 返回全局实时服务实例
+func GetRealtimeService() *RealtimeService {
+	return defaultRealtimeService
 }

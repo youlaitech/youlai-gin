@@ -206,8 +206,8 @@ INSERT INTO `sys_menu` (`id`, `parent_id`, `tree_path`, `name`, `type`, `route_n
 -- 实战文档双形态置顶（内嵌 iframe + 外链新标签），直观演示系统对两种外链打开方式的支持
 
 -- ============================ 通用组件（顶级 ID=4） ============================
--- 前端模板招牌能力聚合，独立顶级便于访客沉淀组件库；按用途三分组：基础/表单/表格
--- 物理目录 views/demo/component（基础与表单）与 views/demo/table（表格）一一对应
+-- 前端模板招牌能力聚合，独立顶级便于访客沉淀组件库；按用途四分组：基础/表单/CRUD/表格
+-- 物理目录 views/demo/component（基础与表单）、views/demo/crud（CRUD）与 views/demo/table（表格）一一对应
 INSERT INTO `sys_menu` (`id`, `parent_id`, `tree_path`, `name`, `type`, `route_name`, `route_path`, `component`, `perm`, `keep_alive`, `visible`, `sort`, `icon`, `redirect`, `create_time`, `update_time`, `params`) VALUES (4, 0, '0', '通用组件', 'C', '', '/component', 'Layout', NULL, NULL, 1, 4, 'el-icon-SetUp', '/component/basic/icon-demo', now(), now(), NULL);
 
 -- 基础组件（不依附表单/表格场景的通用 UI 能力）
@@ -225,12 +225,13 @@ INSERT INTO `sys_menu` (`id`, `parent_id`, `tree_path`, `name`, `type`, `route_n
 INSERT INTO `sys_menu` (`id`, `parent_id`, `tree_path`, `name`, `type`, `route_name`, `route_path`, `component`, `perm`, `keep_alive`, `visible`, `sort`, `icon`, `redirect`, `create_time`, `update_time`, `params`) VALUES (40204, 402, '0,4,402', '字典组件', 'M', 'DictDemo', 'dict-demo', 'demo/component/dictionary', NULL, 1, 1, 4, '', '', now(), now(), NULL);
 INSERT INTO `sys_menu` (`id`, `parent_id`, `tree_path`, `name`, `type`, `route_name`, `route_path`, `component`, `perm`, `keep_alive`, `visible`, `sort`, `icon`, `redirect`, `create_time`, `update_time`, `params`) VALUES (40205, 402, '0,4,402', '列表选择器', 'M', 'TableSelect', 'table-select', 'demo/component/table-select/index', NULL, 1, 1, 5, '', '', now(), now(), NULL);
 
+-- CRUD 组件（完整业务页面，物理目录 views/demo/crud 与之对应）
+INSERT INTO `sys_menu` (`id`, `parent_id`, `tree_path`, `name`, `type`, `route_name`, `route_path`, `component`, `perm`, `keep_alive`, `visible`, `sort`, `icon`, `redirect`, `create_time`, `update_time`, `params`) VALUES (403, 4, '0,4', 'CRUD 示例', 'M', 'CrudDemo', 'crud', 'demo/crud/index', NULL, 1, 1, 3, 'el-icon-Document', '', now(), now(), NULL);
+
 -- 表格组件（数据展示场景，物理目录 views/demo/table 与之对应）
-INSERT INTO `sys_menu` (`id`, `parent_id`, `tree_path`, `name`, `type`, `route_name`, `route_path`, `component`, `perm`, `keep_alive`, `visible`, `sort`, `icon`, `redirect`, `create_time`, `update_time`, `params`) VALUES (403, 4, '0,4', '表格组件', 'C', '', 'table', 'Layout', NULL, NULL, 1, 3, 'el-icon-Grid', '', now(), now(), NULL);
-INSERT INTO `sys_menu` (`id`, `parent_id`, `tree_path`, `name`, `type`, `route_name`, `route_path`, `component`, `perm`, `keep_alive`, `visible`, `sort`, `icon`, `redirect`, `create_time`, `update_time`, `params`) VALUES (40301, 403, '0,4,403', '增删改查', 'M', 'Crud', 'crud', 'demo/table/crud/index', NULL, 1, 1, 1, '', '', now(), now(), NULL);
-INSERT INTO `sys_menu` (`id`, `parent_id`, `tree_path`, `name`, `type`, `route_name`, `route_path`, `component`, `perm`, `keep_alive`, `visible`, `sort`, `icon`, `redirect`, `create_time`, `update_time`, `params`) VALUES (40302, 403, '0,4,403', 'CRUD单文件', 'M', 'CrudSingle', 'crud-single', 'demo/table/crud-single', NULL, 1, 1, 2, 'el-icon-Reading', '', now(), now(), NULL);
-INSERT INTO `sys_menu` (`id`, `parent_id`, `tree_path`, `name`, `type`, `route_name`, `route_path`, `component`, `perm`, `keep_alive`, `visible`, `sort`, `icon`, `redirect`, `create_time`, `update_time`, `params`) VALUES (40303, 403, '0,4,403', 'VxeTable', 'M', 'VxeTable', 'vxe-table', 'demo/table/vxe-table/index', NULL, 1, 1, 3, 'el-icon-MagicStick', '', now(), now(), NULL);
-INSERT INTO `sys_menu` (`id`, `parent_id`, `tree_path`, `name`, `type`, `route_name`, `route_path`, `component`, `perm`, `keep_alive`, `visible`, `sort`, `icon`, `redirect`, `create_time`, `update_time`, `params`) VALUES (40304, 403, '0,4,403', '自适应表格操作列', 'M', 'AutoOperationColumn', 'operation-column', 'demo/table/auto-operation-column', NULL, 1, 1, 4, '', '', now(), now(), NULL);
+INSERT INTO `sys_menu` (`id`, `parent_id`, `tree_path`, `name`, `type`, `route_name`, `route_path`, `component`, `perm`, `keep_alive`, `visible`, `sort`, `icon`, `redirect`, `create_time`, `update_time`, `params`) VALUES (404, 4, '0,4', '表格组件', 'C', '', 'table', 'Layout', NULL, NULL, 1, 4, 'el-icon-Grid', '', now(), now(), NULL);
+INSERT INTO `sys_menu` (`id`, `parent_id`, `tree_path`, `name`, `type`, `route_name`, `route_path`, `component`, `perm`, `keep_alive`, `visible`, `sort`, `icon`, `redirect`, `create_time`, `update_time`, `params`) VALUES (40401, 404, '0,4,404', 'VxeTable', 'M', 'VxeTable', 'vxe-table', 'demo/table/vxe-table/index', NULL, 1, 1, 1, 'el-icon-MagicStick', '', now(), now(), NULL);
+INSERT INTO `sys_menu` (`id`, `parent_id`, `tree_path`, `name`, `type`, `route_name`, `route_path`, `component`, `perm`, `keep_alive`, `visible`, `sort`, `icon`, `redirect`, `create_time`, `update_time`, `params`) VALUES (40402, 404, '0,4,404', '自适应表格操作列', 'M', 'AutoOperationColumn', 'operation-column', 'demo/table/auto-operation-column', NULL, 1, 1, 2, '', '', now(), now(), NULL);
 
 -- ============================ 多级菜单（顶级 ID=5） ============================
 -- 独立顶级，直观演示菜单驱动动态路由的嵌套能力，避免折叠导致顶级菜单不可见
@@ -323,7 +324,7 @@ INSERT INTO `sys_role_menu` VALUES
 (6, 10104), (6, 10105), (6, 10106), (6, 10107), (6, 102), (6, 10201), (6, 10202), (6, 10203), (6, 10204), (6, 10205),
 (7, 1), (7, 101), (7, 10101), (7, 10102), (7, 10103), (7, 10104), (7, 10105), (7, 10106), (7, 10107), (7, 102),
 (7, 10201), (7, 10202), (7, 10203), (7, 10204), (7, 10205), (2, 401), (2, 40101), (2, 40102), (2, 40103), (2, 40104), (2, 402), (2, 40201),
-(2, 40202), (2, 40203), (2, 40204), (2, 40205), (2, 403), (2, 40301), (2, 40302), (2, 40303), (2, 40304), (2, 501),
+(2, 40202), (2, 40203), (2, 40204), (2, 40205), (2, 403), (2, 40401), (2, 40402), (2, 404), (2, 501),
 (2, 50101), (2, 5010101), (2, 5010102), (2, 601), (2, 602), (2, 603), (2, 604), (2, 605);
 
 -- ----------------------------
@@ -564,25 +565,20 @@ INSERT INTO `sys_user_notice` VALUES (28, 9, 3, 1, NULL, now(), now(), 0);
 INSERT INTO `sys_user_notice` VALUES (29, 10, 3, 0, NULL, now(), now(), 0);
 
 -- ----------------------------
--- 表结构：sys_user_social
+-- 表结构：sys_user_identity
 -- ----------------------------
-DROP TABLE IF EXISTS `sys_user_social`;
-CREATE TABLE `sys_user_social` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `platform` varchar(20) NOT NULL COMMENT '平台类型(WECHAT_MINI/WECHAT_MP/ALIPAY/QQ/APPLE)',
-  `openid` varchar(64) NOT NULL COMMENT '平台openid',
-  `unionid` varchar(64) DEFAULT NULL COMMENT '微信unionid',
-  `nickname` varchar(64) DEFAULT NULL COMMENT '第三方昵称',
-  `avatar` varchar(255) DEFAULT NULL COMMENT '第三方头像URL',
-  `session_key` varchar(128) DEFAULT NULL COMMENT '微信session_key',
-  `verified` tinyint(1) DEFAULT 1 COMMENT '是否已验证(1-已验证 0-未验证)',
-  `create_time` datetime DEFAULT NULL COMMENT '绑定时间',
-  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+DROP TABLE IF EXISTS `sys_user_identity`;
+CREATE TABLE `sys_user_identity` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '关联记录ID',
+  `user_id` bigint NOT NULL COMMENT '本地用户ID，角色与数据权限归属此用户',
+  `provider` varchar(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '具体认证源标识，如 wechat-mini-main',
+  `provider_account_id` varchar(255) COLLATE utf8mb4_0900_bin NOT NULL COMMENT '来源方账号ID，小程序即 OpenID',
+  `display_name` varchar(128) DEFAULT NULL COMMENT '外部账号展示名，不参与身份匹配',
+  `avatar_url` varchar(512) DEFAULT NULL COMMENT '外部账号头像，不覆盖本地资料',
+  `last_login_time` datetime DEFAULT NULL COMMENT '最近一次通过该外部账号登录的时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '关联创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_platform_openid` (`platform`, `openid`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_unionid` (`unionid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户第三方账号绑定表';
-
-
+  UNIQUE KEY `uk_provider_account` (`provider`, `provider_account_id`),
+  UNIQUE KEY `uk_user_provider` (`user_id`, `provider`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='本地用户与外部账号的关联';

@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	baseModel "youlai-gin/pkg/model"
 	"youlai-gin/pkg/types"
 )
@@ -34,31 +36,21 @@ func (UserRole) TableName() string {
 	return "sys_user_role"
 }
 
-// SocialPlatform 社交平台类型
-type SocialPlatform string
+// WechatMiniProvider 微信小程序的认证源标识，与配置一致
+const WechatMiniProvider = "wechat-mini-main"
 
-const (
-	PlatformWechatMini SocialPlatform = "WECHAT_MINI"
-	PlatformWechatMP   SocialPlatform = "WECHAT_MP"
-	PlatformAlipay     SocialPlatform = "ALIPAY"
-	PlatformQQ         SocialPlatform = "QQ"
-	PlatformApple      SocialPlatform = "APPLE"
-)
-
-// UserSocial 用户第三方账号绑定
-type UserSocial struct {
-	ID         types.BigInt   `gorm:"primaryKey;autoIncrement" json:"id"` // 主键
-	UserID     types.BigInt   `gorm:"column:user_id;not null" json:"userId"`
-	Platform   SocialPlatform `gorm:"column:platform;not null;size:20" json:"platform"`
-	OpenID     string         `gorm:"column:openid;not null;size:64" json:"openid"`
-	UnionID    string         `gorm:"column:unionid;size:64" json:"unionid"`
-	Nickname   string         `gorm:"column:nickname;size:64" json:"nickname"` // 昵称
-	Avatar     string         `gorm:"column:avatar;size:255" json:"avatar"`    // 头像
-	SessionKey string         `gorm:"column:session_key;size:128" json:"sessionKey"`
-	Verified   int            `gorm:"column:verified;default:1" json:"verified"` // 1-已验证 0-未验证
+// UserIdentity 本地用户与外部账号的关联
+type UserIdentity struct {
+	ID                types.BigInt `gorm:"primaryKey;autoIncrement" json:"id"` // 关联记录ID
+	UserID            types.BigInt `gorm:"column:user_id;not null" json:"userId"`
+	Provider          string       `gorm:"column:provider;not null;size:64" json:"provider"`                      // 具体认证源标识
+	ProviderAccountID string       `gorm:"column:provider_account_id;not null;size:255" json:"providerAccountId"` // 来源方账号ID
+	DisplayName       string       `gorm:"column:display_name;size:128" json:"displayName"`                       // 外部账号展示名
+	AvatarURL         string       `gorm:"column:avatar_url;size:512" json:"avatarUrl"`                           // 外部账号头像
+	LastLoginTime     *time.Time   `gorm:"column:last_login_time" json:"lastLoginTime"`                           // 最近登录时间
 	baseModel.BaseEntity
 }
 
-func (UserSocial) TableName() string {
-	return "sys_user_social"
+func (UserIdentity) TableName() string {
+	return "sys_user_identity"
 }

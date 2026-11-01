@@ -152,5 +152,3 @@ func (r *Repository) MarkRead(ctx context.Context, noticeID, userID int64) error
 	}
 	return db.Create(&userNotice).Error
 }
-
-

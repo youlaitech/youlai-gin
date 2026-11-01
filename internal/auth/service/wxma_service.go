@@ -21,11 +21,11 @@ import (
 	"youlai-gin/pkg/types"
 )
 
-// WxMaRepository 微信小程序登录所需数据访问（用户 + 第三方绑定，由 user.Repository 实现）
+// WxMaRepository 微信小程序登录所需数据访问（用户 + 身份关联，由 user.Repository 实现）
 type WxMaRepository interface {
 	UserRepository
-	GetSocial(ctx context.Context, platform userModel.SocialPlatform, openID string) (*userModel.UserSocial, error)
-	UpsertSocial(ctx context.Context, social *userModel.UserSocial) error
+	GetIdentity(ctx context.Context, provider, providerAccountID string) (*userModel.UserIdentity, error)
+	SaveIdentity(ctx context.Context, identity *userModel.UserIdentity) error
 	CreateUserWithGuestRole(ctx context.Context, user *userModel.User) error
 }
 
@@ -105,11 +105,11 @@ func (s *WxMaService) SilentLogin(ctx context.Context, code string) (*authModel.
 	}
 
 	// 查找是否已绑定用户
-	social, err := s.userRepo.GetSocial(ctx, userModel.PlatformWechatMini, openID)
+	identity, err := s.userRepo.GetIdentity(ctx, userModel.WechatMiniProvider, openID)
 
 	if err == nil {
 		// 已绑定用户，直接登录
-		token, err := s.generateTokenByUserID(ctx, int64(social.UserID))
+		token, err := s.generateTokenByUserID(ctx, int64(identity.UserID))
 		if err != nil {
 			return nil, err
 		}
@@ -154,7 +154,7 @@ func (s *WxMaService) PhoneLogin(ctx context.Context, loginCode, phoneCode strin
 		return nil, err
 	}
 
-	s.bindWechatOpenID(ctx, int64(user.ID), session.OpenID, session.UnionID, session.SessionKey)
+	s.bindWechatOpenID(ctx, int64(user.ID), session.OpenID, session.SessionKey)
 
 	return s.issuer.Issue(ctx, user)
 }
@@ -170,7 +170,7 @@ func (s *WxMaService) BindMobile(ctx context.Context, openID, mobile, smsCode st
 		return nil, err
 	}
 
-	s.bindWechatOpenID(ctx, int64(user.ID), openID, "", "")
+	s.bindWechatOpenID(ctx, int64(user.ID), openID, "")
 
 	logger.Log.Sugar().Infow("微信小程序绑定手机号成功", "mobile", mobile, "openId", openID)
 
@@ -204,19 +204,28 @@ func (s *WxMaService) findOrCreateUser(ctx context.Context, mobile string) (*use
 	return user, nil
 }
 
-// bindWechatOpenID 绑定微信 openid（已存在则更新绑定的用户与会话，否则新增）
-func (s *WxMaService) bindWechatOpenID(ctx context.Context, userID int64, openID, unionID, sessionKey string) {
-	social := &userModel.UserSocial{
-		UserID:     types.BigInt(userID),
-		Platform:   userModel.PlatformWechatMini,
-		OpenID:     openID,
-		UnionID:    unionID,
-		SessionKey: sessionKey,
-		Verified:   1,
+// bindWechatOpenID 绑定微信 openid，会话密钥写入 Redis
+func (s *WxMaService) bindWechatOpenID(ctx context.Context, userID int64, openID, sessionKey string) {
+	now := time.Now()
+	identity := &userModel.UserIdentity{
+		UserID:            types.BigInt(userID),
+		Provider:          userModel.WechatMiniProvider,
+		ProviderAccountID: openID,
+		LastLoginTime:     &now,
 	}
 
-	if err := s.userRepo.UpsertSocial(ctx, social); err != nil {
+	if err := s.userRepo.SaveIdentity(ctx, identity); err != nil {
 		logger.Log.Sugar().Errorw("绑定微信 openid 失败", "openId", openID, "error", err)
+		return
+	}
+
+	if sessionKey == "" {
+		return
+	}
+
+	cacheKey := redis.WxMaSessionKeyPrefix + userModel.WechatMiniProvider + ":" + openID
+	if err := redis.Client.Set(ctx, cacheKey, sessionKey, 3*24*time.Hour).Err(); err != nil {
+		logger.Log.Sugar().Errorw("缓存微信会话密钥失败", "openId", openID, "error", err)
 	}
 }
 

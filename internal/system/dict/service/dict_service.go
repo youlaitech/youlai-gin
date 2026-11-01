@@ -6,7 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
-	sse "youlai-gin/internal/message/service"
+	realtime "youlai-gin/internal/message/service"
 	"youlai-gin/internal/system/dict/model"
 	"youlai-gin/pkg/errs"
 	baseModel "youlai-gin/pkg/model"
@@ -319,7 +319,7 @@ func toItemVO(item model.DictItem) model.DictItemVO {
 
 // notifyDictChange 推送字典变更事件（SSE 未就绪时静默跳过）
 func (s *Service) notifyDictChange(dictCode string) {
-	if sse := sse.GetSseService(); sse != nil {
-		sse.SendDictChange(dictCode)
+	if realtime := realtime.GetRealtimeService(); realtime != nil {
+		realtime.SendDictChange(dictCode)
 	}
 }

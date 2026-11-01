@@ -7,7 +7,7 @@ import (
 	"youlai-gin/internal/message/handler"
 )
 
-// RegisterRoutes 注册 SSE 连接路由（handler → service → model 依赖注入）
+// RegisterRoutes 注册实时连接路由（handler → service → model 依赖注入）
 func RegisterRoutes(r *gin.RouterGroup, tokenManager pkgAuth.TokenManager) {
-	handler.NewSseHandler(tokenManager).RegisterRoutes(r)
+	handler.NewRealtimeHandler(tokenManager).RegisterRoutes(r)
 }

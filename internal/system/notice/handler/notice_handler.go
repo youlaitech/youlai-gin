@@ -252,5 +252,3 @@ func (h *Handler) MyPage(c *gin.Context) {
 func (h *Handler) ReadAll(c *gin.Context) {
 	response.OkMsg(c, "全部已读成功")
 }
-
-

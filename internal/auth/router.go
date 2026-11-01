@@ -27,6 +27,6 @@ func RegisterRoutes(api *gin.RouterGroup, tokenManager pkgAuth.TokenManager) {
 	// 扫码登录：tokenManager 供 scan/confirm/cancel 的 JWT 鉴权中间件使用
 	authHandler.NewQrCodeHandler(authService.NewQrCodeService(issuer, userRepo)).RegisterRoutes(api, tokenManager)
 
-	// 微信小程序认证（去裸 db：事务写 user_social 由 user.Repository 封装）
+	// 微信小程序认证（去裸 db：事务写 user_identity 由 user.Repository 封装）
 	authHandler.NewWxMaHandler(authService.NewWxMaService(issuer, userRepo)).RegisterRoutes(api)
 }
