@@ -35,7 +35,6 @@ func (e *ExcelExporter) SetHeaders(headers []string) error {
 		}
 	}
 
-	// 设置表头样式
 	headerStyle, _ := e.file.NewStyle(&excelize.Style{
 		Font:      &excelize.Font{Bold: true, Size: 12},
 		Fill:      excelize.Fill{Type: "pattern", Color: []string{"#E0E0E0"}, Pattern: 1},

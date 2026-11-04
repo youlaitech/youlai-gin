@@ -556,8 +556,8 @@ func blankDefault(value, fallback string) string {
 	return value
 }
 
-// AddMenuForCodegen 代码生成时追加菜单及按钮权限
-func (s *Service) AddMenuForCodegen(parentMenuId int64, tableName, moduleName, businessName, entityName string) error {
+// AddMenuForCodegen 代码生成时追加菜单及按钮权限；permPrefix 由 codegen 统一生成，与生成的路由、页面同源
+func (s *Service) AddMenuForCodegen(parentMenuId int64, moduleName, businessName, entityName, permPrefix string) error {
 	ctx := context.Background()
 
 	parentMenu, err := s.repo.Get(ctx, parentMenuId)
@@ -565,12 +565,16 @@ func (s *Service) AddMenuForCodegen(parentMenuId int64, tableName, moduleName, b
 		return errs.NotFound("父菜单不存在")
 	}
 
-	sort := 1
-	if maxSortMenu, err := s.repo.MaxSortMenu(ctx, parentMenuId); err == nil && maxSortMenu != nil {
-		sort = int(maxSortMenu.Sort) + 1
+	// 重复保存配置时按路由名去重，避免同一菜单挂出多份按钮
+	dup, err := s.repo.RouteNameExists(ctx, entityName, 0)
+	if err != nil {
+		return errs.SystemError("检查路由名称失败")
+	}
+	if dup {
+		return nil
 	}
 
-	entityKebab := s.toKebabCase(entityName)
+	entityKebab := utils.KebabCase(entityName)
 	menu := &model.Menu{
 		ParentID:  types.BigInt(parentMenuId),
 		Name:      businessName,
@@ -578,7 +582,7 @@ func (s *Service) AddMenuForCodegen(parentMenuId int64, tableName, moduleName, b
 		RouteName: entityName,
 		RoutePath: entityKebab,
 		Component: moduleName + "/" + entityKebab + "/index",
-		Sort:      sort,
+		Sort:      s.resolveNextSort(ctx, parentMenuId),
 		Visible:   1,
 		TreePath:  fmt.Sprintf("%s,%d", parentMenu.TreePath, parentMenuId),
 	}
@@ -586,21 +590,8 @@ func (s *Service) AddMenuForCodegen(parentMenuId int64, tableName, moduleName, b
 		return errs.SystemError("创建菜单失败")
 	}
 
-	permPrefix := moduleName + ":" + strings.ReplaceAll(tableName, "_", "-") + ":"
-	for i, action := range []string{"查询", "新增", "修改", "删除"} {
-		perm := permPrefix + []string{"list", "create", "update", "delete"}[i]
-		button := &model.Menu{
-			ParentID: types.BigInt(menu.ID),
-			Type:     "B",
-			Name:     action,
-			Perm:     perm,
-			Sort:     i + 1,
-			TreePath: fmt.Sprintf("%s,%d", menu.TreePath, menu.ID),
-		}
-		if err := s.repo.Create(ctx, button); err != nil {
-			logger.Log.Sugar().Infof("创建按钮菜单失败: %v", err)
-		}
-	}
+	// 按钮沿用菜单管理的既有实现，保证字段与手工新建菜单一致
+	s.saveCrudButtons(ctx, int64(menu.ID), permPrefix, menu.TreePath)
 
 	return nil
 }
@@ -626,22 +617,7 @@ func (s *Service) mapToKeyValue(m map[string]any) []baseModel.KeyValue {
 	return kvs
 }
 
-// toKebabCase 驼峰转短横线命名
-func (s *Service) toKebabCase(str string) string {
-	if str == "" {
-		return ""
-	}
-	var result []rune
-	for i, r := range str {
-		if i > 0 && 'A' <= r && r <= 'Z' {
-			result = append(result, '-')
-		}
-		result = append(result, []rune(strings.ToLower(string(r)))...)
-	}
-	return string(result)
-}
-
 // AddMenuForCodegen 包级桥接（codegen 模块未迁移，走全局 DB 装配）
-func AddMenuForCodegen(parentMenuId int64, tableName, moduleName, businessName, entityName string) error {
-	return NewService(repository.NewRepository(database.DB), nil).AddMenuForCodegen(parentMenuId, tableName, moduleName, businessName, entityName)
+func AddMenuForCodegen(parentMenuId int64, moduleName, businessName, entityName, permPrefix string) error {
+	return NewService(repository.NewRepository(database.DB), nil).AddMenuForCodegen(parentMenuId, moduleName, businessName, entityName, permPrefix)
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// RealtimeMessage 实时消息，与 youlai-boot 的协议保持一致
+// RealtimeMessage 实时消息
 type RealtimeMessage struct {
 	Version int         `json:"version"`
 	ID      string      `json:"id"`

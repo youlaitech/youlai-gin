@@ -7,6 +7,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"go/format"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -19,6 +20,7 @@ import (
 	"youlai-gin/internal/codegen/repository"
 	"youlai-gin/internal/common/ai"
 	"youlai-gin/internal/common/logger"
+	"youlai-gin/internal/common/utils"
 	menuService "youlai-gin/internal/system/menu/service"
 	"youlai-gin/pkg/errs"
 	commonModel "youlai-gin/pkg/model"
@@ -33,23 +35,75 @@ type templateConfig struct {
 }
 
 type templateFieldConfig struct {
-	ColumnName    string `velty:"name=columnName"`
-	ColumnType    string `velty:"name=columnType"`
-	FieldName     string `velty:"name=fieldName"`
-	GoFieldName   string `velty:"name=goFieldName"`
-	FieldType     string `velty:"name=fieldType"`
-	FieldComment  string `velty:"name=fieldComment"`
-	IsShowInList  int    `velty:"name=isShowInList"`
-	IsShowInForm  int    `velty:"name=isShowInForm"`
-	IsShowInQuery int    `velty:"name=isShowInQuery"`
-	IsRequired    int    `velty:"name=isRequired"`
-	FormType      string `velty:"name=formType"`
-	QueryType     string `velty:"name=queryType"`
-	MaxLength     *int   `velty:"name=maxLength"`
-	FieldSort     *int   `velty:"name=fieldSort"`
-	DictType      string `velty:"name=dictType"`
-	TsType        string `velty:"name=tsType"`
-	GoType        string `velty:"name=goType"`
+	ColumnName     string `velty:"name=columnName"`
+	ColumnType     string `velty:"name=columnType"`
+	FieldName      string `velty:"name=fieldName"`
+	GoFieldName    string `velty:"name=goFieldName"`
+	FieldType      string `velty:"name=fieldType"`
+	FieldComment   string `velty:"name=fieldComment"`
+	IsShowInList   int    `velty:"name=isShowInList"`
+	IsShowInForm   int    `velty:"name=isShowInForm"`
+	IsShowInQuery  int    `velty:"name=isShowInQuery"`
+	IsRequired     int    `velty:"name=isRequired"`
+	FormType       string `velty:"name=formType"`
+	QueryType      string `velty:"name=queryType"`
+	MaxLength      *int   `velty:"name=maxLength"`
+	FieldSort      *int   `velty:"name=fieldSort"`
+	DictType       string `velty:"name=dictType"`
+	TsType         string `velty:"name=tsType"`
+	GoType         string `velty:"name=goType"`
+	QueryGoType    string `velty:"name=queryGoType"`
+	TsQueryType    string `velty:"name=tsQueryType"`
+	GormTag        string `velty:"name=gormTag"`
+	JSONTag        string `velty:"name=jsonTag"`
+	QueryIsSetExpr string `velty:"name=queryIsSetExpr"`
+	QueryArgExpr   string `velty:"name=queryArgExpr"`
+
+	// 模板计算字段：Velty 对字符串的 and/or/裸选择器语义不可靠，统一在 Go 侧算好布尔标志。
+	HasDictType     bool `velty:"name=hasDictType"`
+	IsDate          bool `velty:"name=isDate"`
+	IsDateTime      bool `velty:"name=isDateTime"`
+	IsNumeric       bool `velty:"name=isNumeric"`
+	IsDecimal       bool `velty:"name=isDecimal"`
+	VisibleInForm   bool `velty:"name=visibleInForm"`
+	RequiredInForm  bool `velty:"name=requiredInForm"`
+	BindingRequired bool `velty:"name=bindingRequired"`
+	ShowDictInList  bool `velty:"name=showDictInList"`
+	ShowDictInQuery bool `velty:"name=showDictInQuery"`
+	ShowDictInForm  bool `velty:"name=showDictInForm"`
+}
+
+// nonFormColumns 服务端维护的列，不进入生成表单，避免客户端篡改主键、审计字段与逻辑删除标记。
+var nonFormColumns = map[string]struct{}{
+	"id":          {},
+	"create_time": {},
+	"update_time": {},
+	"create_by":   {},
+	"update_by":   {},
+	"is_deleted":  {},
+}
+
+func isEditableFormColumn(columnName string) bool {
+	_, reserved := nonFormColumns[strings.ToLower(strings.TrimSpace(columnName))]
+	return !reserved
+}
+
+func usesTypes(fields []templateFieldConfig) bool {
+	for i := range fields {
+		if strings.HasPrefix(fields[i].GoType, "types.") {
+			return true
+		}
+	}
+	return false
+}
+
+func hasColumn(fields []templateFieldConfig, columnName string) bool {
+	for i := range fields {
+		if strings.EqualFold(strings.TrimSpace(fields[i].ColumnName), columnName) {
+			return true
+		}
+	}
+	return false
 }
 
 const (
@@ -83,6 +137,26 @@ var codegenConfig = struct {
 	defaultModuleName:        "system",
 	defaultPackageName:       "internal",
 	defaultRemoveTablePrefix: "sys_",
+}
+
+// permissionNamespaces 模块名 → 权限前缀，未配置时用模块名
+var permissionNamespaces = map[string]string{"system": "sys"}
+
+// ResolvePermPrefix 权限标识前缀（如 sys:user）：后端守卫、前端 v-hasPerm、菜单按钮权限共用同一个值
+func ResolvePermPrefix(moduleName, entityName string) string {
+	namespace, ok := permissionNamespaces[moduleName]
+	if !ok {
+		namespace = moduleName
+	}
+	return namespace + ":" + utils.KebabCase(entityName)
+}
+
+// trimTablePrefix 去掉表前缀，避免 sys_user 推导出 SysUser 这种把模块名重复进实体名的结果
+func trimTablePrefix(tableName, removePrefix string) string {
+	if removePrefix != "" && strings.HasPrefix(tableName, removePrefix) {
+		return strings.TrimPrefix(tableName, removePrefix)
+	}
+	return tableName
 }
 
 // templateConfigs 各层代码模板映射：backend 为 Go 后端，frontend 为 Vue 前端
@@ -129,19 +203,21 @@ func (s *CodegenService) GetGenConfig(ctx context.Context, tableName string) (*m
 			return nil, err
 		}
 
+		removePrefix := defaultStr(cfg.RemoveTablePrefix, codegenConfig.defaultRemoveTablePrefix)
+
 		resp := &model.GenConfigForm{
 			ID:                cfg.ID,
 			TableName:         cfg.TableName,
-			ModuleName:        cfg.ModuleName,
+			ModuleName:        defaultStr(cfg.ModuleName, codegenConfig.defaultModuleName),
 			PackageName:       codegenConfig.defaultPackageName,
 			BusinessName:      cfg.BusinessName,
-			EntityName:        cfg.EntityName,
+			EntityName:        defaultStr(cfg.EntityName, toPascalCase(trimTablePrefix(cfg.TableName, removePrefix))),
 			Author:            cfg.Author,
 			ParentMenuId:      cfg.ParentMenuID,
 			BackendAppName:    codegenConfig.backendAppName,
 			FrontendAppName:   codegenConfig.frontendAppName,
 			PageType:          defaultStr(cfg.PageType, "classic"),
-			RemoveTablePrefix: defaultStr(cfg.RemoveTablePrefix, codegenConfig.defaultRemoveTablePrefix),
+			RemoveTablePrefix: removePrefix,
 			FieldConfigs:      make([]model.FieldConfigForm, 0, len(fields)),
 		}
 
@@ -179,11 +255,7 @@ func (s *CodegenService) GetGenConfig(ctx context.Context, tableName string) (*m
 	}
 
 	removePrefix := codegenConfig.defaultRemoveTablePrefix
-	processed := tableName
-	if removePrefix != "" && strings.HasPrefix(tableName, removePrefix) {
-		processed = strings.TrimPrefix(tableName, removePrefix)
-	}
-	entityName := toPascalCase(processed)
+	entityName := toPascalCase(trimTablePrefix(tableName, removePrefix))
 
 	cols, err := s.repo.TableColumns(ctx, tableName)
 	if err != nil {
@@ -245,10 +317,10 @@ func (s *CodegenService) SaveGenConfig(ctx context.Context, tableName string, bo
 	moduleName := defaultStr(body.ModuleName, codegenConfig.defaultModuleName)
 	packageName := codegenConfig.defaultPackageName
 	businessName := defaultStr(body.BusinessName, tableName)
-	entityName := defaultStr(body.EntityName, toPascalCase(tableName))
+	removePrefix := defaultStr(body.RemoveTablePrefix, codegenConfig.defaultRemoveTablePrefix)
+	entityName := defaultStr(body.EntityName, toPascalCase(trimTablePrefix(tableName, removePrefix)))
 	author := defaultStr(body.Author, codegenConfig.defaultAuthor)
 	pageType := defaultStr(body.PageType, "classic")
-	removePrefix := defaultStr(body.RemoveTablePrefix, codegenConfig.defaultRemoveTablePrefix)
 
 	updates := map[string]interface{}{
 		"module_name":         moduleName,
@@ -311,10 +383,9 @@ func (s *CodegenService) SaveGenConfig(ctx context.Context, tableName string, bo
 		return err
 	}
 
+	// 菜单与按钮权限和配置一起保存，失败直接返回，避免留下“有配置无权限”的半成品；重试按路由名幂等
 	if body.ParentMenuId != nil && *body.ParentMenuId > 0 {
-		if err := menuService.AddMenuForCodegen(*body.ParentMenuId, tableName, moduleName, businessName, entityName); err != nil {
-			logger.Log.Sugar().Errorf("添加菜单失败: %v", err)
-		}
+		return menuService.AddMenuForCodegen(*body.ParentMenuId, moduleName, businessName, entityName, ResolvePermPrefix(moduleName, entityName))
 	}
 
 	return nil
@@ -456,6 +527,7 @@ func (s *CodegenService) GetPreview(ctx context.Context, tableName string, pageT
 		if err != nil {
 			return nil, err
 		}
+		content = formatGeneratedSource(content, fileName)
 
 		previews = append(previews, model.CodegenPreviewVO{
 			Path:     filepath.ToSlash(filePath),
@@ -545,6 +617,39 @@ func resolveLanguage(fileName string) string {
 	return strings.TrimPrefix(ext, ".")
 }
 
+// formatGeneratedSource 对生成的代码做基础整理：
+//   - Go 代码执行 gofmt，保证模板控制指令不影响产物格式；
+//   - 前端代码折叠连续空行，避免控制指令留下成片空白。
+func formatGeneratedSource(content, fileName string) string {
+	if strings.EqualFold(filepath.Ext(fileName), ".go") {
+		formatted, err := format.Source([]byte(content))
+		if err != nil {
+			logger.Log.Sugar().Warnf("生成代码格式化失败: %s, 错误: %s", fileName, err.Error())
+			return content
+		}
+		return string(formatted)
+	}
+	return compactBlankLines(content)
+}
+
+func compactBlankLines(content string) string {
+	lines := strings.Split(content, "\n")
+	result := make([]string, 0, len(lines))
+	blank := 0
+	for _, line := range lines {
+		if strings.TrimSpace(line) != "" {
+			blank = 0
+			result = append(result, line)
+			continue
+		}
+		blank++
+		if blank == 1 {
+			result = append(result, line)
+		}
+	}
+	return strings.Join(result, "\n")
+}
+
 func renderTemplate(
 	name templateName,
 	templatePath string,
@@ -579,14 +684,23 @@ func renderTemplate(
 	_ = planner.DefineVariable("author", "")
 	_ = planner.DefineVariable("entityLowerCamel", "")
 	_ = planner.DefineVariable("entityKebab", "")
+	_ = planner.DefineVariable("entityKebabPlural", "")
+	_ = planner.DefineVariable("entityPackage", "")
 	_ = planner.DefineVariable("entityUpperSnake", "")
 	_ = planner.DefineVariable("entitySnake", "")
+	_ = planner.DefineVariable("permissionPrefix", "")
 	_ = planner.DefineVariable("businessName", "")
 	_ = planner.DefineVariable("entityComment", "")
 	_ = planner.DefineVariable("fieldConfigs", reflect.TypeOf([]templateFieldConfig{}))
 	_ = planner.DefineVariable("fieldConfigsInList", reflect.TypeOf([]templateFieldConfig{}))
 	_ = planner.DefineVariable("fieldConfigsInForm", reflect.TypeOf([]templateFieldConfig{}))
 	_ = planner.DefineVariable("fieldConfigsInQuery", reflect.TypeOf([]templateFieldConfig{}))
+	_ = planner.DefineVariable("useTypesInEntity", false)
+	_ = planner.DefineVariable("useTypesInList", false)
+	_ = planner.DefineVariable("useTypesInForm", false)
+	_ = planner.DefineVariable("useTypesInQuery", false)
+	_ = planner.DefineVariable("hasIsDeleted", false)
+	_ = planner.DefineVariable("hasCreateTime", false)
 
 	exec, newState, err := planner.Compile(content)
 	if err != nil {
@@ -603,9 +717,12 @@ func renderTemplate(
 	_ = state.SetValue("tableName", cfg.TableName)
 	_ = state.SetValue("author", cfg.Author)
 	_ = state.SetValue("entityLowerCamel", lowerFirst(cfg.EntityName))
-	_ = state.SetValue("entityKebab", toKebabCase(cfg.EntityName))
+	_ = state.SetValue("entityKebab", utils.KebabCase(cfg.EntityName))
+	_ = state.SetValue("entityKebabPlural", utils.PluralKebab(cfg.EntityName))
+	_ = state.SetValue("entityPackage", toGoPackageName(cfg.EntityName))
 	_ = state.SetValue("entityUpperSnake", toSnakeUpper(cfg.EntityName))
 	_ = state.SetValue("entitySnake", toSnakeLower(cfg.EntityName))
+	_ = state.SetValue("permissionPrefix", ResolvePermPrefix(cfg.ModuleName, cfg.EntityName))
 	_ = state.SetValue("businessName", cfg.BusinessName)
 	_ = state.SetValue("entityComment", cfg.BusinessName)
 
@@ -614,24 +731,86 @@ func renderTemplate(
 		f := cfg.FieldConfigs[i]
 		fieldType := defaultStr(f.FieldType, getFieldTypeByColumnType(f.ColumnType))
 		goType := getGoTypeByColumnType(f.ColumnType)
+		tsType := getTsTypeByFieldType(fieldType)
+		formTypeName := getFormTypeName(f.FormType)
+		queryTypeName := getQueryTypeName(f.QueryType)
+		if goType != "string" && strings.HasPrefix(queryTypeName, "LIKE") {
+			queryTypeName = "EQ"
+		}
+		queryBaseType := goType
+		if queryBaseType == "types.LocalTime" {
+			// 查询参数沿用字符串，前端按 YYYY-MM-DD[ HH:mm:ss] 传值，避免自定义时间类型缺少表单反序列化入口。
+			queryBaseType = "string"
+		}
+		queryGoType := queryBaseType
+		if queryTypeName == "BETWEEN" || queryTypeName == "IN" {
+			queryGoType = "[]" + queryBaseType
+		} else if queryBaseType != "string" {
+			queryGoType = "*" + queryBaseType
+		}
+		tsQueryType := tsType
+		if queryTypeName == "BETWEEN" {
+			tsQueryType = "[" + tsType + ", " + tsType + "]"
+		} else if queryTypeName == "IN" {
+			tsQueryType = tsType + "[]"
+		}
+		hasDict := strings.TrimSpace(f.DictType) != ""
+		visibleInForm := f.IsShowInForm == 1 && formTypeName != "HIDDEN"
+		gormTag := "column:" + f.ColumnName
+		jsonTag := f.FieldName
+		switch strings.ToLower(strings.TrimSpace(f.ColumnName)) {
+		case "id":
+			gormTag += ";primaryKey;autoIncrement"
+		case "create_time":
+			gormTag += ";autoCreateTime"
+		case "update_time":
+			gormTag += ";autoUpdateTime"
+		case "is_deleted":
+			gormTag += ";default:0"
+			jsonTag = "-"
+		}
+		queryIsSetExpr := "query." + toGoFieldName(f.FieldName) + ` != ""`
+		queryArgExpr := "query." + toGoFieldName(f.FieldName)
+		if queryBaseType != "string" {
+			queryIsSetExpr = "query." + toGoFieldName(f.FieldName) + " != nil"
+			queryArgExpr = "*" + queryArgExpr
+		}
 		fields = append(fields, templateFieldConfig{
-			ColumnName:    f.ColumnName,
-			ColumnType:    f.ColumnType,
-			FieldName:     f.FieldName,
-			GoFieldName:   toGoFieldName(f.FieldName),
-			FieldType:     fieldType,
-			FieldComment:  f.FieldComment,
-			IsShowInList:  f.IsShowInList,
-			IsShowInForm:  f.IsShowInForm,
-			IsShowInQuery: f.IsShowInQuery,
-			IsRequired:    f.IsRequired,
-			FormType:      getFormTypeName(f.FormType),
-			QueryType:     getQueryTypeName(f.QueryType),
-			MaxLength:     f.MaxLength,
-			FieldSort:     f.FieldSort,
-			DictType:      f.DictType,
-			TsType:        getTsTypeByFieldType(fieldType),
-			GoType:        goType,
+			ColumnName:     f.ColumnName,
+			ColumnType:     f.ColumnType,
+			FieldName:      f.FieldName,
+			GoFieldName:    toGoFieldName(f.FieldName),
+			FieldType:      fieldType,
+			FieldComment:   f.FieldComment,
+			IsShowInList:   f.IsShowInList,
+			IsShowInForm:   f.IsShowInForm,
+			IsShowInQuery:  f.IsShowInQuery,
+			IsRequired:     f.IsRequired,
+			FormType:       formTypeName,
+			QueryType:      queryTypeName,
+			MaxLength:      f.MaxLength,
+			FieldSort:      f.FieldSort,
+			DictType:       f.DictType,
+			TsType:         tsType,
+			GoType:         goType,
+			QueryGoType:    queryGoType,
+			TsQueryType:    tsQueryType,
+			GormTag:        gormTag,
+			JSONTag:        jsonTag,
+			QueryIsSetExpr: queryIsSetExpr,
+			QueryArgExpr:   queryArgExpr,
+
+			HasDictType:     hasDict,
+			IsDate:          formTypeName == "DATE" || formTypeName == "DATE_TIME",
+			IsDateTime:      formTypeName == "DATE_TIME",
+			IsNumeric:       fieldType == "Integer" || fieldType == "Long" || fieldType == "BigDecimal",
+			IsDecimal:       fieldType == "BigDecimal" || fieldType == "Double",
+			VisibleInForm:   visibleInForm,
+			RequiredInForm:  visibleInForm && f.IsRequired == 1,
+			BindingRequired: f.IsRequired == 1 && goType == "string",
+			ShowDictInList:  f.IsShowInList == 1 && hasDict,
+			ShowDictInQuery: f.IsShowInQuery == 1 && hasDict,
+			ShowDictInForm:  visibleInForm && hasDict,
 		})
 	}
 
@@ -640,10 +819,10 @@ func renderTemplate(
 	fieldsInQuery := make([]templateFieldConfig, 0, len(fields))
 	for i := range fields {
 		f := fields[i]
-		if f.IsShowInList == 1 {
+		if f.IsShowInList == 1 && !strings.EqualFold(strings.TrimSpace(f.ColumnName), "is_deleted") {
 			fieldsInList = append(fieldsInList, f)
 		}
-		if f.IsShowInForm == 1 {
+		if f.VisibleInForm && isEditableFormColumn(f.ColumnName) {
 			fieldsInForm = append(fieldsInForm, f)
 		}
 		if f.IsShowInQuery == 1 {
@@ -655,6 +834,12 @@ func renderTemplate(
 	_ = state.SetValue("fieldConfigsInList", fieldsInList)
 	_ = state.SetValue("fieldConfigsInForm", fieldsInForm)
 	_ = state.SetValue("fieldConfigsInQuery", fieldsInQuery)
+	_ = state.SetValue("useTypesInEntity", usesTypes(fields))
+	_ = state.SetValue("useTypesInList", usesTypes(fieldsInList))
+	_ = state.SetValue("useTypesInForm", usesTypes(fieldsInForm))
+	_ = state.SetValue("useTypesInQuery", usesTypes(fieldsInQuery))
+	_ = state.SetValue("hasIsDeleted", hasColumn(fields, "is_deleted"))
+	_ = state.SetValue("hasCreateTime", hasColumn(fields, "create_time"))
 
 	exec.Exec(state)
 	if !state.IsValid() {
@@ -712,16 +897,16 @@ func getFilePath(name templateName, moduleName string, packageName string, subpa
 	frontend := codegenConfig.frontendAppName
 
 	if name == tplAPI {
-		return filepath.Join(frontend, "src", subpackageName, moduleName, toKebabCase(entityName))
+		return filepath.Join(frontend, "src", subpackageName, moduleName, utils.KebabCase(entityName))
 	}
 	if name == tplAPITypes {
-		return filepath.Join(frontend, "src", "api", moduleName, toKebabCase(entityName))
+		return filepath.Join(frontend, "src", "api", moduleName, utils.KebabCase(entityName))
 	}
 	if name == tplView {
-		return filepath.Join(frontend, "src", subpackageName, moduleName, toKebabCase(entityName))
+		return filepath.Join(frontend, "src", subpackageName, moduleName, utils.KebabCase(entityName))
 	}
 
-	base := filepath.Join(backend, "internal", moduleName, toKebabCase(entityName))
+	base := filepath.Join(backend, "internal", moduleName, utils.KebabCase(entityName))
 	if subpackageName == "" {
 		return base
 	}
@@ -788,19 +973,18 @@ func toPascalCase(s string) string {
 	return strings.ToUpper(c[:1]) + c[1:]
 }
 
-func toKebabCase(s string) string {
+// toGoPackageName 生成合法 Go 包标识符：目录可用 kebab-case，但 package 声明不能含连字符。
+func toGoPackageName(s string) string {
 	var b strings.Builder
-	for i, r := range s {
-		if i > 0 && r >= 'A' && r <= 'Z' {
-			b.WriteByte('-')
+	for _, r := range strings.ToLower(s) {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			b.WriteRune(r)
 		}
-		if r == '_' {
-			b.WriteByte('-')
-			continue
-		}
-		b.WriteRune(r)
 	}
-	return strings.ToLower(b.String())
+	if b.Len() == 0 {
+		return "module"
+	}
+	return b.String()
 }
 
 func getGoTypeByColumnType(columnType string) string {
@@ -814,7 +998,9 @@ func getGoTypeByColumnType(columnType string) string {
 		return "types.BigInt"
 	case "float", "double", "decimal":
 		return "float64"
-	case "date", "datetime", "timestamp":
+	case "datetime", "timestamp":
+		return "types.LocalTime"
+	case "date":
 		return "string"
 	case "boolean", "bool", "bit":
 		return "int"

@@ -71,7 +71,6 @@ func CheckSendInterval(ctx context.Context, intervalKey string) error {
 		return errs.BadRequest(fmt.Sprintf("验证码发送过于频繁，请 %d 秒后再试", int(ttl.Seconds())))
 	}
 
-	// 设置发送间隔标记
 	redis.Client.Set(ctx, intervalKey, "1", time.Duration(CodeSendInterval)*time.Second)
 
 	return nil

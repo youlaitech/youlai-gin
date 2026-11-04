@@ -1,6 +1,6 @@
 import request from "@/utils/request";
 
-const ${entityUpperSnake}_BASE_URL = "/api/v1/${entityKebab}";
+const ${entityUpperSnake}_BASE_URL = "/api/v1/${entityKebabPlural}";
 
 const ${entityName}API = {
   /** 获取${businessName}分页数据 */

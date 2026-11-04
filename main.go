@@ -83,11 +83,9 @@ func main() {
 		log.Fatalf("配置加载失败: %v", err)
 	}
 
-	// 初始化日志
 	logger.InitWithConfig(&config.Cfg.Logger)
 	defer logger.Sync()
 
-	// 初始化数据库
 	if err := database.InitWithConfig(&config.Cfg.Database); err != nil {
 		log.Fatalf("数据库初始化失败: %v", err)
 	}

@@ -26,7 +26,6 @@ func marshalValue(val reflect.Value) ([]byte, error) {
 		return []byte("null"), nil
 	}
 
-	// 处理指针
 	if val.Kind() == reflect.Ptr {
 		if val.IsNil() {
 			return []byte("null"), nil
@@ -84,7 +83,6 @@ func marshalStruct(val reflect.Value) ([]byte, error) {
 			buf.WriteByte(',')
 		}
 
-		// 写入字段名
 		buf.WriteByte('"')
 		buf.WriteString(fieldName)
 		buf.WriteByte('"')

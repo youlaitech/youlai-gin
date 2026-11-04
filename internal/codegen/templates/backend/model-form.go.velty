@@ -1,12 +1,9 @@
 package model
 
-#set($useTypes = false)#foreach($fieldConfig in $fieldConfigsInForm)#if($fieldConfig.goType == "types.BigInt")#set($useTypes = true)#end#end
-#if($useTypes)
+#if($useTypesInForm)
 import "youlai-gin/pkg/types"
 #end
 
 type ${entityName}Form struct {
-#foreach($fieldConfig in $fieldConfigsInForm)
-	${fieldConfig.goFieldName} ${fieldConfig.goType} `json:"${fieldConfig.fieldName}"#if($fieldConfig.isRequired == 1) binding:"required"#end`#if($fieldConfig.fieldComment.trim() != "") // ${fieldConfig.fieldComment}#end
-#end
-}
+#foreach($fieldConfig in $fieldConfigsInForm)	${fieldConfig.goFieldName} ${fieldConfig.goType} `json:"${fieldConfig.fieldName}"#if($fieldConfig.bindingRequired) binding:"required"#end`#if($fieldConfig.fieldComment.trim() != "") // ${fieldConfig.fieldComment}#end
+#end}

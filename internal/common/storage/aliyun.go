@@ -70,7 +70,6 @@ func (s *AliyunOSS) UploadWithOptions(path string, file io.Reader, opts *UploadO
 		options = append(options, oss.ContentDisposition(opts.ContentDisposition))
 	}
 
-	// 设置ACL
 	if opts.ACL != "" {
 		var aclType oss.ACLType
 		switch opts.ACL {
@@ -89,7 +88,6 @@ func (s *AliyunOSS) UploadWithOptions(path string, file io.Reader, opts *UploadO
 		return "", fmt.Errorf("上传文件失败: %w", err)
 	}
 
-	// 返回访问URL
 	return s.GetURL(path, 0)
 }
 

@@ -5,27 +5,15 @@
     :form-config="formConfig"
     :load-form-data="loadFormData"
   >
-#foreach($field in $fieldConfigs)
-#if($field.isShowInQuery == 1 and $field.dictType != "" and $field.dictType.trim() != "")
-    <template #search-${field.fieldName}="{ formData, prop, attrs }">
+#foreach($field in $fieldConfigsInQuery)#if($field.hasDictType)    <template #search-${field.fieldName}="{ formData, prop, attrs }">
       <DictSelect v-model="formData[prop]" code="$field.dictType" v-bind="attrs" />
-    </template>
-#end
-#end
-#foreach($field in $fieldConfigs)
-#if($field.isShowInList == 1 and $field.dictType != "" and $field.dictType.trim() != "")
-    <template #table-cell-${field.fieldName}="{ row }">
+    </template>#end#end
+#foreach($field in $fieldConfigsInList)#if($field.hasDictType)    <template #table-cell-${field.fieldName}="{ row }">
       <DictTag :model-value="row.${field.fieldName}" code="$field.dictType" />
-    </template>
-#end
-#end
-#foreach($field in $fieldConfigs)
-#if($field.isShowInForm == 1 and $field.formType != "HIDDEN" and $field.dictType != "" and $field.dictType.trim() != "")
-    <template #form-${field.fieldName}="{ formData, prop, attrs }">
+    </template>#end#end
+#foreach($field in $fieldConfigsInForm)#if($field.hasDictType)    <template #form-${field.fieldName}="{ formData, prop, attrs }">
       <DictSelect v-model="formData[prop]" code="$field.dictType" v-bind="attrs" />
-    </template>
-#end
-#end
+    </template>#end#end
   </CrudPage>
 </template>
 
@@ -36,42 +24,30 @@ defineOptions({ name: "$entityName", inheritAttrs: false });
 
 const searchConfig = {
   fields: [
-#foreach($field in $fieldConfigs)
-#if($field.isShowInQuery == 1)
-    {
+#foreach($field in $fieldConfigsInQuery)    {
       prop: "$field.fieldName",
       label: "$field.fieldComment",
-#if($field.dictType and $field.dictType.trim() != "")
-      type: "custom",
+#if($field.hasDictType)      type: "custom",
       attrs: { clearable: true },
-#elseif($field.formType == "DATE" or $field.formType == "DATE_TIME")
-      type: "date-picker",
-#if($field.queryType == "BETWEEN")
-      initialValue: [],
+#elseif($field.isDate)      type: "date-picker",
+#if($field.queryType == "BETWEEN")      initialValue: [],
       attrs: {
         type: "daterange",
         valueFormat: "YYYY-MM-DD",
         startPlaceholder: "开始日期",
         endPlaceholder: "结束日期",
       },
-#else
-      attrs: { type: "date", valueFormat: "YYYY-MM-DD", clearable: true },
-#end
-#elseif($field.fieldType == "Integer" or $field.fieldType == "Long" or $field.fieldType == "BigDecimal")
-      type: "input-number",
+#else      attrs: { type: "date", valueFormat: "YYYY-MM-DD", clearable: true },
+#end#elseif($field.isNumeric)      type: "input-number",
       attrs: { clearable: true },
-#else
-      type: "input",
+#else      type: "input",
       attrs: { clearable: true },
-#end
-    },
-#end
-#end
-  ],
+#end    },
+#end  ],
 };
 
 const tableConfig = {
-  permissionPrefix: "${moduleName}:${entityKebab}",
+  permissionPrefix: "${permissionPrefix}",
   table: { border: true },
   fetchData: ${entityName}API.getPage,
   deleteByIds: ${entityName}API.deleteByIds,
@@ -79,12 +55,8 @@ const tableConfig = {
   tableTools: ["refresh", "columns", "search"],
   columns: [
     { type: "selection", width: 50 },
-#foreach($field in $fieldConfigs)
-#if($field.isShowInList == 1)
-    { prop: "$field.fieldName", label: "$field.fieldComment", minWidth: 120 },
-#end
-#end
-    {
+#foreach($field in $fieldConfigsInList)    { prop: "$field.fieldName", label: "$field.fieldComment", minWidth: 120 },
+#end    {
       prop: "actions",
       label: "操作",
       cellType: "actions",
@@ -111,57 +83,32 @@ const formConfig = {
     return ${entityName}API.update(String(id), data);
   },
   fields: [
-#foreach($field in $fieldConfigs)
-#if($field.isShowInForm == 1 and $field.formType != "HIDDEN")
-    {
+#foreach($field in $fieldConfigsInForm)    {
       prop: "$field.fieldName",
       label: "$field.fieldComment",
-#if($field.isRequired == 1)
-      required: true,
-#end
-#if($field.dictType and $field.dictType.trim() != "")
-      type: "custom",
-#elseif($field.formType == "SWITCH")
-      type: "switch",
-#if($field.fieldType == "Boolean")
-      initialValue: true,
+#if($field.requiredInForm)      required: true,
+#end#if($field.hasDictType)      type: "custom",
+#elseif($field.formType == "SWITCH")      type: "switch",
+#if($field.fieldType == "Boolean")      initialValue: true,
       attrs: { activeValue: true, inactiveValue: false },
-#else
-      initialValue: 1,
+#else      initialValue: 1,
       attrs: { activeValue: 1, inactiveValue: 0 },
-#end
-#elseif($field.formType == "DATE" or $field.formType == "DATE_TIME")
-      type: "date-picker",
-#if($field.formType == "DATE_TIME")
-      attrs: { type: "datetime", valueFormat: "YYYY-MM-DD HH:mm:ss" },
-#else
-      attrs: { type: "date", valueFormat: "YYYY-MM-DD" },
-#end
-#elseif($field.formType == "INPUT_NUMBER")
-      type: "input-number",
-#if($field.fieldType == "BigDecimal" or $field.fieldType == "Double")
-      attrs: { precision: 2 },
-#end
-#elseif($field.formType == "SELECT")
-      type: "select",
+#end#elseif($field.isDate)      type: "date-picker",
+#if($field.isDateTime)      attrs: { type: "datetime", valueFormat: "YYYY-MM-DD HH:mm:ss" },
+#else      attrs: { type: "date", valueFormat: "YYYY-MM-DD" },
+#end#elseif($field.formType == "INPUT_NUMBER")      type: "input-number",
+#if($field.isDecimal)      attrs: { precision: 2 },
+#end#elseif($field.formType == "SELECT")      type: "select",
       options: [],
-#elseif($field.formType == "RADIO")
-      type: "radio",
+#elseif($field.formType == "RADIO")      type: "radio",
       options: [],
-#elseif($field.formType == "CHECK_BOX")
-      type: "checkbox",
+#elseif($field.formType == "CHECK_BOX")      type: "checkbox",
       initialValue: [],
       options: [],
-#else
-      type: "input",
-#if($field.formType == "TEXT_AREA")
-      attrs: { type: "textarea", rows: 3 },
-#end
-#end
-    },
-#end
-#end
-  ],
+#else      type: "input",
+#if($field.formType == "TEXT_AREA")      attrs: { type: "textarea", rows: 3 },
+#end#end    },
+#end  ],
 };
 
 /**

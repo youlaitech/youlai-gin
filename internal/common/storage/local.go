@@ -41,7 +41,6 @@ func (s *LocalStorage) UploadWithOptions(path string, file io.Reader, opts *Uplo
 		return "", fmt.Errorf("创建目录失败: %w", err)
 	}
 
-	// 创建文件
 	dst, err := os.Create(fullPath)
 	if err != nil {
 		return "", fmt.Errorf("创建文件失败: %w", err)
@@ -53,7 +52,6 @@ func (s *LocalStorage) UploadWithOptions(path string, file io.Reader, opts *Uplo
 		return "", fmt.Errorf("写入文件失败: %w", err)
 	}
 
-	// 返回访问URL
 	return s.GetURL(path, 0)
 }
 

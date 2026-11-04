@@ -1,15 +1,11 @@
 package model
 
-import "youlai-gin/pkg/model"
-
-#set($useTypes = false)#foreach($fieldConfig in $fieldConfigsInQuery)#if($fieldConfig.queryType != "BETWEEN" and $fieldConfig.goType == "types.BigInt")#set($useTypes = true)#end#end
-#if($useTypes)
-import "youlai-gin/pkg/types"
-#end
+import (
+	"youlai-gin/pkg/model"
+#if($useTypesInQuery)	"youlai-gin/pkg/types"
+#end)
 
 type ${entityName}Query struct {
 	model.BaseQuery
-#foreach($fieldConfig in $fieldConfigsInQuery)
-	${fieldConfig.goFieldName} #if($fieldConfig.queryType == "BETWEEN")[]string#elseif($fieldConfig.queryType == "IN")[]${fieldConfig.goType}#else${fieldConfig.goType}#end `form:"${fieldConfig.fieldName}"`#if($fieldConfig.fieldComment.trim() != "") // ${fieldConfig.fieldComment}#end
-#end
-}
+#foreach($fieldConfig in $fieldConfigsInQuery)	${fieldConfig.goFieldName} ${fieldConfig.queryGoType} `form:"${fieldConfig.fieldName}"`#if($fieldConfig.fieldComment.trim() != "") // ${fieldConfig.fieldComment}#end
+#end}

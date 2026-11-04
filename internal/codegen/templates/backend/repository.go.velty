@@ -1,40 +1,76 @@
 package repository
 
 import (
+	"context"
+
+	"gorm.io/gorm"
+
 	"youlai-gin/internal/${moduleName}/${entityKebab}/model"
-	"youlai-gin/internal/common/database"
 )
 
-// Get${entityName}Page ${businessName}分页查询
-func Get${entityName}Page(query *model.${entityName}Query) ([]model.${entityName}, int64, error) {
+// Repository ${businessName}数据访问层
+type Repository struct {
+	db *gorm.DB
+}
+
+// NewRepository 创建 Repository 实例
+func NewRepository(db *gorm.DB) *Repository {
+	return &Repository{db: db}
+}
+
+// Page ${businessName}分页查询
+func (r *Repository) Page(ctx context.Context, query *model.${entityName}Query) ([]model.${entityName}, int64, error) {
 	var list []model.${entityName}
 	var total int64
 
-	db := database.DB.Model(&model.${entityName}{}).Where("is_deleted = 0")
+	db := r.db.WithContext(ctx).Model(&model.${entityName}{})
+#if($hasIsDeleted)
+	db = db.Where("is_deleted = 0")
+#end
 #foreach($fieldConfig in $fieldConfigsInQuery)
 #if($fieldConfig.queryType == "BETWEEN")
 	if len(query.${fieldConfig.goFieldName}) == 2 {
 		db = db.Where("${fieldConfig.columnName} BETWEEN ? AND ?", query.${fieldConfig.goFieldName}[0], query.${fieldConfig.goFieldName}[1])
 	}
+#elseif($fieldConfig.queryType == "IN")
+	if len(query.${fieldConfig.goFieldName}) > 0 {
+		db = db.Where("${fieldConfig.columnName} IN ?", query.${fieldConfig.goFieldName})
+	}
 #elseif($fieldConfig.queryType == "LIKE")
-	if query.${fieldConfig.goFieldName} != "" {
-		db = db.Where("${fieldConfig.columnName} LIKE ?", "%"+query.${fieldConfig.goFieldName}+"%")
+	if ${fieldConfig.queryIsSetExpr} {
+		db = db.Where("${fieldConfig.columnName} LIKE ?", "%"+${fieldConfig.queryArgExpr}+"%")
 	}
 #elseif($fieldConfig.queryType == "LIKE_LEFT")
-	if query.${fieldConfig.goFieldName} != "" {
-		db = db.Where("${fieldConfig.columnName} LIKE ?", "%"+query.${fieldConfig.goFieldName})
+	if ${fieldConfig.queryIsSetExpr} {
+		db = db.Where("${fieldConfig.columnName} LIKE ?", "%"+${fieldConfig.queryArgExpr})
 	}
 #elseif($fieldConfig.queryType == "LIKE_RIGHT")
-	if query.${fieldConfig.goFieldName} != "" {
-		db = db.Where("${fieldConfig.columnName} LIKE ?", query.${fieldConfig.goFieldName}+"%")
+	if ${fieldConfig.queryIsSetExpr} {
+		db = db.Where("${fieldConfig.columnName} LIKE ?", ${fieldConfig.queryArgExpr}+"%")
 	}
-#elseif($fieldConfig.goType == "string")
-	if query.${fieldConfig.goFieldName} != "" {
-		db = db.Where("${fieldConfig.columnName} = ?", query.${fieldConfig.goFieldName})
+#elseif($fieldConfig.queryType == "GT")
+	if ${fieldConfig.queryIsSetExpr} {
+		db = db.Where("${fieldConfig.columnName} > ?", ${fieldConfig.queryArgExpr})
+	}
+#elseif($fieldConfig.queryType == "GE")
+	if ${fieldConfig.queryIsSetExpr} {
+		db = db.Where("${fieldConfig.columnName} >= ?", ${fieldConfig.queryArgExpr})
+	}
+#elseif($fieldConfig.queryType == "LT")
+	if ${fieldConfig.queryIsSetExpr} {
+		db = db.Where("${fieldConfig.columnName} < ?", ${fieldConfig.queryArgExpr})
+	}
+#elseif($fieldConfig.queryType == "LE")
+	if ${fieldConfig.queryIsSetExpr} {
+		db = db.Where("${fieldConfig.columnName} <= ?", ${fieldConfig.queryArgExpr})
+	}
+#elseif($fieldConfig.queryType == "NE")
+	if ${fieldConfig.queryIsSetExpr} {
+		db = db.Where("${fieldConfig.columnName} != ?", ${fieldConfig.queryArgExpr})
 	}
 #else
-	if query.${fieldConfig.goFieldName} != 0 {
-		db = db.Where("${fieldConfig.columnName} = ?", query.${fieldConfig.goFieldName})
+	if ${fieldConfig.queryIsSetExpr} {
+		db = db.Where("${fieldConfig.columnName} = ?", ${fieldConfig.queryArgExpr})
 	}
 #end
 #end
@@ -42,33 +78,52 @@ func Get${entityName}Page(query *model.${entityName}Query) ([]model.${entityName
 		return nil, 0, err
 	}
 
-	offset := query.GetOffset()
-	limit := query.GetLimit()
-	if err := db.Offset(offset).Limit(limit).Order("create_time DESC").Find(&list).Error; err != nil {
+#if($hasCreateTime)
+	order := "create_time DESC"
+#else
+	order := "id DESC"
+#end
+	if err := db.Offset(query.GetOffset()).Limit(query.GetLimit()).Order(order).Find(&list).Error; err != nil {
 		return nil, 0, err
 	}
 
 	return list, total, nil
 }
 
-// Get${entityName}ByID 根据ID查询${businessName}
-func Get${entityName}ByID(id int64) (*model.${entityName}, error) {
+// Get 根据 ID 查询${businessName}
+func (r *Repository) Get(ctx context.Context, id int64) (*model.${entityName}, error) {
 	var item model.${entityName}
-	err := database.DB.Where("id = ? AND is_deleted = 0", id).First(&item).Error
-	return &item, err
+	db := r.db.WithContext(ctx).Where("id = ?", id)
+#if($hasIsDeleted)
+	db = db.Where("is_deleted = 0")
+#end
+	if err := db.First(&item).Error; err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
-// Create${entityName} 创建${businessName}
-func Create${entityName}(item *model.${entityName}) error {
-	return database.DB.Create(item).Error
+// Create 创建${businessName}（ctx 携带操作人，由审计钩子填充 create_by/update_by）
+func (r *Repository) Create(ctx context.Context, item *model.${entityName}) error {
+	return r.db.WithContext(ctx).Create(item).Error
 }
 
-// Update${entityName} 更新${businessName}
-func Update${entityName}(item *model.${entityName}) error {
-	return database.DB.Model(&model.${entityName}{}).Where("id = ?", item.ID).Updates(item).Error
+// Update 更新${businessName}
+func (r *Repository) Update(ctx context.Context, id int64, form *model.${entityName}Form) error {
+	updates := map[string]interface{}{
+#foreach($fieldConfig in $fieldConfigsInForm)		"${fieldConfig.columnName}": form.${fieldConfig.goFieldName},
+#end	}
+	return r.db.WithContext(ctx).Model(&model.${entityName}{}).Where("id = ?", id).Updates(updates).Error
 }
 
-// Delete${entityName} 删除${businessName}（逻辑删除）
-func Delete${entityName}(id int64) error {
-	return database.DB.Model(&model.${entityName}{}).Where("id = ?", id).Update("is_deleted", 1).Error
-}
+// Delete 删除${businessName}
+func (r *Repository) Delete(ctx context.Context, ids []int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	db := r.db.WithContext(ctx).Model(&model.${entityName}{}).Where("id IN ?", ids)
+#if($hasIsDeleted)
+	return db.Update("is_deleted", 1).Error
+#else
+	return db.Delete(&model.${entityName}{}).Error
+#end}

@@ -138,7 +138,6 @@ func (m *RedisTokenManager) RefreshToken(refreshToken string) (*AuthenticationTo
 		return nil, err
 	}
 
-	// 删除旧的访问令牌
 	userAccessKey := fmt.Sprintf("%s%d", UserAccessTokenPrefix, userSession.UserID)
 	oldAccessToken, err := redisClient.Client.Get(ctx, userAccessKey).Result()
 	if err == nil {

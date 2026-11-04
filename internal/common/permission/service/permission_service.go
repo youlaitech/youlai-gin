@@ -110,7 +110,6 @@ func GetUserDataScopes(userID int64, roleCodes []string, deptID int64) ([]permMo
 		}
 	}
 
-	// 查询用户角色的数据权限
 	type roleDataScopeRow struct {
 		Code      string
 		DataScope int
@@ -212,7 +211,6 @@ func getDeptAndChildrenIDs(deptID int64) []int64 {
 		return []int64{deptID}
 	}
 
-	// 查询部门及子部门
 	pattern := treePath + "," + strconv.FormatInt(deptID, 10) + "%"
 	var deptIDs []int64
 	err = database.DB.Table("sys_dept").
