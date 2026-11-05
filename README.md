@@ -1,10 +1,10 @@
 <div align="center">
 
-# <img alt="youlai-gin" width="28" src="./docs/images/logo/logo.png" valign="middle"> youlai-gin
+# <img alt="youlai-gin" width="40" height="40" src="./docs/images/logo/logo.png" align="center"> youlai-gin
 
+**Go 1.25 + Gin 1.11 企业级权限管理系统后端**
 
-
-**Go/Gin 企业级权限管理系统后端**
+<br>
 
 [![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)](https://go.dev/)
 [![Gin](https://img.shields.io/badge/Gin-1.11-green?logo=gin)](https://gin-gonic.com/)
@@ -15,14 +15,14 @@
 
 </div>
 
-![](./docs/images/rainbow.png "rainbow.png")
+<p align="center"><img src="./docs/images/rainbow.png" alt="rainbow"></p>
 
 <div align="center">
 
-[![在线预览](https://img.shields.io/badge/在线预览-2D8CF0?style=for-the-badge&logo=google-chrome&logoColor=white)](https://vue.youlai.tech)
-[![移动端预览](https://img.shields.io/badge/移动端预览-19BE6B?style=for-the-badge&logo=android&logoColor=white)](https://app.youlai.tech)
-[![阅读文档](https://img.shields.io/badge/阅读文档-8B5CF6?style=for-the-badge&logo=gitbook&logoColor=white)](https://www.youlai.tech/docs/server/gin/)
-[![English](https://img.shields.io/badge/English-00B4D8?style=for-the-badge&logo=google-translate&logoColor=white)](./README.en.md)
+[![在线预览](https://img.shields.io/badge/在线预览-2D8CF0?style=for-the-badge\&logo=google-chrome\&logoColor=white)](https://admin.youlai.tech)
+[![移动端预览](https://img.shields.io/badge/移动端预览-19BE6B?style=for-the-badge\&logo=android\&logoColor=white)](https://app.youlai.tech)
+[![阅读文档](https://img.shields.io/badge/阅读文档-8B5CF6?style=for-the-badge\&logo=gitbook\&logoColor=white)](https://www.youlai.tech/docs/server/spring-boot/)
+[![English](https://img.shields.io/badge/English-00B4D8?style=for-the-badge\&logo=google-translate\&logoColor=white)](./README.en.md)
 
 </div>
 

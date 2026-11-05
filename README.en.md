@@ -1,54 +1,30 @@
 <div align="center">
 
+# <img alt="youlai-gin" width="40" height="40" src="./docs/images/logo/logo.png" align="center"> youlai-gin
 
+**Go 1.25 + Gin 1.11 Enterprise-Grade Permission Management Backend**
 
-# <img alt="youlai-gin" width="28" src="./docs/images/logo/logo.png" align="center"> youlai-gin
-
-
-
-**Enterprise-grade permission management backend based on Go/Gin**
-
-
+<br>
 
 [![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)](https://go.dev/)
-
 [![Gin](https://img.shields.io/badge/Gin-1.11-green?logo=gin)](https://gin-gonic.com/)
-
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?logo=apache)](LICENSE)
-
 [![Gitee Star](https://gitee.com/youlaiorg/youlai-gin/badge/star.svg)](https://gitee.com/youlaiorg/youlai-gin/stargazers)
-
 [![GitHub Star](https://img.shields.io/github/stars/youlaitech/youlai-gin?style=social)](https://github.com/youlaitech/youlai-gin)
-
 [![GitCode Star](https://gitcode.com/youlai/youlai-gin/star/badge.svg)](https://gitcode.com/youlai/youlai-gin/stargazers)
-
-
 
 </div>
 
-
-
-![](./docs/images/rainbow.png "rainbow.png")
-
-
+<p align="center"><img src="./docs/images/rainbow.png" alt="rainbow"></p>
 
 <div align="center">
 
-
-
-[![Live Preview](https://img.shields.io/badge/Live%20Preview-2D8CF0?style=for-the-badge&logo=google-chrome&logoColor=white)](https://vue.youlai.tech)
-
-[![Mobile Preview](https://img.shields.io/badge/Mobile%20Preview-19BE6B?style=for-the-badge&logo=android&logoColor=white)](https://app.youlai.tech)
-
-[![Documentation](https://img.shields.io/badge/Documentation-8B5CF6?style=for-the-badge&logo=gitbook&logoColor=white)](https://www.youlai.tech/docs/server/gin/)
-
-[![简体中文](https://img.shields.io/badge/简体中文-00B4D8?style=for-the-badge&logo=google-translate&logoColor=white)](./README.md)
-
-
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-2D8CF0?style=for-the-badge\&logo=google-chrome\&logoColor=white)](https://admin.youlai.tech)
+[![Mobile Demo](https://img.shields.io/badge/Mobile%20Demo-19BE6B?style=for-the-badge\&logo=android\&logoColor=white)](https://app.youlai.tech)
+[![Documentation](https://img.shields.io/badge/Documentation-8B5CF6?style=for-the-badge\&logo=gitbook\&logoColor=white)](https://www.youlai.tech/docs/server/spring-boot/)
+[![简体中文](https://img.shields.io/badge/简体中文-00B4D8?style=for-the-badge\&logo=google-translate\&logoColor=white)](./README.md)
 
 </div>
-
-
 
 ## Introduction
 
@@ -299,7 +275,7 @@ ai:
 
 | 📖 Full docs site | [www.youlai.tech](https://www.youlai.tech/) |
 
-| 🖥️ PC live preview | [vue.youlai.tech](https://vue.youlai.tech) |
+| 🖥️ PC live preview | [admin.youlai.tech](https://admin.youlai.tech) |
 
 | 📱 Mobile live preview | [app.youlai.tech](https://app.youlai.tech) |
 
