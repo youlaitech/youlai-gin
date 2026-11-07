@@ -1,6 +1,6 @@
 <div align="center">
 
-# <img alt="youlai-gin" width="40" height="40" src="./docs/images/logo/logo.png" align="center"> youlai-gin
+# <img alt="youlai-gin" width="40" height="40" src="./docs/images/logo/logo.png" valign="middle"> youlai-gin
 
 **Go 1.25 + Gin 1.11 Enterprise-Grade Permission Management Backend**
 
