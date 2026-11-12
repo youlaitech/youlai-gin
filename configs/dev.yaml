@@ -1,4 +1,5 @@
 # 开发环境配置 (dev.yaml)
+# 任何配置项可用环境变量覆盖：APP_<模块>_<字段>（如 APP_DATABASE_PASSWORD、APP_REDIS_HOST）
 
 # 服务配置
 server:
@@ -6,10 +7,10 @@ server:
 
 # 数据库配置
 database:
-  host: www.youlai.tech # MySQL 主机地址
-  port: 3306 # MySQL 端口
-  username: youlai # 数据库用户名
-  password: 123456 # 数据库密码（可通过环境变量 APP_DATABASE_PASSWORD 覆盖）
+  host: www.youlai.tech
+  port: 3306
+  username: youlai
+  password: 123456
   dbname: youlai_admin # 数据库名称
   charset: utf8mb4 # 字符集（支持 emoji）
   parseTime: true # 自动解析时间类型
@@ -22,9 +23,9 @@ database:
 
 # Redis 配置
 redis:
-  host: www.youlai.tech # Redis 主机（开发用本地）
-  port: 6379 # Redis 端口
-  password: 123456 # Redis 密码（本地开发通常无密码）
+  host: www.youlai.tech
+  port: 6379
+  password: 123456
   database: 0 # Redis 数据库编号（0-15）
 
   # 连接池配置
@@ -78,15 +79,6 @@ security:
     refreshTokenTTL: 2592000 # 刷新令牌有效期（秒）
     allowMultiLogin: true # 是否允许多设备同时登录（开发环境允许）
 
-# 环境变量覆盖示例
-# 任何配置项都可以通过环境变量覆盖，格式：APP_<模块>_<字段>
-#
-# 示例：
-#   export APP_DATABASE_PASSWORD="new-password"      # 覆盖数据库密码
-#   export APP_LOGGER_LEVEL="info"                   # 覆盖日志级别
-#   export APP_REDIS_HOST="remote-redis.com"         # 覆盖 Redis 地址
-#   export APP_SECURITY_JWT_SECRETKEY="new-secret"   # 覆盖 JWT 密钥
-
 # 微信小程序配置
 wechat:
   miniapp:
@@ -109,9 +101,9 @@ storage:
       - gif
   # S3（RustFS）对象存储
   s3:
-    endpoint: http://111.229.83.153:9000
-    access-key: bybaddp7zyARpgNbEGKf
-    secret-key: p9rBdQZPBIJcMH23iyFkZkXmmawbmwPlk3JLlaaj
+    endpoint: http://127.0.0.1:9000
+    access-key: rustfs-admin
+    secret-key: rustfs-admin
     bucket: public
     # 自定义域名：配置后文件 URL 走域名，留空则用 endpoint（IP）格式
     domain:
