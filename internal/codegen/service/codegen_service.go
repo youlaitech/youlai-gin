@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"time"
 
@@ -71,6 +72,7 @@ type templateFieldConfig struct {
 	ShowDictInList  bool `velty:"name=showDictInList"`
 	ShowDictInQuery bool `velty:"name=showDictInQuery"`
 	ShowDictInForm  bool `velty:"name=showDictInForm"`
+	IsTimeColumn    bool `velty:"name=isTimeColumn"`
 }
 
 // nonFormColumns 服务端维护的列，不进入生成表单，避免客户端篡改主键、审计字段与逻辑删除标记。
@@ -87,6 +89,14 @@ func isEditableFormColumn(columnName string) bool {
 	_, reserved := nonFormColumns[strings.ToLower(strings.TrimSpace(columnName))]
 	return !reserved
 }
+
+// identifierPatterns 生成产物输出名约束：实体为 Go 导出类型（MixedCaps 大写驼峰），
+// 模块为 Go 包目录名（全小写无下划线），字段为驼峰字母数字
+var (
+	fieldNamePattern  = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
+	entityNamePattern = regexp.MustCompile(`^[A-Z][A-Za-z0-9]*$`)
+	moduleNamePattern = regexp.MustCompile(`^[a-z][a-z0-9]*$`)
+)
 
 func usesTypes(fields []templateFieldConfig) bool {
 	for i := range fields {
@@ -159,6 +169,13 @@ func trimTablePrefix(tableName, removePrefix string) string {
 	return tableName
 }
 
+// templateOrder 预览与下载的固定输出顺序：模型层在前，前端模板在后
+var templateOrder = []templateName{
+	tplModelEntity, tplModelForm, tplModelQuery, tplModelVo,
+	tplRepository, tplService, tplHandler, tplRouter,
+	tplAPI, tplAPITypes, tplView,
+}
+
 // templateConfigs 各层代码模板映射：backend 为 Go 后端，frontend 为 Vue 前端
 var templateConfigs = map[templateName]templateConfig{
 	tplAPI:         {templatePath: "frontend/ts/api.ts.velty", subpackageName: "api", extension: ".ts"},
@@ -216,7 +233,7 @@ func (s *CodegenService) GetGenConfig(ctx context.Context, tableName string) (*m
 			ParentMenuId:      cfg.ParentMenuID,
 			BackendAppName:    codegenConfig.backendAppName,
 			FrontendAppName:   codegenConfig.frontendAppName,
-			PageType:          defaultStr(cfg.PageType, "classic"),
+			PageType:          defaultStr(cfg.PageType, "crud"),
 			RemoveTablePrefix: removePrefix,
 			FieldConfigs:      make([]model.FieldConfigForm, 0, len(fields)),
 		}
@@ -296,7 +313,7 @@ func (s *CodegenService) GetGenConfig(ctx context.Context, tableName string) (*m
 		Author:            codegenConfig.defaultAuthor,
 		BackendAppName:    codegenConfig.backendAppName,
 		FrontendAppName:   codegenConfig.frontendAppName,
-		PageType:          "classic",
+		PageType:          "crud",
 		RemoveTablePrefix: removePrefix,
 		FieldConfigs:      fieldConfigs,
 	}, nil
@@ -306,6 +323,24 @@ func (s *CodegenService) GetGenConfig(ctx context.Context, tableName string) (*m
 func (s *CodegenService) SaveGenConfig(ctx context.Context, tableName string, body *model.GenConfigForm) error {
 	if body == nil {
 		return errs.BadRequest("参数错误")
+	}
+	if len(body.FieldConfigs) == 0 {
+		return errs.BadRequest("字段配置不能为空")
+	}
+
+	// 列名必须真实存在于表结构，防止伪造列生成无效代码
+	cols, err := s.repo.TableColumns(ctx, tableName)
+	if err != nil {
+		return err
+	}
+	columnSet := make(map[string]struct{}, len(cols))
+	for _, col := range cols {
+		columnSet[col.ColumnName] = struct{}{}
+	}
+	for _, f := range body.FieldConfigs {
+		if _, ok := columnSet[f.ColumnName]; !ok {
+			return errs.BadRequest("列 " + f.ColumnName + " 不存在于表 " + tableName)
+		}
 	}
 
 	now := time.Now()
@@ -320,7 +355,15 @@ func (s *CodegenService) SaveGenConfig(ctx context.Context, tableName string, bo
 	removePrefix := defaultStr(body.RemoveTablePrefix, codegenConfig.defaultRemoveTablePrefix)
 	entityName := defaultStr(body.EntityName, toPascalCase(trimTablePrefix(tableName, removePrefix)))
 	author := defaultStr(body.Author, codegenConfig.defaultAuthor)
-	pageType := defaultStr(body.PageType, "classic")
+	pageType := defaultStr(body.PageType, "crud")
+
+	// 输出名进入 Go 类型、目录与导入路径，必须是合法标识符
+	if !entityNamePattern.MatchString(entityName) {
+		return errs.BadRequest("实体名须为 PascalCase 字母数字组合")
+	}
+	if !moduleNamePattern.MatchString(moduleName) {
+		return errs.BadRequest("模块名须为全小写字母数字")
+	}
 
 	updates := map[string]interface{}{
 		"module_name":         moduleName,
@@ -336,21 +379,6 @@ func (s *CodegenService) SaveGenConfig(ctx context.Context, tableName string, bo
 	}
 
 	var tableID int64
-	if found && cfg != nil && cfg.ID > 0 {
-		tableID = cfg.ID
-		if err := s.repo.UpdateGenTable(ctx, tableID, updates); err != nil {
-			return err
-		}
-	} else {
-		inserts := updates
-		inserts["table_name"] = tableName
-		inserts["create_time"] = now
-		newID, err := s.repo.CreateGenTable(ctx, inserts)
-		if err != nil {
-			return err
-		}
-		tableID = newID
-	}
 
 	columns := make([]repository.GenColumn, 0, len(body.FieldConfigs))
 	for i := range body.FieldConfigs {
@@ -360,11 +388,14 @@ func (s *CodegenService) SaveGenConfig(ctx context.Context, tableName string, bo
 			sort = *f.FieldSort
 		}
 
+		fieldName := defaultStr(f.FieldName, toCamelCase(f.ColumnName))
+		if !fieldNamePattern.MatchString(fieldName) {
+			return errs.BadRequest("字段名 " + fieldName + " 须为驼峰字母数字组合")
+		}
 		columns = append(columns, repository.GenColumn{
-			TableID:       tableID,
 			ColumnName:    f.ColumnName,
 			ColumnType:    f.ColumnType,
-			FieldName:     defaultStr(f.FieldName, toCamelCase(f.ColumnName)),
+			FieldName:     fieldName,
 			FieldType:     defaultStr(f.FieldType, getFieldTypeByColumnType(f.ColumnType)),
 			FieldSort:     &sort,
 			FieldComment:  f.FieldComment,
@@ -379,7 +410,28 @@ func (s *CodegenService) SaveGenConfig(ctx context.Context, tableName string, bo
 		})
 	}
 
-	if err := s.repo.ReplaceGenColumns(ctx, tableID, columns); err != nil {
+	// 表配置与字段同一事务写入，中途失败整体回滚，避免留下无字段的孤儿配置
+	if err := s.repo.Transaction(ctx, func(txRepo *repository.Repository) error {
+		if found && cfg != nil && cfg.ID > 0 {
+			tableID = cfg.ID
+			if err := txRepo.UpdateGenTable(ctx, tableID, updates); err != nil {
+				return err
+			}
+		} else {
+			inserts := updates
+			inserts["table_name"] = tableName
+			inserts["create_time"] = now
+			newID, err := txRepo.CreateGenTable(ctx, inserts)
+			if err != nil {
+				return err
+			}
+			tableID = newID
+		}
+		for i := range columns {
+			columns[i].TableID = tableID
+		}
+		return txRepo.ReplaceGenColumns(ctx, tableID, columns)
+	}); err != nil {
 		return err
 	}
 
@@ -513,7 +565,8 @@ func (s *CodegenService) GetPreview(ctx context.Context, tableName string, pageT
 	}
 
 	previews := make([]model.CodegenPreviewVO, 0)
-	for name, tc := range templateConfigs {
+	for _, name := range templateOrder {
+		tc := templateConfigs[name]
 		if frontendType == "js" && name == tplAPITypes {
 			continue
 		}
@@ -618,9 +671,11 @@ func resolveLanguage(fileName string) string {
 }
 
 // formatGeneratedSource 对生成的代码做基础整理：
+//   - 行尾统一为 LF（模板文件可能是 CRLF）；
 //   - Go 代码执行 gofmt，保证模板控制指令不影响产物格式；
 //   - 前端代码折叠连续空行，避免控制指令留下成片空白。
 func formatGeneratedSource(content, fileName string) string {
+	content = strings.ReplaceAll(content, "\r\n", "\n")
 	if strings.EqualFold(filepath.Ext(fileName), ".go") {
 		formatted, err := format.Source([]byte(content))
 		if err != nil {
@@ -811,6 +866,7 @@ func renderTemplate(
 			ShowDictInList:  f.IsShowInList == 1 && hasDict,
 			ShowDictInQuery: f.IsShowInQuery == 1 && hasDict,
 			ShowDictInForm:  visibleInForm && hasDict,
+			IsTimeColumn:    goType == "types.LocalTime",
 		})
 	}
 
@@ -1003,7 +1059,7 @@ func getGoTypeByColumnType(columnType string) string {
 	case "date":
 		return "string"
 	case "boolean", "bool", "bit":
-		return "int"
+		return "bool"
 	default:
 		return "string"
 	}

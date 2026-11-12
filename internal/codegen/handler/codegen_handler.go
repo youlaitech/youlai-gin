@@ -110,7 +110,7 @@ func (h *CodegenHandler) DeleteGenConfig(c *gin.Context) {
 // @Router /api/v1/codegen/{tableName}/preview [get]
 func (h *CodegenHandler) GetPreview(c *gin.Context) {
 	tableName := c.Param("tableName")
-	pageType := c.DefaultQuery("pageType", "classic")
+	pageType := c.DefaultQuery("pageType", "crud")
 	typeParam := c.DefaultQuery("type", "ts")
 
 	list, err := h.svc.GetPreview(c.Request.Context(), tableName, pageType, typeParam)
@@ -128,7 +128,7 @@ func (h *CodegenHandler) GetPreview(c *gin.Context) {
 // @Router /api/v1/codegen/{tableName}/download [get]
 func (h *CodegenHandler) Download(c *gin.Context) {
 	tableName := c.Param("tableName")
-	pageType := c.DefaultQuery("pageType", "classic")
+	pageType := c.DefaultQuery("pageType", "crud")
 	typeParam := c.DefaultQuery("type", "ts")
 
 	tableNames := make([]string, 0)

@@ -32,12 +32,13 @@
             v-model="params.$fieldConfig.fieldName"
 #if($fieldConfig.queryType == "BETWEEN")            type="daterange"
             range-separator="~"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            value-format="YYYY-MM-DD"
 #else            type="datetime"
             placeholder="$fieldConfig.fieldComment"
-#end            value-format="YYYY-MM-DD HH:mm:ss"
-          />
+            value-format="YYYY-MM-DD HH:mm:ss"
+#end          />
 #elseif($fieldConfig.formType == "DATE")          <el-date-picker
             class="!w-[240px]"
             v-model="params.$fieldConfig.fieldName"
@@ -179,9 +180,11 @@
           />
 #elseif($fieldConfig.formType == "SWITCH")          <el-switch
             v-model="formData.$fieldConfig.fieldName"
-            :active-value="1"
+#if($fieldConfig.fieldType == "Boolean")            :active-value="true"
+            :inactive-value="false"
+#else            :active-value="1"
             :inactive-value="0"
-          />
+#end          />
 #elseif($fieldConfig.formType == "TEXT_AREA")          <el-input
             type="textarea"
             v-model="formData.$fieldConfig.fieldName"

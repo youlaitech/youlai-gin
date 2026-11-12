@@ -30,8 +30,13 @@ func (r *Repository) Page(ctx context.Context, query *model.${entityName}Query) 
 #foreach($fieldConfig in $fieldConfigsInQuery)
 #if($fieldConfig.queryType == "BETWEEN")
 	if len(query.${fieldConfig.goFieldName}) == 2 {
-		db = db.Where("${fieldConfig.columnName} BETWEEN ? AND ?", query.${fieldConfig.goFieldName}[0], query.${fieldConfig.goFieldName}[1])
-	}
+#if($fieldConfig.isTimeColumn)		end := query.${fieldConfig.goFieldName}[1]
+		if len(end) == 10 {
+			end += " 23:59:59"
+		}
+		db = db.Where("${fieldConfig.columnName} BETWEEN ? AND ?", query.${fieldConfig.goFieldName}[0], end)
+#else		db = db.Where("${fieldConfig.columnName} BETWEEN ? AND ?", query.${fieldConfig.goFieldName}[0], query.${fieldConfig.goFieldName}[1])
+#end	}
 #elseif($fieldConfig.queryType == "IN")
 	if len(query.${fieldConfig.goFieldName}) > 0 {
 		db = db.Where("${fieldConfig.columnName} IN ?", query.${fieldConfig.goFieldName})

@@ -48,6 +48,7 @@ const searchConfig: CrudSearchConfig = {
         startPlaceholder: "开始日期",
         endPlaceholder: "结束日期",
       },
+#elseif($field.isDateTime)      attrs: { type: "datetime", valueFormat: "YYYY-MM-DD HH:mm:ss", clearable: true },
 #else      attrs: { type: "date", valueFormat: "YYYY-MM-DD", clearable: true },
 #end#elseif($field.isNumeric)      type: "input-number",
       attrs: { clearable: true },

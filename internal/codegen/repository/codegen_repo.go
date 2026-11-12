@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -64,6 +65,13 @@ type Repository struct {
 
 // NewRepository 创建 Repository 实例
 func NewRepository(db *gorm.DB) *Repository { return &Repository{db: db} }
+
+// Transaction 在单事务内执行 fn，fn 收到共享事务句柄的 Repository
+func (r *Repository) Transaction(ctx context.Context, fn func(repo *Repository) error) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return fn(&Repository{db: tx})
+	})
+}
 
 // TableListPage 分页查询可代码生成的数据表（含是否已配置标识，来自 information_schema）
 func (r *Repository) TableListPage(ctx context.Context, keywords string, offset, limit int) (*commonModel.PagedData, error) {
@@ -162,7 +170,8 @@ func (r *Repository) CreateGenTable(ctx context.Context, data map[string]interfa
 	}
 	var row GenConfigRow
 	if err := r.db.WithContext(ctx).Table("gen_table").
-		Where("table_name = ?", data["table_name"]).First(&row).Error; err != nil {
+		Where("table_name = ? AND is_deleted = 0", data["table_name"]).
+		Order("id DESC").First(&row).Error; err != nil {
 		return 0, errs.SystemError("保存配置失败")
 	}
 	return row.ID, nil
@@ -177,36 +186,44 @@ func (r *Repository) UpdateGenTable(ctx context.Context, id int64, updates map[s
 	return nil
 }
 
-// ReplaceGenColumns 覆盖写字段配置（先删后插）
+// ReplaceGenColumns 覆盖写字段配置（事务内先删后批量插入，失败整体回滚）
 func (r *Repository) ReplaceGenColumns(ctx context.Context, tableID int64, cols []GenColumn) error {
-	if err := r.db.WithContext(ctx).Table("gen_table_column").
-		Where("table_id = ?", tableID).Delete(&GenColumn{}).Error; err != nil {
-		return errs.SystemError("保存字段配置失败")
-	}
-	for i := range cols {
-		if err := r.db.WithContext(ctx).Table("gen_table_column").Create(&cols[i]).Error; err != nil {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Table("gen_table_column").
+			Where("table_id = ?", tableID).Delete(&GenColumn{}).Error; err != nil {
 			return errs.SystemError("保存字段配置失败")
 		}
-	}
-	return nil
+		if len(cols) == 0 {
+			return nil
+		}
+		if err := tx.Table("gen_table_column").Create(&cols).Error; err != nil {
+			return errs.SystemError("保存字段配置失败")
+		}
+		return nil
+	})
 }
 
 // DeleteGenConfig 逻辑删除配置并物理删除其字段（未配置视为已删除）
 func (r *Repository) DeleteGenConfig(ctx context.Context, tableName string) error {
-	var cfg GenConfigRow
-	if err := r.db.WithContext(ctx).Table("gen_table").
-		Where("table_name = ? AND is_deleted = 0", tableName).First(&cfg).Error; err != nil {
-		return nil
-	}
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var cfg GenConfigRow
+		if err := tx.Table("gen_table").
+			Where("table_name = ? AND is_deleted = 0", tableName).First(&cfg).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil
+			}
+			return errs.SystemError("删除失败")
+		}
 
-	if err := r.db.WithContext(ctx).Table("gen_table_column").
-		Where("table_id = ?", cfg.ID).Delete(&GenColumn{}).Error; err != nil {
-		return errs.SystemError("删除失败")
-	}
-	if err := r.db.WithContext(ctx).Table("gen_table").
-		Where("id = ?", cfg.ID).
-		Updates(map[string]interface{}{"is_deleted": 1, "update_time": time.Now()}).Error; err != nil {
-		return errs.SystemError("删除失败")
-	}
-	return nil
+		if err := tx.Table("gen_table_column").
+			Where("table_id = ?", cfg.ID).Delete(&GenColumn{}).Error; err != nil {
+			return errs.SystemError("删除失败")
+		}
+		if err := tx.Table("gen_table").
+			Where("id = ?", cfg.ID).
+			Updates(map[string]interface{}{"is_deleted": 1, "update_time": time.Now()}).Error; err != nil {
+			return errs.SystemError("删除失败")
+		}
+		return nil
+	})
 }
