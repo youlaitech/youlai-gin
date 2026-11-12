@@ -317,7 +317,7 @@ func toItemVO(item model.DictItem) model.DictItemVO {
 	}
 }
 
-// notifyDictChange 推送字典变更事件（SSE 未就绪时静默跳过）
+// notifyDictChange 推送字典变更事件（实时服务未就绪时静默跳过）
 func (s *Service) notifyDictChange(dictCode string) {
 	if realtime := realtime.GetRealtimeService(); realtime != nil {
 		realtime.SendDictChange(dictCode)

@@ -235,7 +235,7 @@ func parsePublishTime(s string) (*types.LocalTime, error) {
 	return &t, nil
 }
 
-// pushNotice 推送通知（SSE）
+// pushNotice 推送通知（WebSocket）
 func pushNotice(notice *model.Notice, targetUsers []types.BigInt) {
 	realtimeService := realtime.GetRealtimeService()
 	if realtimeService == nil {

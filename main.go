@@ -119,7 +119,7 @@ func main() {
 	}
 	logger.Log.Sugar().Infof("文件存储已初始化: type=%s", storageCfg.Type)
 
-	// 初始化 SSE 服务
+	// 初始化实时推送服务
 	realtime.InitRealtimeService()
 
 	// 初始化 TokenManager
@@ -175,7 +175,7 @@ func main() {
 
 	logger.Log.Sugar().Info("正在关闭服务器...")
 
-	// 主动断开所有 SSE 连接
+	// 主动断开所有 WebSocket 连接
 	realtime.GetRealtimeService().CloseAll()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

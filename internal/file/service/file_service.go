@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"mime/multipart"
 	"path/filepath"
@@ -26,16 +27,13 @@ type FileService struct{}
 // NewFileService 创建 FileService 实例
 func NewFileService() *FileService { return &FileService{} }
 
-// Upload 单文件上传到指定路径前缀，失败统一转换为规范的 API 错误
-func (s *FileService) Upload(file *multipart.FileHeader, pathPrefix string) (*UploadResult, error) {
-	if pathPrefix == "" {
-		pathPrefix = "uploads"
-	}
+// Upload 单文件上传（存储路径由服务端生成，客户端不可指定），失败统一转换为规范的 API 错误
+func (s *FileService) Upload(file *multipart.FileHeader) (*UploadResult, error) {
 	if err := validateUpload(file); err != nil {
 		return nil, errs.BadRequest(err.Error())
 	}
 
-	result, err := doUpload(file, pathPrefix)
+	result, err := doUpload(file)
 	if err != nil {
 		return nil, err
 	}
@@ -48,15 +46,18 @@ func (s *FileService) Delete(path string) error {
 		return errs.BadRequest("文件路径不能为空")
 	}
 	if err := storage.DefaultStorage.Delete(path); err != nil {
+		if errors.Is(err, storage.ErrIllegalPath) {
+			return errs.BadRequest(err.Error())
+		}
 		return errs.SystemError("删除失败")
 	}
 	return nil
 }
 
 // doUpload 统一打开文件并写入存储
-func doUpload(file *multipart.FileHeader, pathPrefix string) (*UploadResult, error) {
+func doUpload(file *multipart.FileHeader) (*UploadResult, error) {
 	filename := utils.GenerateFileName(file.Filename)
-	path := utils.GeneratePath(pathPrefix, filename)
+	path := utils.GeneratePath("uploads", filename)
 
 	src, err := file.Open()
 	if err != nil {
@@ -67,6 +68,9 @@ func doUpload(file *multipart.FileHeader, pathPrefix string) (*UploadResult, err
 	contentType := utils.GetContentType(file.Filename)
 	url, err := storage.DefaultStorage.Upload(path, src, contentType)
 	if err != nil {
+		if errors.Is(err, storage.ErrIllegalPath) {
+			return nil, errs.BadRequest(err.Error())
+		}
 		return nil, errs.SystemError("上传失败")
 	}
 

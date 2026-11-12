@@ -84,8 +84,8 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	response.Ok(c, token)
 
-	// 异步保存登录日志
-	go saveLoginLog(c, userID, "/api/v1/auth/login")
+	// IP/UA 返回前取值，gin.Context 不可跨 goroutine
+	saveLoginLog(c.ClientIP(), c.Request.UserAgent(), "/api/v1/auth/login", userID)
 }
 
 // Logout 退出登录
@@ -206,20 +206,20 @@ func (h *AuthHandler) LoginBySms(c *gin.Context) {
 
 	response.Ok(c, token)
 
-	// 异步保存登录日志
-	go saveLoginLog(c, userID, "/api/v1/auth/sms/login")
+	// IP/UA 返回前取值，gin.Context 不可跨 goroutine
+	saveLoginLog(c.ClientIP(), c.Request.UserAgent(), "/api/v1/auth/sms/login", userID)
 }
 
-// saveLoginLog 异步保存登录操作日志（登录为公开路由，中间件无法获取 userID）
-func saveLoginLog(c *gin.Context, userID int64, requestURI string) {
+// saveLoginLog 异步落库登录日志（登录为公开路由，中间件拿不到 userID）
+func saveLoginLog(ip, userAgent, requestURI string, userID int64) {
 	logEntry := middleware.OperationLogEntity{
 		Module:        int(enums.LogModuleLogin),
 		ActionType:    int(enums.ActionTypeLogin),
 		RequestURI:    requestURI,
 		RequestMethod: "POST",
-		IP:            c.ClientIP(),
-		OS:            middleware.ParseOS(c.Request.UserAgent()),
-		Browser:       middleware.ParseBrowser(c.Request.UserAgent()),
+		IP:            ip,
+		OS:            middleware.ParseOS(userAgent),
+		Browser:       middleware.ParseBrowser(userAgent),
 		Status:        1,
 	}
 

@@ -29,7 +29,6 @@ func (h *FileHandler) RegisterRoutes(r *gin.RouterGroup) {
 // @Accept multipart/form-data
 // @Produce json
 // @Param file formData file true "文件"
-// @Param path formData string false "存储路径前缀"
 // @Success 200 {object} response.Result{data=service.UploadResult}
 // @Router /api/v1/files [post]
 func (h *FileHandler) UploadFile(c *gin.Context) {
@@ -39,7 +38,7 @@ func (h *FileHandler) UploadFile(c *gin.Context) {
 		return
 	}
 
-	result, err := h.svc.Upload(file, c.DefaultPostForm("path", "uploads"))
+	result, err := h.svc.Upload(file)
 	if err != nil {
 		c.Error(err)
 		return
@@ -51,11 +50,11 @@ func (h *FileHandler) UploadFile(c *gin.Context) {
 // @Summary 删除文件
 // @Tags 10.文件接口
 // @Produce json
-// @Param path query string true "文件路径"
+// @Param filePath query string true "文件路径"
 // @Success 200 {object} response.Result
 // @Router /api/v1/files [delete]
 func (h *FileHandler) DeleteFile(c *gin.Context) {
-	if err := h.svc.Delete(c.Query("path")); err != nil {
+	if err := h.svc.Delete(c.Query("filePath")); err != nil {
 		c.Error(err)
 		return
 	}

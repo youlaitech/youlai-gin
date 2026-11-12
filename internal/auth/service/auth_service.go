@@ -76,7 +76,6 @@ func (s *AuthService) GetCaptcha(ctx context.Context) (*authModel.CaptchaVO, err
 	return &authModel.CaptchaVO{
 		CaptchaID:     captchaID,
 		CaptchaBase64: b64s,
-		CaptchaCode:   answer,
 	}, nil
 }
 

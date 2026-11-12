@@ -46,7 +46,7 @@
 
 - 📦 **Complete modules** — users, roles, menus, departments, dictionaries, files, message center, operation logs
 
-- 🔌 **Real-time communication** — SSE push: online user count, dictionary sync, notification broadcast
+- 🔌 **Real-time communication** — WebSocket push: online user count, dictionary sync, notification broadcast
 
 
 
@@ -182,7 +182,7 @@ youlai-gin/
 
 │   ├── file/                       # File management
 
-│   ├── message/                    # SSE push
+│   ├── message/                    # Realtime push
 
 │   ├── middleware/                 # Middleware (JWT/CORS/rate limit)
 

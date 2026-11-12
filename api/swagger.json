@@ -1570,58 +1570,6 @@
                 }
             }
         },
-        "/api/v1/sse/connect": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "text/event-stream"
-                ],
-                "tags": [
-                    "13.SSE连接"
-                ],
-                "summary": "建立SSE连接",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "JWT Token (可选，优先使用Authorization Header)",
-                        "name": "token",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "SSE Stream",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/sse/online-count": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "13.SSE连接"
-                ],
-                "summary": "获取在线用户数",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/common.Result"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/users": {
             "get": {
                 "tags": [

@@ -21,6 +21,7 @@ var authWhitelist = map[string]bool{
 	"/api/v1/auth/qr-code/generate":      true,
 	"/api/v1/auth/qr-code/status":        true,
 	"/api/v1/auth/qr-code/login":         true,
+	"/api/v1/realtime/ws":                true,
 }
 
 // 匿名前缀：路径含参数段，精确匹配覆盖不到（如公开表单 /api/v1/forms/public/{formKey}/render）

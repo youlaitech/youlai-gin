@@ -30,10 +30,10 @@ func (r *Repository) Page(ctx context.Context, query *model.UserQuery, currentUs
 	db := r.db.WithContext(ctx).Table("sys_user u").
 		Select(`u.id, u.username, u.nickname, u.mobile, u.gender, u.avatar, u.email, u.status,
 			u.create_time, d.name as dept_name,
-			GROUP_CONCAT(r.name ORDER BY r.id SEPARATOR ',') as role_names`).
+			(SELECT GROUP_CONCAT(r.name ORDER BY r.id SEPARATOR ',')
+				FROM sys_user_role ur JOIN sys_role r ON ur.role_id = r.id
+				WHERE ur.user_id = u.id) as role_names`).
 		Joins("LEFT JOIN sys_dept d ON u.dept_id = d.id").
-		Joins("LEFT JOIN sys_user_role ur ON u.id = ur.user_id").
-		Joins("LEFT JOIN sys_role r ON ur.role_id = r.id").
 		Where("u.is_deleted = 0").
 		Where(
 			`NOT EXISTS (
@@ -77,8 +77,7 @@ func (r *Repository) Page(ctx context.Context, query *model.UserQuery, currentUs
 		db = db.Where("u.create_time >= ? AND u.create_time <= ?", startTime, endTime)
 	}
 
-	db = db.Group("u.id")
-
+	// 角色名由子查询聚合，主查询一行一个用户，Count 无需 Group
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
