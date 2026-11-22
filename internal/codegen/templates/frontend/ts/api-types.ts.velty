@@ -7,20 +7,23 @@ import type { PageQuery } from "@/api/common";
 /** ${businessName}查询参数 */
 export interface ${entityName}QueryParams extends PageQuery {
 #foreach($fieldConfig in $fieldConfigsInQuery)#if($fieldConfig.fieldComment != "")  /** ${fieldConfig.fieldComment} */
-#end  ${fieldConfig.fieldName}?: ${fieldConfig.tsQueryType};
+#end  ${fieldConfig.fieldName}#if($fieldConfig.isBetweenNonDate)#else?#end: ${fieldConfig.tsQueryType};
 #end}
 
 /** ${businessName}表单对象 */
 export interface ${entityName}Form {
-#foreach($fieldConfig in $fieldConfigsInForm)#if($fieldConfig.fieldComment != "")  /** ${fieldConfig.fieldComment} */
+  id?: string;
+#foreach($fieldConfig in $fieldConfigsInForm)#if($fieldConfig.fieldName != "id")#if($fieldConfig.fieldComment != "")  /** ${fieldConfig.fieldComment} */
 #end  ${fieldConfig.fieldName}?: ${fieldConfig.tsType};
-#end}
+#end#end}
 
 /** ${businessName}详情对象 */
 export type ${entityName}Detail = ${entityName}Item & ${entityName}Form;
 
 /** ${businessName}列表项 */
 export interface ${entityName}Item {
-#foreach($fieldConfig in $fieldConfigsInList)#if($fieldConfig.fieldComment != "")  /** ${fieldConfig.fieldComment} */
+  /** 稳定主键，不受列表显示配置影响 */
+  id: string;
+#foreach($fieldConfig in $fieldConfigsInList)#if($fieldConfig.fieldName != "id")#if($fieldConfig.fieldComment != "")  /** ${fieldConfig.fieldComment} */
 #end  ${fieldConfig.fieldName}?: ${fieldConfig.tsType};
-#end}
+#end#end}

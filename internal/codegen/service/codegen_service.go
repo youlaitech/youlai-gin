@@ -61,11 +61,15 @@ type templateFieldConfig struct {
 	QueryArgExpr   string `velty:"name=queryArgExpr"`
 
 	// 模板计算字段：Velty 对字符串的 and/or/裸选择器语义不可靠，统一在 Go 侧算好布尔标志。
-	HasDictType     bool `velty:"name=hasDictType"`
-	IsDate          bool `velty:"name=isDate"`
-	IsDateTime      bool `velty:"name=isDateTime"`
-	IsNumeric       bool `velty:"name=isNumeric"`
-	IsDecimal       bool `velty:"name=isDecimal"`
+	HasDictType      bool `velty:"name=hasDictType"`
+	IsDate           bool `velty:"name=isDate"`
+	IsDateTime       bool `velty:"name=isDateTime"`
+	IsNumeric        bool `velty:"name=isNumeric"`
+	IsInQuery        bool `velty:"name=isInQuery"`
+	IsBetweenQuery   bool `velty:"name=isBetweenQuery"`
+	IsBetweenNonDate bool `velty:"name=isBetweenNonDate"`
+	IsPassword       bool `velty:"name=isPassword"`
+	IsDecimal        bool `velty:"name=isDecimal"`
 	VisibleInForm   bool `velty:"name=visibleInForm"`
 	RequiredInForm  bool `velty:"name=requiredInForm"`
 	BindingRequired bool `velty:"name=bindingRequired"`
@@ -805,9 +809,13 @@ func renderTemplate(
 		}
 		tsQueryType := tsType
 		if queryTypeName == "BETWEEN" {
-			tsQueryType = "[" + tsType + ", " + tsType + "]"
+			if formTypeName == "DATE" || formTypeName == "DATE_TIME" {
+				tsQueryType = "[string, string]"
+			} else {
+				tsQueryType = "[" + tsType + " | null, " + tsType + " | null]"
+			}
 		} else if queryTypeName == "IN" {
-			tsQueryType = tsType + "[]"
+			tsQueryType = "string[]"
 		}
 		hasDict := strings.TrimSpace(f.DictType) != ""
 		visibleInForm := f.IsShowInForm == 1 && formTypeName != "HIDDEN"
@@ -856,9 +864,13 @@ func renderTemplate(
 			QueryArgExpr:   queryArgExpr,
 
 			HasDictType:     hasDict,
-			IsDate:          formTypeName == "DATE" || formTypeName == "DATE_TIME",
-			IsDateTime:      formTypeName == "DATE_TIME",
-			IsNumeric:       fieldType == "Integer" || fieldType == "Long" || fieldType == "BigDecimal",
+			IsDate:           formTypeName == "DATE" || formTypeName == "DATE_TIME",
+			IsDateTime:       formTypeName == "DATE_TIME",
+			IsNumeric:        fieldType == "Integer" || fieldType == "Long" || fieldType == "BigDecimal",
+			IsInQuery:        queryTypeName == "IN",
+			IsBetweenQuery:   queryTypeName == "BETWEEN",
+			IsBetweenNonDate: queryTypeName == "BETWEEN" && formTypeName != "DATE" && formTypeName != "DATE_TIME",
+			IsPassword:       strings.Contains(strings.ToLower(f.FieldName), "password") || strings.Contains(strings.ToLower(f.FieldName), "pwd"),
 			IsDecimal:       fieldType == "BigDecimal" || fieldType == "Double",
 			VisibleInForm:   visibleInForm,
 			RequiredInForm:  visibleInForm && f.IsRequired == 1,

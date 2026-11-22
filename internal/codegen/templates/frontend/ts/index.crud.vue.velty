@@ -5,7 +5,20 @@
     :form-config="formConfig"
     :load-form-data="loadFormData"
   >
-#foreach($field in $fieldConfigsInQuery)#if($field.hasDictType)    <template #search-${field.fieldName}="{ formData, prop, attrs }">
+#foreach($field in $fieldConfigsInQuery)#if($field.isInQuery)#if($field.hasDictType)    <template #search-${field.fieldName}="{ formData, prop, attrs }">
+      <DictSelect v-model="formData[prop]" type="checkbox" code="$field.dictType" v-bind="attrs" />
+    </template>#end
+#elseif($field.isBetweenNonDate)    <template #search-${field.fieldName}="{ formData, prop, attrs }">
+      <div class="flex w-full items-center gap-2" v-bind="attrs">
+#if($field.isNumeric)        <el-input-number v-model="formData[prop][0]" placeholder="最小值" class="flex-1" />
+        <span class="text-[var(--el-text-color-placeholder)]">~</span>
+        <el-input-number v-model="formData[prop][1]" placeholder="最大值" class="flex-1" />
+#else        <el-input v-model="formData[prop][0]" placeholder="开始值" clearable class="flex-1" />
+        <span class="text-[var(--el-text-color-placeholder)]">~</span>
+        <el-input v-model="formData[prop][1]" placeholder="结束值" clearable class="flex-1" />
+#end      </div>
+    </template>
+#elseif($field.hasDictType)    <template #search-${field.fieldName}="{ formData, prop, attrs }">
       <DictSelect v-model="formData[prop]" code="$field.dictType" v-bind="attrs" />
     </template>#end#end
 #foreach($field in $fieldConfigsInList)#if($field.hasDictType)    <template #table-cell-${field.fieldName}="{ row }">
@@ -38,17 +51,31 @@ const searchConfig: CrudSearchConfig = {
 #foreach($field in $fieldConfigsInQuery)    {
       prop: "$field.fieldName",
       label: "$field.fieldComment",
-#if($field.hasDictType)      type: "custom",
+#if($field.isInQuery)#if($field.hasDictType)      type: "custom",
+      initialValue: [],
       attrs: { clearable: true },
-#elseif($field.isDate)      type: "date-picker",
-#if($field.queryType == "BETWEEN")      initialValue: [],
+#else      type: "input-tag",
+      attrs: { clearable: true },
+#end
+#elseif($field.isBetweenQuery)#if($field.isDate)      type: "date-picker",
+      initialValue: [],
       attrs: {
-        type: "daterange",
+#if($field.isDateTime)        type: "datetimerange",
+        valueFormat: "YYYY-MM-DD HH:mm:ss",
+        startPlaceholder: "开始时间",
+        endPlaceholder: "结束时间",
+#else        type: "daterange",
         valueFormat: "YYYY-MM-DD",
         startPlaceholder: "开始日期",
         endPlaceholder: "结束日期",
-      },
-#elseif($field.isDateTime)      attrs: { type: "datetime", valueFormat: "YYYY-MM-DD HH:mm:ss", clearable: true },
+#end      },
+#else      type: "custom",
+      initialValue: [null, null],
+#end
+#elseif($field.hasDictType)      type: "custom",
+      attrs: { clearable: true },
+#elseif($field.isDate)      type: "date-picker",
+#if($field.isDateTime)      attrs: { type: "datetime", valueFormat: "YYYY-MM-DD HH:mm:ss", clearable: true },
 #else      attrs: { type: "date", valueFormat: "YYYY-MM-DD", clearable: true },
 #end#elseif($field.isNumeric)      type: "input-number",
       attrs: { clearable: true },
@@ -119,6 +146,7 @@ const formConfig: CrudFormConfig<${entityName}Form> = {
       options: [],
 #else      type: "input",
 #if($field.formType == "TEXT_AREA")      attrs: { type: "textarea", rows: 3 },
+#elseif($field.isPassword)      attrs: { type: "password", showPassword: true },
 #end#end    },
 #end  ],
 };
