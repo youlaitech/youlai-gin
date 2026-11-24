@@ -116,61 +116,67 @@ func (r *Repository) Page(ctx context.Context, query *model.LogQuery) ([]model.L
 func (r *Repository) VisitTrend(ctx context.Context, startDate, endDate time.Time) (*model.VisitTrendVO, error) {
 	db := r.db.WithContext(ctx)
 
-	dates := make([]string, 0)
-	pvList := make([]int64, 0)
-	uvList := make([]int64, 0)
-
+	points := make([]model.VisitTrendPointVO, 0)
 	for d := startDate; !d.After(endDate); d = d.AddDate(0, 0, 1) {
 		dateStr := d.Format("2006-01-02")
-		dates = append(dates, dateStr)
 
-		// PV（总访问量）
-		var pv int64
-		db.Table("sys_log").
-			Where("DATE(create_time) = ?", dateStr).
-			Count(&pv)
-		pvList = append(pvList, pv)
+		var pv, uv int64
+		db.Table("sys_log").Where("DATE(create_time) = ?", dateStr).Count(&pv)
+		db.Table("sys_log").Where("DATE(create_time) = ?", dateStr).Distinct("ip").Count(&uv)
 
-		// UV（独立访客）
-		var uvCount int64
-		db.Table("sys_log").
-			Where("DATE(create_time) = ?", dateStr).
-			Distinct("ip").
-			Count(&uvCount)
-		uvList = append(uvList, uvCount)
+		points = append(points, model.VisitTrendPointVO{Date: dateStr, Pv: pv, Uv: uv})
 	}
 
 	return &model.VisitTrendVO{
-		Dates:  dates,
-		PvList: pvList,
-		UvList: uvList,
+		StartDate: startDate.Format("2006-01-02"),
+		EndDate:   endDate.Format("2006-01-02"),
+		Points:    points,
 	}, nil
 }
 
-// VisitStats 访问统计（今日/累计的 PV、UV）
-func (r *Repository) VisitStats(ctx context.Context) (*model.VisitStatsVO, error) {
+// VisitSummary 访问汇总（今日/昨日/累计的 PV、UV 及增长率）
+func (r *Repository) VisitSummary(ctx context.Context) (*model.VisitSummaryVO, error) {
 	db := r.db.WithContext(ctx)
-	today := time.Now().Format("2006-01-02")
+	today := time.Now()
+	todayStr := today.Format("2006-01-02")
+	yesterdayStr := today.AddDate(0, 0, -1).Format("2006-01-02")
 
-	stats := &model.VisitStatsVO{}
+	countPv := func(day string) int64 {
+		var n int64
+		db.Table("sys_log").Where("DATE(create_time) = ?", day).Count(&n)
+		return n
+	}
+	countUv := func(day string) int64 {
+		var n int64
+		db.Table("sys_log").Where("DATE(create_time) = ?", day).Distinct("ip").Count(&n)
+		return n
+	}
 
-	// 今日统计
-	db.Table("sys_log").
-		Where("DATE(create_time) = ?", today).
-		Count(&stats.TodayPvCount)
-
-	db.Table("sys_log").
-		Where("DATE(create_time) = ?", today).
-		Distinct("operator_id").
-		Count(&stats.TodayUvCount)
-
-	// 总统计
-	db.Table("sys_log").Count(&stats.TotalPvCount)
-	db.Table("sys_log").Distinct("operator_id").Count(&stats.TotalUvCount)
-
-	// 增长率暂未计算，返回 0
-	stats.UvGrowthRate = 0
-	stats.PvGrowthRate = 0
+	stats := &model.VisitSummaryVO{}
+	stats.TodayPv = countPv(todayStr)
+	stats.YesterdayPv = countPv(yesterdayStr)
+	stats.TodayUv = countUv(todayStr)
+	stats.YesterdayUv = countUv(yesterdayStr)
+	db.Table("sys_log").Count(&stats.TotalPv)
+	db.Table("sys_log").Distinct("ip").Count(&stats.TotalUv)
+	stats.PvGrowthRate = growthRate(stats.TodayPv, stats.YesterdayPv)
+	stats.UvGrowthRate = growthRate(stats.TodayUv, stats.YesterdayUv)
 
 	return stats, nil
+}
+
+// UserSummary 用户总数
+func (r *Repository) UserSummary(ctx context.Context) (*model.UserSummaryVO, error) {
+	var total int64
+	r.db.WithContext(ctx).Table("sys_user").Where("is_deleted = 0").Count(&total)
+	return &model.UserSummaryVO{Total: total}, nil
+}
+
+func growthRate(today, yesterday int64) *float64 {
+	if yesterday == 0 {
+		return nil
+	}
+	rate := float64(today-yesterday) / float64(yesterday)
+	rate = float64(int64(rate*10000)) / 10000
+	return &rate
 }

@@ -24,19 +24,33 @@ type LogPageVO struct {
 	CreateTime    types.LocalTime `json:"createTime"` // 创建时间
 }
 
-// VisitTrendVO 访问趋势VO
-type VisitTrendVO struct {
-	Dates  []string `json:"dates"`  // 日期列表
-	PvList []int64  `json:"pvList"` // 浏览量(PV)
-	UvList []int64  `json:"uvList"` // 访客数(UV)
+// VisitTrendPointVO 单日访问量
+type VisitTrendPointVO struct {
+	Date string `json:"date"` // 日期 yyyy-MM-dd
+	Pv   int64  `json:"pv"`   // 浏览量
+	Uv   int64  `json:"uv"`   // 访客数
 }
 
-// VisitStatsVO 访问统计 VO，含今日/累计的 UV、PV 及增长率
-type VisitStatsVO struct {
-	TodayUvCount int64 `json:"todayUvCount"` // 今日独立访客数 (UV)
-	TotalUvCount int64 `json:"totalUvCount"` // 累计独立访客数 (UV)
-	UvGrowthRate int64 `json:"uvGrowthRate"` // 独立访客增长率（暂未计算，返回 0）
-	TodayPvCount int64 `json:"todayPvCount"` // 今日页面浏览量 (PV)
-	TotalPvCount int64 `json:"totalPvCount"` // 累计页面浏览量 (PV)
-	PvGrowthRate int64 `json:"pvGrowthRate"` // 页面浏览量增长率（暂未计算，返回 0）
+// VisitTrendVO 访问趋势VO
+type VisitTrendVO struct {
+	StartDate string               `json:"startDate"` // 查询开始日期
+	EndDate   string               `json:"endDate"`   // 查询结束日期
+	Points    []VisitTrendPointVO  `json:"points"`    // 逐日访问量
+}
+
+// VisitSummaryVO 访问汇总VO
+type VisitSummaryVO struct {
+	TodayUv      int64    `json:"todayUv"`      // 今日访客数
+	YesterdayUv  int64    `json:"yesterdayUv"`  // 昨日访客数
+	TotalUv      int64    `json:"totalUv"`      // 累计访客数
+	TodayPv      int64    `json:"todayPv"`      // 今日浏览量
+	YesterdayPv  int64    `json:"yesterdayPv"`  // 昨日浏览量
+	TotalPv      int64    `json:"totalPv"`      // 累计浏览量
+	UvGrowthRate *float64 `json:"uvGrowthRate"` // 访客增长率，昨日为 0 时为 null
+	PvGrowthRate *float64 `json:"pvGrowthRate"` // 浏览量增长率，昨日为 0 时为 null
+}
+
+// UserSummaryVO 用户汇总VO
+type UserSummaryVO struct {
+	Total int64 `json:"total"` // 用户总数
 }

@@ -63,9 +63,7 @@ func (u FileStorageUploadConfig) MaxFileSizeBytes() int64 {
 
 // RateLimitConfig 限流配置
 type RateLimitConfig struct {
-	DefaultLimit  int               `mapstructure:"default-limit"`
-	DefaultWindow string            `mapstructure:"default-window"`
-	Ip            IpRateLimitConfig `mapstructure:"ip"`
+	Ip IpRateLimitConfig `mapstructure:"ip"`
 }
 
 // IpRateLimitConfig IP 全局限流配置

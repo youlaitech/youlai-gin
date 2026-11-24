@@ -239,6 +239,24 @@ definitions:
 info:
   contact: {}
 paths:
+  /api/v1/analytics/users/summary:
+    get:
+      responses: {}
+      summary: 用户汇总
+      tags:
+      - 10.统计接口
+  /api/v1/analytics/visits/summary:
+    get:
+      responses: {}
+      summary: 访问汇总
+      tags:
+      - 10.统计接口
+  /api/v1/analytics/visits/trend:
+    get:
+      responses: {}
+      summary: 访问趋势
+      tags:
+      - 10.统计接口
   /api/v1/auth/captcha:
     get:
       description: 获取图形验证码
@@ -704,7 +722,7 @@ paths:
       parameters:
       - description: 文件路径
         in: query
-        name: path
+        name: filePath
         required: true
         type: string
       produces:
@@ -726,10 +744,6 @@ paths:
         name: file
         required: true
         type: file
-      - description: 存储路径前缀
-        in: formData
-        name: path
-        type: string
       produces:
       - application/json
       responses:
@@ -854,18 +868,6 @@ paths:
     get:
       responses: {}
       summary: 日志分页
-      tags:
-      - 09.日志接口
-  /api/v1/logs/analytics/overview:
-    get:
-      responses: {}
-      summary: 访问统计概览
-      tags:
-      - 09.日志接口
-  /api/v1/logs/analytics/trend:
-    get:
-      responses: {}
-      summary: 访问趋势
       tags:
       - 09.日志接口
   /api/v1/menus:

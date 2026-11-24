@@ -15,6 +15,33 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/analytics/users/summary": {
+            "get": {
+                "tags": [
+                    "10.统计接口"
+                ],
+                "summary": "用户汇总",
+                "responses": {}
+            }
+        },
+        "/api/v1/analytics/visits/summary": {
+            "get": {
+                "tags": [
+                    "10.统计接口"
+                ],
+                "summary": "访问汇总",
+                "responses": {}
+            }
+        },
+        "/api/v1/analytics/visits/trend": {
+            "get": {
+                "tags": [
+                    "10.统计接口"
+                ],
+                "summary": "访问趋势",
+                "responses": {}
+            }
+        },
         "/api/v1/auth/captcha": {
             "get": {
                 "description": "获取图形验证码",
@@ -738,12 +765,6 @@ const docTemplate = `{
                         "name": "file",
                         "in": "formData",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "存储路径前缀",
-                        "name": "path",
-                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -779,7 +800,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "文件路径",
-                        "name": "path",
+                        "name": "filePath",
                         "in": "query",
                         "required": true
                     }
@@ -956,24 +977,6 @@ const docTemplate = `{
                     "09.日志接口"
                 ],
                 "summary": "日志分页",
-                "responses": {}
-            }
-        },
-        "/api/v1/logs/analytics/overview": {
-            "get": {
-                "tags": [
-                    "09.日志接口"
-                ],
-                "summary": "访问统计概览",
-                "responses": {}
-            }
-        },
-        "/api/v1/logs/analytics/trend": {
-            "get": {
-                "tags": [
-                    "09.日志接口"
-                ],
-                "summary": "访问趋势",
                 "responses": {}
             }
         },

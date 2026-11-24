@@ -13,7 +13,8 @@ import (
 type Repository interface {
 	Page(ctx context.Context, query *model.LogQuery) ([]model.LogPageVO, int64, error)
 	VisitTrend(ctx context.Context, startDate, endDate time.Time) (*model.VisitTrendVO, error)
-	VisitStats(ctx context.Context) (*model.VisitStatsVO, error)
+	VisitSummary(ctx context.Context) (*model.VisitSummaryVO, error)
+	UserSummary(ctx context.Context) (*model.UserSummaryVO, error)
 }
 
 // Service 日志业务逻辑层
@@ -50,14 +51,19 @@ func (s *Service) VisitTrend(ctx context.Context, startDate, endDate string) (*m
 		return nil, errs.BadRequest("开始日期不能晚于结束日期")
 	}
 
-	if end.Sub(start).Hours() > 90*24 {
-		return nil, errs.BadRequest("查询范围不能超过90天")
+	if end.Sub(start).Hours() >= 366*24 {
+		return nil, errs.BadRequest("查询跨度不能超过366天")
 	}
 
 	return s.repo.VisitTrend(ctx, start, end)
 }
 
-// VisitStats 访问统计概览
-func (s *Service) VisitStats(ctx context.Context) (*model.VisitStatsVO, error) {
-	return s.repo.VisitStats(ctx)
+// VisitSummary 访问汇总
+func (s *Service) VisitSummary(ctx context.Context) (*model.VisitSummaryVO, error) {
+	return s.repo.VisitSummary(ctx)
+}
+
+// UserSummary 用户汇总
+func (s *Service) UserSummary(ctx context.Context) (*model.UserSummaryVO, error) {
+	return s.repo.UserSummary(ctx)
 }

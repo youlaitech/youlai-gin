@@ -4,6 +4,33 @@
         "contact": {}
     },
     "paths": {
+        "/api/v1/analytics/users/summary": {
+            "get": {
+                "tags": [
+                    "10.统计接口"
+                ],
+                "summary": "用户汇总",
+                "responses": {}
+            }
+        },
+        "/api/v1/analytics/visits/summary": {
+            "get": {
+                "tags": [
+                    "10.统计接口"
+                ],
+                "summary": "访问汇总",
+                "responses": {}
+            }
+        },
+        "/api/v1/analytics/visits/trend": {
+            "get": {
+                "tags": [
+                    "10.统计接口"
+                ],
+                "summary": "访问趋势",
+                "responses": {}
+            }
+        },
         "/api/v1/auth/captcha": {
             "get": {
                 "description": "获取图形验证码",
@@ -727,12 +754,6 @@
                         "name": "file",
                         "in": "formData",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "存储路径前缀",
-                        "name": "path",
-                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -768,7 +789,7 @@
                     {
                         "type": "string",
                         "description": "文件路径",
-                        "name": "path",
+                        "name": "filePath",
                         "in": "query",
                         "required": true
                     }
@@ -945,24 +966,6 @@
                     "09.日志接口"
                 ],
                 "summary": "日志分页",
-                "responses": {}
-            }
-        },
-        "/api/v1/logs/analytics/overview": {
-            "get": {
-                "tags": [
-                    "09.日志接口"
-                ],
-                "summary": "访问统计概览",
-                "responses": {}
-            }
-        },
-        "/api/v1/logs/analytics/trend": {
-            "get": {
-                "tags": [
-                    "09.日志接口"
-                ],
-                "summary": "访问趋势",
                 "responses": {}
             }
         },
@@ -1296,6 +1299,47 @@
                     }
                 ],
                 "responses": {}
+            }
+        },
+        "/api/v1/realtime/presence": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "13.实时推送"
+                ],
+                "summary": "查询在线状态",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.Result"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/realtime/tickets": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "13.实时推送"
+                ],
+                "summary": "签发实时连接票据",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.Result"
+                        }
+                    }
+                }
             }
         },
         "/api/v1/roles": {
