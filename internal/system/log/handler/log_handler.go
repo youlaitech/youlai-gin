@@ -49,7 +49,7 @@ func (h *Handler) Page(c *gin.Context) {
 
 // VisitSummary 访问汇总
 // @Summary 访问汇总
-// @Tags 10.统计接口
+// @Tags 15.统计接口
 // @Router /api/v1/analytics/visits/summary [get]
 func (h *Handler) VisitSummary(c *gin.Context) {
 	result, err := h.svc.VisitSummary(c.Request.Context())
@@ -62,7 +62,7 @@ func (h *Handler) VisitSummary(c *gin.Context) {
 
 // VisitTrend 访问趋势
 // @Summary 访问趋势
-// @Tags 10.统计接口
+// @Tags 15.统计接口
 // @Router /api/v1/analytics/visits/trend [get]
 func (h *Handler) VisitTrend(c *gin.Context) {
 	startDate := c.Query("startDate")
@@ -81,7 +81,7 @@ func (h *Handler) VisitTrend(c *gin.Context) {
 
 // UserSummary 用户汇总
 // @Summary 用户汇总
-// @Tags 10.统计接口
+// @Tags 15.统计接口
 // @Router /api/v1/analytics/users/summary [get]
 func (h *Handler) UserSummary(c *gin.Context) {
 	result, err := h.svc.UserSummary(c.Request.Context())

@@ -37,6 +37,9 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 }
 
 // List 部门列表（树形）
+// @Summary 部门列表
+// @Tags 05.部门接口
+// @Router /api/v1/depts [get]
 func (h *Handler) List(c *gin.Context) {
 	var query model.DeptQuery
 	if err := validator.BindQuery(c, &query); err != nil {
@@ -60,6 +63,9 @@ func (h *Handler) List(c *gin.Context) {
 }
 
 // Options 部门下拉列表（树形）
+// @Summary 部门下拉列表
+// @Tags 05.部门接口
+// @Router /api/v1/depts/options [get]
 func (h *Handler) Options(c *gin.Context) {
 	currentUser, err := appContext.GetCurrentUser(c)
 	if err != nil {
@@ -77,6 +83,9 @@ func (h *Handler) Options(c *gin.Context) {
 }
 
 // Create 新增部门
+// @Summary 保存部门
+// @Tags 05.部门接口
+// @Router /api/v1/depts [post]
 func (h *Handler) Create(c *gin.Context) {
 	var form model.DeptForm
 	if err := validator.BindJSON(c, &form); err != nil {
@@ -93,6 +102,10 @@ func (h *Handler) Create(c *gin.Context) {
 }
 
 // GetForm 获取部门表单数据
+// @Summary 获取部门表单
+// @Tags 05.部门接口
+// @Param id path int true "部门ID"
+// @Router /api/v1/depts/{id}/form [get]
 func (h *Handler) GetForm(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "部门")
 	if err != nil {
@@ -110,6 +123,10 @@ func (h *Handler) GetForm(c *gin.Context) {
 }
 
 // Update 更新部门
+// @Summary 修改部门
+// @Tags 05.部门接口
+// @Param id path int true "部门ID"
+// @Router /api/v1/depts/{id} [put]
 func (h *Handler) Update(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "部门")
 	if err != nil {
@@ -132,6 +149,10 @@ func (h *Handler) Update(c *gin.Context) {
 }
 
 // Delete 删除部门
+// @Summary 删除部门
+// @Tags 05.部门接口
+// @Param id path int true "部门ID"
+// @Router /api/v1/depts/{id} [delete]
 func (h *Handler) Delete(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "部门")
 	if err != nil {

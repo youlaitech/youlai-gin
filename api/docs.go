@@ -18,7 +18,7 @@ const docTemplate = `{
         "/api/v1/analytics/users/summary": {
             "get": {
                 "tags": [
-                    "10.统计接口"
+                    "15.统计接口"
                 ],
                 "summary": "用户汇总",
                 "responses": {}
@@ -27,7 +27,7 @@ const docTemplate = `{
         "/api/v1/analytics/visits/summary": {
             "get": {
                 "tags": [
-                    "10.统计接口"
+                    "15.统计接口"
                 ],
                 "summary": "访问汇总",
                 "responses": {}
@@ -36,7 +36,7 @@ const docTemplate = `{
         "/api/v1/analytics/visits/trend": {
             "get": {
                 "tags": [
-                    "10.统计接口"
+                    "15.统计接口"
                 ],
                 "summary": "访问趋势",
                 "responses": {}
@@ -141,7 +141,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "02.扫码登录"
+                    "01.认证中心"
                 ],
                 "summary": "APP 取消登录",
                 "parameters": [
@@ -180,7 +180,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "02.扫码登录"
+                    "01.认证中心"
                 ],
                 "summary": "APP 确认登录",
                 "parameters": [
@@ -211,7 +211,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "02.扫码登录"
+                    "01.认证中心"
                 ],
                 "summary": "生成扫码登录票据",
                 "responses": {
@@ -234,7 +234,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "02.扫码登录"
+                    "01.认证中心"
                 ],
                 "summary": "PC 端换取会话令牌",
                 "parameters": [
@@ -273,7 +273,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "02.扫码登录"
+                    "01.认证中心"
                 ],
                 "summary": "APP 标记已扫码",
                 "parameters": [
@@ -304,7 +304,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "02.扫码登录"
+                    "01.认证中心"
                 ],
                 "summary": "查询扫码状态",
                 "parameters": [
@@ -746,6 +746,287 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/api/v1/depts": {
+            "get": {
+                "tags": [
+                    "05.部门接口"
+                ],
+                "summary": "部门列表",
+                "responses": {}
+            },
+            "post": {
+                "tags": [
+                    "05.部门接口"
+                ],
+                "summary": "保存部门",
+                "responses": {}
+            }
+        },
+        "/api/v1/depts/options": {
+            "get": {
+                "tags": [
+                    "05.部门接口"
+                ],
+                "summary": "部门下拉列表",
+                "responses": {}
+            }
+        },
+        "/api/v1/depts/{id}": {
+            "put": {
+                "tags": [
+                    "05.部门接口"
+                ],
+                "summary": "修改部门",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "部门ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "delete": {
+                "tags": [
+                    "05.部门接口"
+                ],
+                "summary": "删除部门",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "部门ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/depts/{id}/form": {
+            "get": {
+                "tags": [
+                    "05.部门接口"
+                ],
+                "summary": "获取部门表单",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "部门ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/dicts": {
+            "get": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "字典分页列表",
+                "responses": {}
+            },
+            "post": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "保存字典",
+                "responses": {}
+            }
+        },
+        "/api/v1/dicts/options": {
+            "get": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "字典下拉选项",
+                "responses": {}
+            }
+        },
+        "/api/v1/dicts/{id}": {
+            "put": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "修改字典",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典编码",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "delete": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "删除字典",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典编码",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/dicts/{id}/form": {
+            "get": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "获取字典表单",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典编码",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/dicts/{id}/items": {
+            "get": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "字典项分页列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典编码",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "post": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "保存字典项",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典编码",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/dicts/{id}/items/options": {
+            "get": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "字典项列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典编码",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/dicts/{id}/items/{itemIds}": {
+            "delete": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "批量删除字典项",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典编码",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "字典项ID，逗号分隔",
+                        "name": "itemIds",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/dicts/{id}/items/{itemId}": {
+            "put": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "修改字典项",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典编码",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "字典项ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/api/v1/dicts/{id}/items/{itemId}/form": {
+            "get": {
+                "tags": [
+                    "06.字典接口"
+                ],
+                "summary": "获取字典项表单",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "字典编码",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "字典项ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/api/v1/files": {
             "post": {
                 "consumes": [
@@ -818,14 +1099,14 @@ const docTemplate = `{
         "/api/v1/forms": {
             "get": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "表单分页列表",
                 "responses": {}
             },
             "post": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "新增表单",
                 "responses": {}
@@ -834,7 +1115,7 @@ const docTemplate = `{
         "/api/v1/forms/ai-generate": {
             "post": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "AI 生成表单规则",
                 "responses": {}
@@ -843,7 +1124,7 @@ const docTemplate = `{
         "/api/v1/forms/options": {
             "get": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "审批表单下拉选项",
                 "responses": {}
@@ -852,7 +1133,7 @@ const docTemplate = `{
         "/api/v1/forms/public/{formKey}/data": {
             "post": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "公开表单提交",
                 "responses": {}
@@ -861,7 +1142,7 @@ const docTemplate = `{
         "/api/v1/forms/public/{formKey}/render": {
             "get": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "公开表单渲染规则",
                 "responses": {}
@@ -870,14 +1151,14 @@ const docTemplate = `{
         "/api/v1/forms/{formKey}/data": {
             "get": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "表单数据分页",
                 "responses": {}
             },
             "post": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "提交表单数据",
                 "responses": {}
@@ -886,7 +1167,7 @@ const docTemplate = `{
         "/api/v1/forms/{formKey}/data/{dataId}": {
             "get": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "表单数据详情",
                 "responses": {}
@@ -895,7 +1176,7 @@ const docTemplate = `{
         "/api/v1/forms/{formKey}/data/{ids}": {
             "delete": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "删除表单数据",
                 "responses": {}
@@ -904,7 +1185,7 @@ const docTemplate = `{
         "/api/v1/forms/{formKey}/render": {
             "get": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "表单渲染规则",
                 "responses": {}
@@ -913,7 +1194,7 @@ const docTemplate = `{
         "/api/v1/forms/{ids}": {
             "delete": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "删除表单",
                 "responses": {}
@@ -922,7 +1203,7 @@ const docTemplate = `{
         "/api/v1/forms/{id}": {
             "put": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "修改表单",
                 "responses": {}
@@ -931,7 +1212,7 @@ const docTemplate = `{
         "/api/v1/forms/{id}/disable": {
             "put": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "停用表单",
                 "responses": {}
@@ -940,7 +1221,7 @@ const docTemplate = `{
         "/api/v1/forms/{id}/form": {
             "get": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "表单设计数据",
                 "responses": {}
@@ -949,14 +1230,14 @@ const docTemplate = `{
         "/api/v1/forms/{id}/menu": {
             "get": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "表单访问菜单回显",
                 "responses": {}
             },
             "post": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "生成表单访问菜单",
                 "responses": {}
@@ -965,7 +1246,7 @@ const docTemplate = `{
         "/api/v1/forms/{id}/publish": {
             "put": {
                 "tags": [
-                    "12.动态表单"
+                    "14.动态表单"
                 ],
                 "summary": "发布表单",
                 "responses": {}

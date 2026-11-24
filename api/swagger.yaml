@@ -244,19 +244,19 @@ paths:
       responses: {}
       summary: 用户汇总
       tags:
-      - 10.统计接口
+      - 15.统计接口
   /api/v1/analytics/visits/summary:
     get:
       responses: {}
       summary: 访问汇总
       tags:
-      - 10.统计接口
+      - 15.统计接口
   /api/v1/analytics/visits/trend:
     get:
       responses: {}
       summary: 访问趋势
       tags:
-      - 10.统计接口
+      - 15.统计接口
   /api/v1/auth/captcha:
     get:
       description: 获取图形验证码
@@ -335,7 +335,7 @@ paths:
       - Bearer: []
       summary: APP 取消登录
       tags:
-      - 02.扫码登录
+      - 01.认证中心
   /api/v1/auth/qr-code/confirm:
     post:
       consumes:
@@ -359,7 +359,7 @@ paths:
       - Bearer: []
       summary: APP 确认登录
       tags:
-      - 02.扫码登录
+      - 01.认证中心
   /api/v1/auth/qr-code/generate:
     post:
       produces:
@@ -372,7 +372,7 @@ paths:
             type: object
       summary: 生成扫码登录票据
       tags:
-      - 02.扫码登录
+      - 01.认证中心
   /api/v1/auth/qr-code/login:
     post:
       consumes:
@@ -394,7 +394,7 @@ paths:
             type: object
       summary: PC 端换取会话令牌
       tags:
-      - 02.扫码登录
+      - 01.认证中心
   /api/v1/auth/qr-code/scan:
     post:
       consumes:
@@ -418,7 +418,7 @@ paths:
       - Bearer: []
       summary: APP 标记已扫码
       tags:
-      - 02.扫码登录
+      - 01.认证中心
   /api/v1/auth/qr-code/status:
     get:
       parameters:
@@ -437,7 +437,7 @@ paths:
             type: object
       summary: 查询扫码状态
       tags:
-      - 02.扫码登录
+      - 01.认证中心
   /api/v1/auth/refresh-token:
     post:
       consumes:
@@ -717,6 +717,196 @@ paths:
       summary: 刷新全部配置缓存
       tags:
       - 07.系统配置
+  /api/v1/depts:
+    get:
+      responses: {}
+      summary: 部门列表
+      tags:
+      - 05.部门接口
+    post:
+      responses: {}
+      summary: 保存部门
+      tags:
+      - 05.部门接口
+  /api/v1/depts/{id}:
+    delete:
+      parameters:
+      - description: 部门ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses: {}
+      summary: 删除部门
+      tags:
+      - 05.部门接口
+    put:
+      parameters:
+      - description: 部门ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses: {}
+      summary: 修改部门
+      tags:
+      - 05.部门接口
+  /api/v1/depts/{id}/form:
+    get:
+      parameters:
+      - description: 部门ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses: {}
+      summary: 获取部门表单
+      tags:
+      - 05.部门接口
+  /api/v1/depts/options:
+    get:
+      responses: {}
+      summary: 部门下拉列表
+      tags:
+      - 05.部门接口
+  /api/v1/dicts:
+    get:
+      responses: {}
+      summary: 字典分页列表
+      tags:
+      - 06.字典接口
+    post:
+      responses: {}
+      summary: 保存字典
+      tags:
+      - 06.字典接口
+  /api/v1/dicts/{id}:
+    delete:
+      parameters:
+      - description: 字典编码
+        in: path
+        name: id
+        required: true
+        type: string
+      responses: {}
+      summary: 删除字典
+      tags:
+      - 06.字典接口
+    put:
+      parameters:
+      - description: 字典编码
+        in: path
+        name: id
+        required: true
+        type: string
+      responses: {}
+      summary: 修改字典
+      tags:
+      - 06.字典接口
+  /api/v1/dicts/{id}/form:
+    get:
+      parameters:
+      - description: 字典编码
+        in: path
+        name: id
+        required: true
+        type: string
+      responses: {}
+      summary: 获取字典表单
+      tags:
+      - 06.字典接口
+  /api/v1/dicts/{id}/items:
+    get:
+      parameters:
+      - description: 字典编码
+        in: path
+        name: id
+        required: true
+        type: string
+      responses: {}
+      summary: 字典项分页列表
+      tags:
+      - 06.字典接口
+    post:
+      parameters:
+      - description: 字典编码
+        in: path
+        name: id
+        required: true
+        type: string
+      responses: {}
+      summary: 保存字典项
+      tags:
+      - 06.字典接口
+  /api/v1/dicts/{id}/items/{itemId}:
+    put:
+      parameters:
+      - description: 字典编码
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 字典项ID
+        in: path
+        name: itemId
+        required: true
+        type: integer
+      responses: {}
+      summary: 修改字典项
+      tags:
+      - 06.字典接口
+  /api/v1/dicts/{id}/items/{itemId}/form:
+    get:
+      parameters:
+      - description: 字典编码
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 字典项ID
+        in: path
+        name: itemId
+        required: true
+        type: integer
+      responses: {}
+      summary: 获取字典项表单
+      tags:
+      - 06.字典接口
+  /api/v1/dicts/{id}/items/{itemIds}:
+    delete:
+      parameters:
+      - description: 字典编码
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 字典项ID，逗号分隔
+        in: path
+        name: itemIds
+        required: true
+        type: string
+      responses: {}
+      summary: 批量删除字典项
+      tags:
+      - 06.字典接口
+  /api/v1/dicts/{id}/items/options:
+    get:
+      parameters:
+      - description: 字典编码
+        in: path
+        name: id
+        required: true
+        type: string
+      responses: {}
+      summary: 字典项列表
+      tags:
+      - 06.字典接口
+  /api/v1/dicts/options:
+    get:
+      responses: {}
+      summary: 字典下拉选项
+      tags:
+      - 06.字典接口
   /api/v1/files:
     delete:
       parameters:
@@ -764,106 +954,106 @@ paths:
       responses: {}
       summary: 表单分页列表
       tags:
-      - 12.动态表单
+      - 14.动态表单
     post:
       responses: {}
       summary: 新增表单
       tags:
-      - 12.动态表单
+      - 14.动态表单
   /api/v1/forms/{formKey}/data:
     get:
       responses: {}
       summary: 表单数据分页
       tags:
-      - 12.动态表单
+      - 14.动态表单
     post:
       responses: {}
       summary: 提交表单数据
       tags:
-      - 12.动态表单
+      - 14.动态表单
   /api/v1/forms/{formKey}/data/{dataId}:
     get:
       responses: {}
       summary: 表单数据详情
       tags:
-      - 12.动态表单
+      - 14.动态表单
   /api/v1/forms/{formKey}/data/{ids}:
     delete:
       responses: {}
       summary: 删除表单数据
       tags:
-      - 12.动态表单
+      - 14.动态表单
   /api/v1/forms/{formKey}/render:
     get:
       responses: {}
       summary: 表单渲染规则
       tags:
-      - 12.动态表单
+      - 14.动态表单
   /api/v1/forms/{id}:
     put:
       responses: {}
       summary: 修改表单
       tags:
-      - 12.动态表单
+      - 14.动态表单
   /api/v1/forms/{id}/disable:
     put:
       responses: {}
       summary: 停用表单
       tags:
-      - 12.动态表单
+      - 14.动态表单
   /api/v1/forms/{id}/form:
     get:
       responses: {}
       summary: 表单设计数据
       tags:
-      - 12.动态表单
+      - 14.动态表单
   /api/v1/forms/{id}/menu:
     get:
       responses: {}
       summary: 表单访问菜单回显
       tags:
-      - 12.动态表单
+      - 14.动态表单
     post:
       responses: {}
       summary: 生成表单访问菜单
       tags:
-      - 12.动态表单
+      - 14.动态表单
   /api/v1/forms/{id}/publish:
     put:
       responses: {}
       summary: 发布表单
       tags:
-      - 12.动态表单
+      - 14.动态表单
   /api/v1/forms/{ids}:
     delete:
       responses: {}
       summary: 删除表单
       tags:
-      - 12.动态表单
+      - 14.动态表单
   /api/v1/forms/ai-generate:
     post:
       responses: {}
       summary: AI 生成表单规则
       tags:
-      - 12.动态表单
+      - 14.动态表单
   /api/v1/forms/options:
     get:
       responses: {}
       summary: 审批表单下拉选项
       tags:
-      - 12.动态表单
+      - 14.动态表单
   /api/v1/forms/public/{formKey}/data:
     post:
       responses: {}
       summary: 公开表单提交
       tags:
-      - 12.动态表单
+      - 14.动态表单
   /api/v1/forms/public/{formKey}/render:
     get:
       responses: {}
       summary: 公开表单渲染规则
       tags:
-      - 12.动态表单
+      - 14.动态表单
   /api/v1/logs:
     get:
       responses: {}

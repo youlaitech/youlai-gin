@@ -92,7 +92,7 @@ func parseIDs(raw string) ([]int64, error) {
 }
 
 // @Summary 表单分页列表
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms [get]
 func (h *Handler) Page(c *gin.Context) {
 	var query model.FormDefinitionQuery
@@ -110,7 +110,7 @@ func (h *Handler) Page(c *gin.Context) {
 }
 
 // @Summary 新增表单
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms [post]
 func (h *Handler) Create(c *gin.Context) {
 	var form model.FormDefinitionForm
@@ -127,7 +127,7 @@ func (h *Handler) Create(c *gin.Context) {
 }
 
 // @Summary 审批表单下拉选项
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms/options [get]
 func (h *Handler) WorkflowOptions(c *gin.Context) {
 	options, err := h.svc.WorkflowOptions(c.Request.Context())
@@ -139,7 +139,7 @@ func (h *Handler) WorkflowOptions(c *gin.Context) {
 }
 
 // @Summary AI 生成表单规则
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms/ai-generate [post]
 func (h *Handler) AiGenerate(c *gin.Context) {
 	var form model.FormAiGenerateForm
@@ -157,7 +157,7 @@ func (h *Handler) AiGenerate(c *gin.Context) {
 }
 
 // @Summary 公开表单渲染规则
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms/public/{formKey}/render [get]
 func (h *Handler) PublicRender(c *gin.Context) {
 	vo, err := h.svc.PublicRender(c.Request.Context(), c.Param("id"))
@@ -169,7 +169,7 @@ func (h *Handler) PublicRender(c *gin.Context) {
 }
 
 // @Summary 公开表单提交
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms/public/{formKey}/data [post]
 func (h *Handler) PublicSubmit(c *gin.Context) {
 	var data map[string]any
@@ -186,7 +186,7 @@ func (h *Handler) PublicSubmit(c *gin.Context) {
 }
 
 // @Summary 表单设计数据
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms/{id}/form [get]
 func (h *Handler) GetForm(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -204,7 +204,7 @@ func (h *Handler) GetForm(c *gin.Context) {
 }
 
 // @Summary 修改表单
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms/{id} [put]
 func (h *Handler) Update(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -227,7 +227,7 @@ func (h *Handler) Update(c *gin.Context) {
 }
 
 // @Summary 删除表单
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms/{ids} [delete]
 func (h *Handler) Delete(c *gin.Context) {
 	ids, err := parseIDs(c.Param("id"))
@@ -244,7 +244,7 @@ func (h *Handler) Delete(c *gin.Context) {
 }
 
 // @Summary 发布表单
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms/{id}/publish [put]
 func (h *Handler) Publish(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -261,7 +261,7 @@ func (h *Handler) Publish(c *gin.Context) {
 }
 
 // @Summary 停用表单
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms/{id}/disable [put]
 func (h *Handler) Disable(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -278,7 +278,7 @@ func (h *Handler) Disable(c *gin.Context) {
 }
 
 // @Summary 表单访问菜单回显
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms/{id}/menu [get]
 func (h *Handler) GetMenu(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -296,7 +296,7 @@ func (h *Handler) GetMenu(c *gin.Context) {
 }
 
 // @Summary 生成表单访问菜单
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms/{id}/menu [post]
 func (h *Handler) SaveMenu(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -319,7 +319,7 @@ func (h *Handler) SaveMenu(c *gin.Context) {
 }
 
 // @Summary 表单渲染规则
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms/{formKey}/render [get]
 func (h *Handler) Render(c *gin.Context) {
 	formKey, err := h.resolveFormKey(c)
@@ -337,7 +337,7 @@ func (h *Handler) Render(c *gin.Context) {
 }
 
 // @Summary 表单数据分页
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms/{formKey}/data [get]
 func (h *Handler) DataPage(c *gin.Context) {
 	formKey, err := h.resolveFormKey(c)
@@ -361,7 +361,7 @@ func (h *Handler) DataPage(c *gin.Context) {
 }
 
 // @Summary 提交表单数据
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms/{formKey}/data [post]
 func (h *Handler) SubmitData(c *gin.Context) {
 	formKey, err := h.resolveFormKey(c)
@@ -384,7 +384,7 @@ func (h *Handler) SubmitData(c *gin.Context) {
 }
 
 // @Summary 表单数据详情
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms/{formKey}/data/{dataId} [get]
 func (h *Handler) DataDetail(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("dataId"), 10, 64)
@@ -402,7 +402,7 @@ func (h *Handler) DataDetail(c *gin.Context) {
 }
 
 // @Summary 删除表单数据
-// @Tags 12.动态表单
+// @Tags 14.动态表单
 // @Router /api/v1/forms/{formKey}/data/{ids} [delete]
 func (h *Handler) DeleteData(c *gin.Context) {
 	ids, err := parseIDs(c.Param("dataId"))

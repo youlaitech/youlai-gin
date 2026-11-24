@@ -39,7 +39,7 @@ func (h *QrCodeHandler) RegisterRoutes(r *gin.RouterGroup, tokenManager pkgAuth.
 
 // Generate 生成扫码登录票据
 // @Summary 生成扫码登录票据
-// @Tags 02.扫码登录
+// @Tags 01.认证中心
 // @Produce json
 // @Success 200 {object} map[string]interface{} "data 为 QrCodeGenerateVO"
 // @Router /api/v1/auth/qr-code/generate [post]
@@ -54,7 +54,7 @@ func (h *QrCodeHandler) Generate(c *gin.Context) {
 
 // Status 查询扫码状态
 // @Summary 查询扫码状态
-// @Tags 02.扫码登录
+// @Tags 01.认证中心
 // @Produce json
 // @Param ticket query string true "票据号"
 // @Success 200 {object} map[string]interface{} "data 为 QrCodeStatusVO"
@@ -70,7 +70,7 @@ func (h *QrCodeHandler) Status(c *gin.Context) {
 
 // Scan APP 标记已扫码
 // @Summary APP 标记已扫码
-// @Tags 02.扫码登录
+// @Tags 01.认证中心
 // @Accept json
 // @Produce json
 // @Param body body model.QrCodeTicketForm true "票据号"
@@ -88,7 +88,7 @@ func (h *QrCodeHandler) Scan(c *gin.Context) {
 
 // Confirm APP 确认登录
 // @Summary APP 确认登录
-// @Tags 02.扫码登录
+// @Tags 01.认证中心
 // @Accept json
 // @Produce json
 // @Param body body model.QrCodeTicketForm true "票据号"
@@ -106,7 +106,7 @@ func (h *QrCodeHandler) Confirm(c *gin.Context) {
 
 // Cancel APP 取消登录
 // @Summary APP 取消登录
-// @Tags 02.扫码登录
+// @Tags 01.认证中心
 // @Accept json
 // @Produce json
 // @Param body body model.QrCodeTicketForm true "票据号"
@@ -124,7 +124,7 @@ func (h *QrCodeHandler) Cancel(c *gin.Context) {
 
 // Login PC 端换取会话令牌
 // @Summary PC 端换取会话令牌
-// @Tags 02.扫码登录
+// @Tags 01.认证中心
 // @Accept json
 // @Produce json
 // @Param body body model.QrCodeTicketForm true "票据号"

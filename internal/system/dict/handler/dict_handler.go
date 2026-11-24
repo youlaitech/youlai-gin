@@ -41,6 +41,9 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 }
 
 // Page 字典分页列表
+// @Summary 字典分页列表
+// @Tags 06.字典接口
+// @Router /api/v1/dicts [get]
 func (h *Handler) Page(c *gin.Context) {
 	var query model.DictQuery
 	if err := validator.BindQuery(c, &query); err != nil {
@@ -58,6 +61,9 @@ func (h *Handler) Page(c *gin.Context) {
 }
 
 // Options 字典下拉选项
+// @Summary 字典下拉选项
+// @Tags 06.字典接口
+// @Router /api/v1/dicts/options [get]
 func (h *Handler) Options(c *gin.Context) {
 	options, err := h.svc.Options(c.Request.Context())
 	if err != nil {
@@ -69,6 +75,9 @@ func (h *Handler) Options(c *gin.Context) {
 }
 
 // Create 新增字典
+// @Summary 保存字典
+// @Tags 06.字典接口
+// @Router /api/v1/dicts [post]
 func (h *Handler) Create(c *gin.Context) {
 	var form model.DictForm
 	if err := validator.BindJSON(c, &form); err != nil {
@@ -85,6 +94,10 @@ func (h *Handler) Create(c *gin.Context) {
 }
 
 // GetForm 获取字典表单数据
+// @Summary 获取字典表单
+// @Tags 06.字典接口
+// @Param id path string true "字典编码"
+// @Router /api/v1/dicts/{id}/form [get]
 func (h *Handler) GetForm(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "字典")
 	if err != nil {
@@ -102,6 +115,10 @@ func (h *Handler) GetForm(c *gin.Context) {
 }
 
 // Update 更新字典
+// @Summary 修改字典
+// @Tags 06.字典接口
+// @Param id path string true "字典编码"
+// @Router /api/v1/dicts/{id} [put]
 func (h *Handler) Update(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "字典")
 	if err != nil {
@@ -124,6 +141,10 @@ func (h *Handler) Update(c *gin.Context) {
 }
 
 // Delete 删除字典
+// @Summary 删除字典
+// @Tags 06.字典接口
+// @Param id path string true "字典编码"
+// @Router /api/v1/dicts/{id} [delete]
 func (h *Handler) Delete(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "字典")
 	if err != nil {
@@ -140,6 +161,10 @@ func (h *Handler) Delete(c *gin.Context) {
 }
 
 // ItemPage 字典项分页列表（字典编码取自路径）
+// @Summary 字典项分页列表
+// @Tags 06.字典接口
+// @Param id path string true "字典编码"
+// @Router /api/v1/dicts/{id}/items [get]
 func (h *Handler) ItemPage(c *gin.Context) {
 	var query model.DictItemQuery
 	if err := validator.BindQuery(c, &query); err != nil {
@@ -158,6 +183,10 @@ func (h *Handler) ItemPage(c *gin.Context) {
 }
 
 // Items 字典项列表（字典编码取自路径）
+// @Summary 字典项列表
+// @Tags 06.字典接口
+// @Param id path string true "字典编码"
+// @Router /api/v1/dicts/{id}/items/options [get]
 func (h *Handler) Items(c *gin.Context) {
 	items, err := h.svc.Items(c.Request.Context(), c.Param("id"))
 	if err != nil {
@@ -169,6 +198,10 @@ func (h *Handler) Items(c *gin.Context) {
 }
 
 // CreateItem 新增字典项（字典编码取自路径）
+// @Summary 保存字典项
+// @Tags 06.字典接口
+// @Param id path string true "字典编码"
+// @Router /api/v1/dicts/{id}/items [post]
 func (h *Handler) CreateItem(c *gin.Context) {
 	var form model.DictItemForm
 	if err := validator.BindJSON(c, &form); err != nil {
@@ -186,6 +219,11 @@ func (h *Handler) CreateItem(c *gin.Context) {
 }
 
 // GetItemForm 获取字典项表单数据
+// @Summary 获取字典项表单
+// @Tags 06.字典接口
+// @Param id path string true "字典编码"
+// @Param itemId path int true "字典项ID"
+// @Router /api/v1/dicts/{id}/items/{itemId}/form [get]
 func (h *Handler) GetItemForm(c *gin.Context) {
 	itemId, err := appContext.ParsePathParam(c, "itemId", "字典项")
 	if err != nil {
@@ -203,6 +241,11 @@ func (h *Handler) GetItemForm(c *gin.Context) {
 }
 
 // UpdateItem 更新字典项（字典编码取自路径）
+// @Summary 修改字典项
+// @Tags 06.字典接口
+// @Param id path string true "字典编码"
+// @Param itemId path int true "字典项ID"
+// @Router /api/v1/dicts/{id}/items/{itemId} [put]
 func (h *Handler) UpdateItem(c *gin.Context) {
 	itemId, err := appContext.ParsePathParam(c, "itemId", "字典项")
 	if err != nil {
@@ -226,6 +269,11 @@ func (h *Handler) UpdateItem(c *gin.Context) {
 }
 
 // BatchDeleteItems 批量删除字典项
+// @Summary 批量删除字典项
+// @Tags 06.字典接口
+// @Param id path string true "字典编码"
+// @Param itemIds path string true "字典项ID，逗号分隔"
+// @Router /api/v1/dicts/{id}/items/{itemIds} [delete]
 func (h *Handler) BatchDeleteItems(c *gin.Context) {
 	ids, err := appContext.ParseIntList(c.Param("itemIds"), "字典项")
 	if err != nil {
