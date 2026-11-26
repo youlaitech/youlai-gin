@@ -256,17 +256,39 @@ func (s *Service) GetForm(ctx context.Context, id int64) (*model.RoleForm, error
 	}, nil
 }
 
+// BatchDelete 批量删除角色
+func (s *Service) BatchDelete(ctx context.Context, ids []int64) error {
+	for _, id := range ids {
+		if err := s.Delete(ctx, id); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Delete 删除角色
 func (s *Service) Delete(ctx context.Context, id int64) error {
-	if _, err := s.repo.Get(ctx, id); err != nil {
+	role, err := s.repo.Get(ctx, id)
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errs.NotFound("角色不存在")
 		}
 		return errs.SystemError("查询角色失败")
 	}
 
+	userIds, err := s.userIDs.ListIDsByRoleID(ctx, id)
+	if err != nil {
+		return errs.SystemError("查询角色关联用户失败")
+	}
+	if len(userIds) > 0 {
+		return errs.Business(fmt.Sprintf("角色【%s】已分配用户，请先解除关联后删除", role.Name))
+	}
+
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return errs.SystemError("删除角色失败")
+	}
+	if err := s.RefreshPermsCacheByCode(role.Code); err != nil {
+		return errs.SystemError("刷新角色权限缓存失败")
 	}
 
 	return nil

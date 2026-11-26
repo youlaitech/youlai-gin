@@ -8,6 +8,7 @@ import (
 
 	realtime "youlai-gin/internal/message/service"
 	"youlai-gin/internal/system/dict/model"
+	"youlai-gin/internal/system/dict/repository"
 	"youlai-gin/pkg/errs"
 	baseModel "youlai-gin/pkg/model"
 	"youlai-gin/pkg/types"
@@ -30,6 +31,7 @@ type Repository interface {
 	DeleteItem(ctx context.Context, id int64) error
 	BatchDeleteItems(ctx context.Context, ids []int64) error
 	BatchDeleteItemsByCode(ctx context.Context, dictCode string) error
+	Transaction(ctx context.Context, fn func(repo *repository.Repository) error) error
 	ItemValueExists(ctx context.Context, dictCode, value string, excludeID int64) (bool, error)
 	ItemsCount(ctx context.Context, dictCode string) (int64, error)
 }
@@ -149,6 +151,35 @@ func (s *Service) GetForm(ctx context.Context, id int64) (*model.DictForm, error
 	}, nil
 }
 
+// BatchDelete 批量删除字典（整批回滚，逐项级联删除字典项）
+func (s *Service) BatchDelete(ctx context.Context, ids []int64) error {
+	var dictCodes []string
+	err := s.repo.Transaction(ctx, func(repo *repository.Repository) error {
+		txService := &Service{repo: repo}
+		for _, id := range ids {
+			dict, err := repo.Get(ctx, id)
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return errs.NotFound("字典不存在")
+				}
+				return errs.SystemError("查询字典失败")
+			}
+			if err := txService.delete(ctx, dict); err != nil {
+				return err
+			}
+			dictCodes = append(dictCodes, dict.DictCode)
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	for _, dictCode := range dictCodes {
+		s.notifyDictChange(dictCode)
+	}
+	return nil
+}
+
 // Delete 删除字典（级联逻辑删除其字典项，保留历史数据）
 func (s *Service) Delete(ctx context.Context, id int64) error {
 	dict, err := s.repo.Get(ctx, id)
@@ -158,17 +189,21 @@ func (s *Service) Delete(ctx context.Context, id int64) error {
 		}
 		return errs.SystemError("查询字典失败")
 	}
+	if err := s.delete(ctx, dict); err != nil {
+		return err
+	}
+	s.notifyDictChange(dict.DictCode)
+	return nil
+}
 
+func (s *Service) delete(ctx context.Context, dict *model.Dict) error {
 	// 级联逻辑删除字典项：父字典删除后子项随之不可见
 	if err := s.repo.BatchDeleteItemsByCode(ctx, dict.DictCode); err != nil {
 		return errs.SystemError("删除字典项失败")
 	}
-
-	if err := s.repo.Delete(ctx, id); err != nil {
+	if err := s.repo.Delete(ctx, int64(dict.ID)); err != nil {
 		return errs.SystemError("删除字典失败")
 	}
-
-	s.notifyDictChange(dict.DictCode)
 	return nil
 }
 

@@ -18,6 +18,13 @@ type Repository struct {
 // NewRepository 创建 Repository 实例
 func NewRepository(db *gorm.DB) *Repository { return &Repository{db: db} }
 
+// Transaction 在单事务内执行字典及字典项操作
+func (r *Repository) Transaction(ctx context.Context, fn func(repo *Repository) error) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return fn(&Repository{db: tx})
+	})
+}
+
 // Page 字典分页查询
 func (r *Repository) Page(ctx context.Context, query *model.DictQuery) ([]model.Dict, int64, error) {
 	var dicts []model.Dict

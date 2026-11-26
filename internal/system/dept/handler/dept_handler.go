@@ -32,7 +32,7 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 		depts.POST("", auth.RequirePermission("sys:dept:create"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeInsert), h.Create)
 		depts.GET("/:id/form", h.GetForm)
 		depts.PUT("/:id", auth.RequirePermission("sys:dept:update"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeUpdate), h.Update)
-		depts.DELETE("/:id", auth.RequirePermission("sys:dept:delete"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeDelete), h.Delete)
+		depts.DELETE("/:ids", auth.RequirePermission("sys:dept:delete"), middleware.OperationLog(enums.LogModuleDept, enums.ActionTypeDelete), h.Delete)
 	}
 }
 
@@ -151,16 +151,16 @@ func (h *Handler) Update(c *gin.Context) {
 // Delete 删除部门
 // @Summary 删除部门
 // @Tags 05.部门接口
-// @Param id path int true "部门ID"
-// @Router /api/v1/depts/{id} [delete]
+// @Param ids path string true "部门ID，逗号分隔"
+// @Router /api/v1/depts/{ids} [delete]
 func (h *Handler) Delete(c *gin.Context) {
-	id, err := appContext.ParsePathParam(c, "id", "部门")
+	ids, err := appContext.ParseIntList(c.Param("ids"), "部门")
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	if err := h.svc.Delete(appContext.OperatorCtx(c), id); err != nil {
+	if err := h.svc.BatchDelete(appContext.OperatorCtx(c), ids); err != nil {
 		c.Error(err)
 		return
 	}

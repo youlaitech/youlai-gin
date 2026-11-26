@@ -194,6 +194,16 @@ func (s *Service) GetForm(ctx context.Context, id int64) (*model.DeptForm, error
 	}, nil
 }
 
+// BatchDelete 批量删除部门（逐项保留子部门校验）
+func (s *Service) BatchDelete(ctx context.Context, ids []int64) error {
+	for _, id := range ids {
+		if err := s.Delete(ctx, id); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Delete 删除部门（存在子部门时拒绝）
 func (s *Service) Delete(ctx context.Context, id int64) error {
 	if _, err := s.repo.Get(ctx, id); err != nil {

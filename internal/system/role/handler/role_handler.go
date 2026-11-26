@@ -31,7 +31,7 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 		roles.POST("", auth.RequirePermission("sys:role:create"), middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeInsert), h.Create)
 		roles.GET("/:id/form", auth.RequirePermission("sys:role:update"), h.GetForm)
 		roles.PUT("/:id", auth.RequirePermission("sys:role:update"), middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeUpdate), h.Update)
-		roles.DELETE("/:id", auth.RequirePermission("sys:role:delete"), middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeDelete), h.Delete)
+		roles.DELETE("/:ids", auth.RequirePermission("sys:role:delete"), middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeDelete), h.Delete)
 		roles.GET("/:id/menu-ids", auth.RequirePermission("sys:role:update"), h.MenuIds)
 		roles.PUT("/:id/menus", auth.RequirePermission("sys:role:assign"), middleware.OperationLog(enums.LogModuleRole, enums.ActionTypeGrant), h.AssignMenus)
 		roles.GET("/:id/dept-ids", h.DeptIds)
@@ -166,17 +166,17 @@ func (h *Handler) Update(c *gin.Context) {
 // Delete 删除角色
 // @Summary 删除角色
 // @Tags 03.角色接口
-// @Param id path int true "角色ID"
+// @Param ids path string true "角色ID，逗号分隔"
 // @Success 200 {object} map[string]interface{}
-// @Router /api/v1/roles/{id} [delete]
+// @Router /api/v1/roles/{ids} [delete]
 func (h *Handler) Delete(c *gin.Context) {
-	id, err := appContext.ParsePathParam(c, "id", "角色")
+	ids, err := appContext.ParseIntList(c.Param("ids"), "角色")
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	if err := h.svc.Delete(appContext.OperatorCtx(c), id); err != nil {
+	if err := h.svc.BatchDelete(appContext.OperatorCtx(c), ids); err != nil {
 		c.Error(err)
 		return
 	}

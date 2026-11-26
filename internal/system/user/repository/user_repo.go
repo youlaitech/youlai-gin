@@ -175,11 +175,13 @@ func (r *Repository) RoleIDs(ctx context.Context, userId int64) ([]int64, error)
 // ListIDsByRoleID 获取角色绑定的用户ID集合
 func (r *Repository) ListIDsByRoleID(ctx context.Context, roleId int64) ([]int64, error) {
 	var userIds []int64
-	err := r.db.WithContext(ctx).Table("sys_user_role").
-		Select("user_id").
-		Where("role_id = ?", roleId).
+	err := r.db.WithContext(ctx).Table("sys_user_role ur").
+		Joins("JOIN sys_user u ON u.id = ur.user_id").
+		Select("ur.user_id").
+		Where("ur.role_id = ?", roleId).
+		Where("u.is_deleted = 0").
 		Distinct().
-		Pluck("user_id", &userIds).Error
+		Pluck("ur.user_id", &userIds).Error
 	return userIds, err
 }
 

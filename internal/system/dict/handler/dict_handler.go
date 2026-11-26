@@ -30,7 +30,7 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 		dicts.POST("", auth.RequirePermission("sys:dict:create"), middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeInsert), h.Create)
 		dicts.GET("/:id/form", h.GetForm)
 		dicts.PUT("/:id", auth.RequirePermission("sys:dict:update"), middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeUpdate), h.Update)
-		dicts.DELETE("/:id", auth.RequirePermission("sys:dict:delete"), middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeDelete), h.Delete)
+		dicts.DELETE("/:ids", auth.RequirePermission("sys:dict:delete"), middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeDelete), h.Delete)
 		dicts.GET("/:id/items", auth.RequirePermission("sys:dict-item:list"), h.ItemPage)
 		dicts.GET("/:id/items/options", h.Items)
 		dicts.POST("/:id/items", auth.RequirePermission("sys:dict-item:create"), middleware.OperationLog(enums.LogModuleDict, enums.ActionTypeInsert), h.CreateItem)
@@ -143,16 +143,16 @@ func (h *Handler) Update(c *gin.Context) {
 // Delete 删除字典
 // @Summary 删除字典
 // @Tags 06.字典接口
-// @Param id path string true "字典编码"
-// @Router /api/v1/dicts/{id} [delete]
+// @Param ids path string true "字典ID，逗号分隔"
+// @Router /api/v1/dicts/{ids} [delete]
 func (h *Handler) Delete(c *gin.Context) {
-	id, err := appContext.ParsePathParam(c, "id", "字典")
+	ids, err := appContext.ParseIntList(c.Param("ids"), "字典")
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	if err := h.svc.Delete(appContext.OperatorCtx(c), id); err != nil {
+	if err := h.svc.BatchDelete(appContext.OperatorCtx(c), ids); err != nil {
 		c.Error(err)
 		return
 	}
