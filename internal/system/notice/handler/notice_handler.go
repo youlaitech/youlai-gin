@@ -28,6 +28,7 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 	r.POST("/notices", auth.RequirePermission("sys:notice:create"), h.Create)
 	r.GET("/notices/:id/form", auth.RequirePermission("sys:notice:update"), h.GetForm)
 	r.GET("/notices/:id/detail", h.GetDetail)
+	r.GET("/notices/:id/preview", auth.RequirePermission("sys:notice:list"), h.Preview)
 	r.PUT("/notices/:id", auth.RequirePermission("sys:notice:update"), h.Update)
 	r.PUT("/notices/:id/publish", auth.RequirePermission("sys:notice:publish"), h.Publish)
 	r.PUT("/notices/:id/revoke", auth.RequirePermission("sys:notice:revoke"), h.Revoke)
@@ -81,6 +82,27 @@ func (h *Handler) Create(c *gin.Context) {
 // @Param id path int true "公告ID"
 // @Router /api/v1/notices/{id}/form [get]
 func (h *Handler) GetForm(c *gin.Context) {
+	id, err := appContext.ParsePathParam(c, "id", "通知")
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	notice, err := h.svc.Get(c.Request.Context(), id)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.Ok(c, notice)
+}
+
+// Preview 管理端预览通知公告，不标记已读
+// @Summary 管理端预览通知公告
+// @Tags 08.通知公告
+// @Param id path int true "公告ID"
+// @Router /api/v1/notices/{id}/preview [get]
+func (h *Handler) Preview(c *gin.Context) {
 	id, err := appContext.ParsePathParam(c, "id", "通知")
 	if err != nil {
 		c.Error(err)
