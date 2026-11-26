@@ -481,7 +481,7 @@ CREATE TABLE `sys_config` (
                               PRIMARY KEY (`id`)
 ) ENGINE=InnoDB COMMENT='系统配置表';
 
-INSERT INTO `sys_config` VALUES (1, '系统限流QPS', 'IP_QPS_THRESHOLD_LIMIT', '10', '单个IP请求的最大每秒查询数（QPS）阈值Key', now(), 1, NULL, NULL, 0);
+INSERT INTO `sys_config` VALUES (1, '用户管理-账号初始密码', 'sys.user.initPassword', '123456', '新增用户、导入用户时的默认密码', now(), 1, NULL, NULL, 0);
 
 -- ----------------------------
 -- 通知公告表
